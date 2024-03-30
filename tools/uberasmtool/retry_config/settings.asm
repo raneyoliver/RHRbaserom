@@ -38,7 +38,7 @@
 ;======================== QoL fixes =====================================;
 
 ; If 1, level transitions will be much faster than usual.
-    !fast_transitions = 1
+    !fast_transitions = 0
 
 ; If 1, it fixes the issue where some sprites don't face Mario when entering a level for the first time.
 ; It's suggested to enable the fix to make sprite behavior consistent between the first and all the next level reloads.
@@ -237,6 +237,11 @@
 ; Palette row used by the letters and cursor (note: they use sprite palettes).
     !letter_palette = $08
     !cursor_palette = $08
+
+; If 1, score sprites (points, 1-Up) will be removed when dying.
+; This can be used to replace their graphics ($29, $38-$39, $44-$47, $54-$57)
+; with the Retry prompt tiles instead of having to reserve sprite tiles for the prompt.
+    !no_score_sprites_on_death = 1
 
 ; Sprite tile number for the tiles used by the prompt ($00-$FF = SP1/SP2, $100-$1FF = SP3/SP4).
 ; These will be overwritten dynamically when the prompt needs to show up.

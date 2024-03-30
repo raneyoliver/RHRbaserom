@@ -23,6 +23,9 @@ endif
     ; Enable SFX echo if applicable.
     lda !ram_play_sfx : bpl +
     lda $1DFA|!addr : bne +
+    ; Don't play every frame or AMK will ignore it
+    ; when changing music in the middle of a level
+    lda $13 : lsr : bcs +
     lda #$06 : sta $1DFA|!addr
 +
     ; Update the window HDMA when the flag is set.
@@ -135,6 +138,12 @@ if !prompt_freeze == 2
     stz $1E66|!addr,x
 ++  dex : bpl -
 +
+    ; Prevent swallow timer from decrementing
+    lda $18AC|!addr : beq +
+    cmp #$FF : beq +
+    lda $14 : and #$03 : bne +
+    inc $18AC|!addr
++
 endif
 else
     ; Force sprites and animations to run.
@@ -160,15 +169,17 @@ endif
     ; Reset Yoshi's swallow timer.
     ldx $18E2|!addr : beq +
     stz !1564-1,x
+
     ; Prevent Yoshi's tongue from extending.
     lda !1594-1,x : cmp #$01 : bne ++
     lda !151C-1,x : sec : sbc.l !rom_yoshi_tongue_extend_speed : bmi +
     sta !151C-1,x
     bra +
-++  ; Prevent Yoshi's tongue from retracting.
+++  
+    ; Prevent Yoshi's tongue from retracting.
     cmp #$02 : bne +
     sta !1558-1,x
-+
++   
     ; Don't respawn if not infinite lives and we're about to game over.
 if not(!infinite_lives)
     jsr shared_get_bitwise_mask
@@ -181,18 +192,19 @@ endif
     ; See what retry we have to use.
     jsr shared_get_prompt_type
     cmp #$03 : bcc ..prompt
-               beq ..instant
+               bne ..vanilla
+               jmp ..instant
 
 ..vanilla:
 if !title_death_behavior != 0
     ; If on the title screen...
-    lda $0100|!addr : cmp #$07 : bne ..return
+    lda $0100|!addr : cmp #$07 : bne ...return
 
     ; ...prevent opening the file select menu.
     stz $15 : stz $16 : stz $17 : stz $18
 
     ; If the death animation is almost over...
-    lda $1496|!addr : cmp #$01 : bne ..return
+    lda $1496|!addr : cmp #$01 : bne ...return
 
     ; ... reset stuff for reloading...
     stz $0109|!addr
@@ -203,6 +215,7 @@ if !title_death_behavior != 0
     lda #$02 : sta $0100|!addr
 endif
 
+...return:
     rtl
 
 ..prompt:
@@ -272,8 +285,10 @@ endif
 
 ...check_box:
 if not(!fast_prompt)
+if not(!retry_death_animation&1)
     ; If fallen in a pit, show immediately.
     lda $81 : dec : bpl +
+endif
 
     ; Check if it's time to show the prompt.
     lda $16 : ora $18 : bmi +
@@ -298,8 +313,10 @@ endif
     rtl
 
 ..instant:
+if not(!retry_death_animation&2)
     ; If fallen offscreen, respawn immediately.
     lda $81 : dec : bpl ..respawn
+endif
     
     ; Respawn after 4 frames so it shows the death pose.
     lda $1496|!addr : cmp.b #!death_time : bcs ..return

@@ -23,6 +23,9 @@ load_title:
 ;=====================================
 reset:
     ; Feel free to put your code here.
+
+
+
     rts
 
 ;=====================================
@@ -32,13 +35,8 @@ reset:
 death:
     ; Feel free to put your code here.
 
-    ; Clear score sprites on death to free up tiles for prompt display
-    stz $16E1|!addr
-    stz $16E2|!addr
-    stz $16E3|!addr
-    stz $16E4|!addr
-    stz $16E5|!addr
-    stz $16E6|!addr
+
+
     rts
 
 ;=====================================
@@ -108,7 +106,7 @@ load_new_file:
     ; Feel free to put your code here.
 
 
-
+    
     rts
 
 ;=====================================
@@ -121,7 +119,7 @@ game_over:
     ; Feel free to put your code here.
 
 
-
+    
     rts
 
 ;=====================================
@@ -136,7 +134,7 @@ door_animation:
     ; Feel free to put your code here.
 
 
-
+    
     rts
 
 ;=====================================
