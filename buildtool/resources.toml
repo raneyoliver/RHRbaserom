@@ -1,11 +1,11 @@
 [resources]
 
 # Fastrom initial patch
-initial_patch = "resources/initial_patches/fastrom.bps"
+# initial_patch = "resources/initial_patches/fastrom.bps"
 
 # Uncomment the line below if you would like to use SA-1.
 # and comment out the one above
-#initial_patch = "resources/initial_patches/sa1.bps"
+initial_patch = "resources/initial_patches/sa1.bps"
 
 # Exported resources
 levels = "resources/levels"

@@ -10,7 +10,7 @@
 ;     In this option, you can press start then select to exit the level.
 ; 3 = no retry prompt/respawn (vanilla death: as if "no" is chosen automatically, use this if you only want the multi-midway feature).
 ; Note: you can override this per sublevel (see "tables.asm") and also at any point by setting a certain RAM address (see "docs/ram_map.txt").
-    !default_prompt_type = 3
+    !default_prompt_type = 1
 
 ;======================== QoL and Anti-Break ============================;
 
@@ -62,7 +62,7 @@
 
 ; If 1, it removes the "Hurry up!" SFX and tempo hike effect that happens when reaching 100 seconds on the timer.
 ; If not disabled, the death song will be played when dying during the tempo hike effect (regardless of the settings), to reset the tempo of the song after respawning.
-    !disable_hurry_up = 0
+    !disable_hurry_up = 1
 
 ; This controls whether to freeze sprites during a level's pipe entrance (it doesn't affect other entrance types).
 ; 0 = don't freeze
@@ -269,14 +269,14 @@
 ; Item box, coins and timer use 1 16x16 tile each, but they only need to be reserved when actually using them,
 ; and you can choose which tiles to use for each level (or to just disable any or all of them in specific levels)
 ; using the tables in "sprite_status_bar_tables.asm".
-    !sprite_status_bar = 1
+    !sprite_status_bar = 0
 
 ; If 1, it disables the original game's status bar (including the IRQ) which prevents layer 3 from messing up.
 ; Differently than the normal remove status bar patch, this keeps the status bar functions (lives, coins,
 ; bonus stars, score, timer, reserve item) running in the background.
 ; Suggested to use if you're using !sprite_status_bar = 1.
 ; Don't use this if you're using similar patches such as "RAM Toggled Status Bar".
-    !remove_vanilla_status_bar = 0
+    !remove_vanilla_status_bar = 1
 
 ; General properties for sprite status bar elements.
 ; These are only relevant if !sprite_status_bar = 1.
