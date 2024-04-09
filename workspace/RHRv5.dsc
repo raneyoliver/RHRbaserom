@@ -120,6 +120,9 @@
 35c	0	Changes the pipe direction from left to up or down to right.
 35d	0	Changes the pipe direction from down to left or right to up.
 36f	0	Part of pipe that is passable.
+400	0	Kills Mario instantly, even if on Yoshi.
+402	0	A block where it will only let the player pass if he is carrying a clone or puzzle clone.
+403	0	A block that acts like a stationary Swooper.
 200 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 201 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 202 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.

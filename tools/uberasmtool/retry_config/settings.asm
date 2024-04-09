@@ -186,7 +186,7 @@
 ; 1 = exit the level immediately and play the death music (note that the vanilla song will be cut short).
 ; 2 = play the death animation and music, then exit the level.
 ; Note: when dying before going to Game Over, the vanilla animation will be always played regardless.
-    !exit_animation = 2
+    !exit_animation = 0
 
 ; Set to 1 if you don't want the "Exit" option in the prompt.
 ; This will also allow the player to Start+Select when having the prompt.
@@ -228,7 +228,7 @@
 
 ; 1 = the letters in the option selected on the Retry prompt will wave up and down.
 ; Note: this is incompatible with the black box (use !no_prompt_box = 1)
-    !prompt_wave = 0
+    !prompt_wave = 1
 
 ; How fast the letters wave (only used when !prompt_wave = 1)
 ; Higher = slower. Possible values: 0 to 5.

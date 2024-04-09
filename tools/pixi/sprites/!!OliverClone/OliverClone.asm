@@ -686,10 +686,19 @@ HandleState:
 
 	JSR EraseFireballs
 
-	LDA #$25                                ; \  play blargg roar
+	LDA !IsMario
+	BEQ ..ohye
+
+..letsago
+	LDA #$2F ;#$25                                ; \  play blargg roar
+	STA $1DF9|!Base2                        ; /
+	BRA +
+
+..ohye
+	LDA #$30 ;#$25                                ; \  play blargg roar
 	STA $1DF9|!Base2                        ; /
 
-	LDY $18DF|!Base2
++	LDY $18DF|!Base2
 	BEQ ..noYoshi
 	DEY
 	LDA #$00
@@ -1248,7 +1257,6 @@ Graphics:
         SEC : SBC #$10
         STA $0301|!Base2,y
         JSR GetTopTile
-		WDM #$01
         STA $0302|!Base2,y										; YXPP CCCT
 		LDA !TeleportReady : BNE + : LDA #$11 : BRA ++ : +		; 0001 0001
 
