@@ -1,0 +1,15 @@
+Conflict - 0x1 byte at SNES: $008179 (unheadered), PC: 0x000379 (headered):
+	Original bytes:
+		AD 
+	AddMusicK:
+		EA 
+	UberASM:
+		14 
+
+Conflict - 0x3 bytes at SNES: $05D8B9 (unheadered), PC: 0x02DAB9 (headered):
+	Original bytes:
+		A5 0E 0A 
+	PIXI:
+		20 46 DC 
+	UberASM:
+		EA EA EA 

@@ -689,14 +689,14 @@ HandleState:
 	LDA !IsMario
 	BEQ ..ohye
 
-..letsago
-	LDA #$2F ;#$25                                ; \  play blargg roar
-	STA $1DF9|!Base2                        ; /
+..wohoo
+	LDA #$3A ;#$25                                ; \  play blargg roar
+	STA $1DFC|!Base2                        ; /
 	BRA +
 
 ..ohye
-	LDA #$30 ;#$25                                ; \  play blargg roar
-	STA $1DF9|!Base2                        ; /
+	LDA #$39 ;#$25                                ; \  play blargg roar
+	STA $1DFC|!Base2                        ; /
 
 +	LDY $18DF|!Base2
 	BEQ ..noYoshi
