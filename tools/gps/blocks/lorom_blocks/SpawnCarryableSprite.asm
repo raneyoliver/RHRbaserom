@@ -34,8 +34,8 @@ ArbitraryLabel:
     BRA NoTimer
 Next:
     LDA $1693 
-    CPY #$00 	
-    CMP #$4A 
+    CPY #$04 	
+    CMP #$14 
     BNE Next2
 	LDA #$1B					; KoopaShell.asm (custom)
     BRA NoTimer
@@ -143,8 +143,8 @@ Next7:
     BRA TimerSpawn
 Next8:	
     LDA $1693 
-    CPY #$00 	
-    CMP #$51 
+    CPY #$04 	
+    CMP #$13
     BNE Return2
 	LDA #$5B ; spiny shell (custom)
     BRA NoTimerBridge

@@ -1,0 +1,22 @@
+CHANGELOG
+
+version 4.2 (2022-01-24):
+        (SOME EXTRA BYTE VALUES HAVE CHANGED! YOU WILL PROBABLY
+        HAVE TO RE-PLACE ALL THE SPRITES IN YOUR LEVEL.)
+        - added an option for different sprite sizes (16x16, 16x32 and 32x32)
+        - added an option to make a sprite invisible
+        - improved the handling of solid sprites
+        - added an option to make solid sprites rideable
+        - added an option to set the player's pose to the default when talking to the sprite
+        - fixed an issue where showing a VWF message would cause a sprite to never despawn
+        - switched the "left" and "right" labels for the initial direction because they were apparently the wrong way round?
+        - made the sprite compatible with the upcoming version of the VWF dialogues patch
+
+version 4.1 (2022-01-07):
+        - the palette no longer switches back to E when a VWF message is shown
+        - the sprite no longer hurts yoshi
+        - the configuration tool now lets you specify a custom graphic for the sprite even when it's set to be stationary
+        - fixed an issue where you could talk to solid sprites if you were directly below or above them
+        - fixed an issue with the jump sound when AMK is applied
+        - fixed an issue with the standing frame selection in the configuration tool
+          (this also means the two walking frames in the GFX file are now swapped, so please reinsert the graphics)

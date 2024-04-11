@@ -5,6 +5,8 @@
 
 ; Add your sprites here
 14 !!OliverClone\OliverClone.json
+1B KoopaShellGreen.json
+5B SpinyShell.json
 
 
 ; For use with the Donut block. If you remove or change this be sure to update the donut_lift.asm block

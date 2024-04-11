@@ -2349,7 +2349,7 @@ CheckInteractableBlocksList:
 	JSR CheckLavaTiles
 	BCS .lavaTile
 
-.left
+.lavaLeft
 	REP #$20
 	LDA $9A	;high, low
 	PHA
@@ -2372,7 +2372,7 @@ CheckInteractableBlocksList:
 	JSR CheckLavaTiles
 	BCS .lavaTile
 
-.right
+.lavaRight
 	REP #$20
 	LDA $9A	;high, low
 	CLC : ADC #$0002
