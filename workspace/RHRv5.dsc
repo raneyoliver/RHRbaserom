@@ -124,6 +124,7 @@
 402	0	A block where it will only let the player pass if he is carrying a clone or puzzle clone.
 403	0	A block that acts like a stationary Swooper.
 404	0	This is one half of a pair of custom on/off switches. Unlike normal switches, after you hit this one, it'll become a brick block and you'll be unable to flip it again, UNTIL the OTHER switch is flipped (and vice versa). Is also set to be activated by Mario fireballs, too, but you can change this.
+405	0	This is one half of a pair of custom on/off switches. Unlike normal switches, after you hit this one, it'll become a brick block and you'll be unable to flip it again, UNTIL the OTHER switch is flipped (and vice versa). Is also set to be activated by Mario fireballs, too, but you can change this.
 406	0	An on-off death block, solid when the switch is on
 40a	0	Bounces a moving throwblock.
 413	0	This block spawns a sprite, automatically carried, with the block erasing itself afterwards. Note that the bobomb and mechakoopa require the correct sprite GFX to display properly.

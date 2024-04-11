@@ -2464,7 +2464,7 @@ CheckLavaTiles:
 SpriteAndSpecialBlockInteraction:
 
 	LDA !BouncingSpeed
-	BNE .done
+	BNE .return
 ; Spin Interaction
 ; Get Sprite-Sprite Contact
 	JSR SprSprContact       ; clone = x, sprite in contact = y
@@ -2514,7 +2514,30 @@ SpriteAndSpecialBlockInteraction:
 		CMP #$61
 		BEQ .platform
 
-		BRA .done
+.greyPlatformCheck
+		CMP #$C4
+		BNE .none
+
+		; This code kickstarts the platform falling routine
+		LDA !14C8,x
+		CMP #$0A
+		BEQ .return	; clone not kicked
+
+		LDA !AA,x
+		CMP #$80
+		BCS .return	; clone not moving up
+
+		; platform itself
+		LDA !AA,y               ;\    
+		BNE .platform           ;/ If the Y speed is non-zero, there's no need to continue.
+		LDA.b #$03              ;\                
+		STA !AA,y               ;/ Initial Y speed when stood on.
+		LDA.b #$18  			;\              
+		STA.w !1540,y           ;/ Timer it takes to fall down initially when stood upon.
+		BRA .platform
+
+.none
+		BRA .return
 
 .isCustom
 	PHX
@@ -2525,7 +2548,7 @@ SpriteAndSpecialBlockInteraction:
 
 	CMP #$09
 	BEQ .platform
-	BRA .done
+	BRA .return
 
 .tryBounce
 	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
@@ -2533,15 +2556,15 @@ SpriteAndSpecialBlockInteraction:
 .platform
 	LDA !14C8,x
 	CMP #$0A
-	BEQ .done
+	BEQ .return
 
 	LDA !AA,x
 	CMP #$80
-	BCS .done
+	BCS .return
 
 	JSR OnPlatform
 
-.done
+.return
 	RTS
 
 OnPlatform:

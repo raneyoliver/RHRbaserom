@@ -11,6 +11,7 @@
 402:130 passifcarrying.asm
 403:025 KoopaBlock.asm
 404:130 OnSwitch-SingleHitSynchronized.asm
+405:130 OffSwitch-SingleHitSynchronized.asm
 406:025 OnDeathBlock.asm
 40A:130 throwblock_bumper.asm
 413:049 SpawnCarryableSprite.asm
