@@ -6,6 +6,14 @@ Conflict - 0x1 byte at SNES: $008179 (unheadered), PC: 0x000379 (headered):
 	UberASM:
 		14 
 
+Conflict - 0x1 byte at SNES: $00F692 (unheadered), PC: 0x007892 (headered):
+	Original bytes:
+		00 
+	Patch (resources\patches\other\mario_gfx_dma.asm):
+		A1 
+	Patch (resources\patches\MarioTileDMAMergedPaletteChange.asm):
+		C6 
+
 Conflict - 0x3 bytes at SNES: $05D8B9 (unheadered), PC: 0x02DAB9 (headered):
 	Original bytes:
 		A5 0E 0A 

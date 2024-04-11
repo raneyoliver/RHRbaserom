@@ -104,4 +104,5 @@ patches = [
 	"resources/patches/other/puff_of_smoke_sprite.asm",
 	"resources/patches/sprite_remaps.asm",
 	"resources/patches/tweaks.asm",
+	"resources/patches/MarioTileDMAMergedPaletteChange.asm",
 ]

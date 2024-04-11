@@ -5,6 +5,7 @@
 
 ; Add your sprites here
 14 !!OliverClone\OliverClone.json
+15 PlayerCursor.cfg
 1B KoopaShellGreen.json
 5B SpinyShell.json
 
