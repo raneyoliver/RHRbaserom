@@ -6,6 +6,7 @@ verbose: on
 
 ; Level resources
 level:
+16 MarioGFXAndPaletteChangeOnTrigger.asm
 
 ; Overworld resources
 overworld:
