@@ -15,6 +15,9 @@ else
 	!bankA = $7E0000
 endif
 
+!CloneIndex = $14
+!DeadTopLeftTile        		= $0A
+
 ; By SJandCharlieTheCat
 
 db $37
@@ -43,11 +46,28 @@ SpriteH:
 	LDY #$10	;act like tile 130
 	LDA #$30
 	STA $1693|!addr
+
+	LDA !7FAB9E,x
+	CMP #!CloneIndex
+	BNE Return
+
+	LDA !14C8,x
+	CMP #$0B
+	BEQ Return
+
+	JSR SetFrameDead
+	LDA #$03
+	STA !14C8,x
+	JSL $00F606|!bank	; Change $00F606 with $00F5B7 if you want it to hurt the player instead of killing.
+
 MarioCape:
 MarioFireball:
 Return:
 	RTL
 
-
+SetFrameDead:
+	LDA #!DeadTopLeftTile
+	STA !1570,x
+	RTS
 
 print "An on-off death block, solid when the switch is on"

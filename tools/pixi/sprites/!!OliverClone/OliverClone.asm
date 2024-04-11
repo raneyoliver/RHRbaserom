@@ -2336,6 +2336,9 @@ SafeGetMap16DifferentXPos:
 	%GetMap16()
 	RTS
 
+ReturnHelper:
+	RTS
+
 CheckInteractableBlocksList:
 
 	JSR SafeGetMap16
@@ -2346,6 +2349,31 @@ CheckInteractableBlocksList:
 	; SEP #$20
 	;BEQ .koopaBlock        I decided to handle this directly from KoopaBlock.asm for better or worse
 
+; .switchONDeathBlock
+; 	REP #$20
+; 	CMP #$0406
+; 	SEP #$20
+; 	BNE .switchOFFDeathBlock
+
+; 	LDA $14AF|!addr
+; 	BNE ReturnHelper
+
+; 	JSR KillMarioSprite
+; 	BRA ReturnHelper
+
+; .switchOFFDeathBlock
+; 	REP #$20
+; 	CMP #$0407
+; 	SEP #$20
+; 	BNE .lavaBlock
+
+; 	LDA $14AF|!addr
+; 	BEQ ReturnHelper
+
+; 	JSR KillMarioSprite
+; 	BRA ReturnHelper
+
+.lavaBlock
 	JSR CheckLavaTiles
 	BCS .lavaTile
 

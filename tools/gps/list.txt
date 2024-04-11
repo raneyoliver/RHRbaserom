@@ -13,10 +13,13 @@
 404:130 OnSwitch-SingleHitSynchronized.asm
 405:130 OffSwitch-SingleHitSynchronized.asm
 406:025 OnDeathBlock.asm
+407:025 OffDeathBlock.asm
+408:025 OnSolid.asm
+409:025 OffSolid.asm
 40A:130 throwblock_bumper.asm
 413:049 SpawnCarryableSprite.asm
 414:04A SpawnCarryableSprite.asm
-
+419:025 SpriteOneWay-AllowGoingLeft.asm
 
 ; BASEROM RESERVED BLOCKS BELOW -------------------------------------;
 ; The following blocks are largely on Pages 02 and 03 of Map16

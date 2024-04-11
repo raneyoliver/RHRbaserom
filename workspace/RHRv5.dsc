@@ -126,9 +126,13 @@
 404	0	This is one half of a pair of custom on/off switches. Unlike normal switches, after you hit this one, it'll become a brick block and you'll be unable to flip it again, UNTIL the OTHER switch is flipped (and vice versa). Is also set to be activated by Mario fireballs, too, but you can change this.
 405	0	This is one half of a pair of custom on/off switches. Unlike normal switches, after you hit this one, it'll become a brick block and you'll be unable to flip it again, UNTIL the OTHER switch is flipped (and vice versa). Is also set to be activated by Mario fireballs, too, but you can change this.
 406	0	An on-off death block, solid when the switch is on
+407	0	An on-off death block, solid when the switch is on.
+408	0	A regular on-off block, solid when the switch is on
+409	0	A regular on-off block, which only becomes solid when the switch is turned off.
 40a	0	Bounces a moving throwblock.
 413	0	This block spawns a sprite, automatically carried, with the block erasing itself afterwards. Note that the bobomb and mechakoopa require the correct sprite GFX to display properly.
 414	0	This block spawns a sprite, automatically carried, with the block erasing itself afterwards. Note that the bobomb and mechakoopa require the correct sprite GFX to display properly.
+419	0	Solid for sprites ONLY (block-interactable sprites) when they go right, but allows left
 200 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 201 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 202 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
