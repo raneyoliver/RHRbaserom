@@ -133,6 +133,8 @@
 413	0	This block spawns a sprite, automatically carried, with the block erasing itself afterwards. Note that the bobomb and mechakoopa require the correct sprite GFX to display properly.
 414	0	This block spawns a sprite, automatically carried, with the block erasing itself afterwards. Note that the bobomb and mechakoopa require the correct sprite GFX to display properly.
 419	0	Solid for sprites ONLY (block-interactable sprites) when they go right, but allows left
+439	0	Solid for sprites ONLY (block-interactable sprites) when they go left, but allows right
+450	0	A block that acts like a mid-air suspended Spiny. If Yoshi's going to eat it, this will need sprite GFX02 in SP4.
 200 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 201 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 202 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.

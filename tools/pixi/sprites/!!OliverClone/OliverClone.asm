@@ -157,7 +157,7 @@ endif
 !SpinDirection					= $41A01E
 !StareTimer						= $41A020
 !Frozen							= $41A021
-!FreezeBlockFrozenFlag			= $41A022       ; from uberASM/level/FreezeSpritesOnTrigger.asm
+;!FreezeBlockFrozenFlag			= $41A022       ; from uberASM/level/FreezeSpritesOnTrigger.asm
 !BouncingSpeed					= $41A023		; also used as a flag ($01=delay bounce $00=okay to bounce)
 !PlayerOnlyStomped         		= $41A024
 !SpriteDirection				= $41A027
@@ -167,7 +167,7 @@ endif
 !RunningLevel					= $AF
 
 !Lvl18XSpeed					= $24
-!Lvl1AXSpeed					= $24
+!Lvl17XSpeed					= $24
 !Lvl21XSpeed					= $24
 !Lvl21YSpeed					= $AA
 
@@ -262,8 +262,8 @@ InitMarioSpriteProperties:
 	CMP #$0A
 	BEQ .lvl0A
 
-	CMP #$1A                ; level 1A
-	BEQ .lvl1A
+	CMP #$17                ; level 17
+	BEQ .lvl17
 
 	CMP #$21
 	BEQ .lvl21
@@ -285,11 +285,11 @@ InitMarioSpriteProperties:
 
 	BRA .return
 
-.lvl1A
+.lvl17
 	LDA #$01				; level 1A starts spinning with some X speed
 	STA !Spinning
 
-	LDA #!Lvl1AXSpeed
+	LDA #!Lvl17XSpeed
 	STA !B6,x
 
 	BRA .return
@@ -377,8 +377,8 @@ GivePoints:
 print "INIT ",pc
 
 	; temporary
-	LDA #$00
-	STA !FreezeBlockFrozenFlag
+	;LDA #$00
+	;STA !FreezeBlockFrozenFlag
 
 	; Initialize MarioSprite's Properties
     JSR InitMarioSpriteProperties
@@ -615,8 +615,8 @@ HandleState:
 	BNE ..cancel
 
 	; Cancel if sprites frozen by FreezeBlock
-	LDA !FreezeBlockFrozenFlag
-	BNE ..cancel
+	;LDA !FreezeBlockFrozenFlag
+	;BNE ..cancel
 
 	BRA ..beginTeleporting
 

@@ -24,7 +24,7 @@
 ; 0 = midways won't give Mario a mushroom.
 ; 1 = vanilla midway powerup behavior.
 ; Note: you can also change this on the fly (see "docs/ram_map.txt").
-    !midway_powerup = 1
+    !midway_powerup = 0
 
 ; Counterbreak options reset the corresponding counters/items when the player dies and when going to the Overworld.
 ; Useful for Kaizo and collab hacks.
@@ -38,7 +38,7 @@
 ;======================== QoL fixes =====================================;
 
 ; If 1, level transitions will be much faster than usual.
-    !fast_transitions = 0
+    !fast_transitions = 1
 
 ; If 1, it fixes the issue where some sprites don't face Mario when entering a level for the first time.
 ; It's suggested to enable the fix to make sprite behavior consistent between the first and all the next level reloads.

@@ -1,4 +1,4 @@
-!FrozenFlag = $7FA022   ; from uberASM/level/FreezeSpritesOnTrigger.asm
+;!FrozenFlag = $7FA022   ; from uberASM/level/FreezeSpritesOnTrigger.asm
 ;npc2.asm !TeleportReady
 	!TeleportReady = $7FA016
 
@@ -9,7 +9,7 @@ if read1($00FFD5) == $23		; check if the rom is sa-1
 	!addr = $6000
 	!bank = $000000
 	!bankA = $400000
-	!FrozenFlag = $41A022   ; from uberASM/level/FreezeSpritesOnTrigger.asm
+	;!FrozenFlag = $41A022   ; from uberASM/level/FreezeSpritesOnTrigger.asm
 	!TeleportReady = $41A016
 else
 	lorom
@@ -242,15 +242,15 @@ ADC #!YDisp		;add Y displacement
 ;STA $0201|!Base2,y	;store to OAM.
 STA $0301|!Base2,y
 
-LDA !FrozenFlag
-BNE +
+;LDA !FrozenFlag
+;BNE +
 
 LDA #!CursorTile	;load tile value (normal cursor)
-BRA ++
+;BRA ++
 
-+
-LDA #!BlockedTile
-++
+;+
+;LDA #!BlockedTile
+;++
 ;STA $0202|!Base2,y	;store to OAM.
 STA $0302|!Base2,y
 

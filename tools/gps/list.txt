@@ -20,6 +20,8 @@
 413:049 SpawnCarryableSprite.asm
 414:04A SpawnCarryableSprite.asm
 419:025 SpriteOneWay-AllowGoingLeft.asm
+439:025 SpriteOneWay-AllowGoingRight.asm
+450:025 spinyblock.asm
 
 ; BASEROM RESERVED BLOCKS BELOW -------------------------------------;
 ; The following blocks are largely on Pages 02 and 03 of Map16
