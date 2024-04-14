@@ -1,0 +1,184 @@
+#amk 2
+
+#spc
+{
+    #title   "Creepy Creatures"
+    #game    "Addams Family Values"
+    #author  "Keith Tirman"
+    #comment "Ported by KevinM"
+}
+
+#path "addams-creatures"
+
+#samples
+{
+    #default
+    "Electric Bass.brr"
+    "Kick.brr"
+    "Snare.brr"
+    "Organ.brr"
+    "Synth Lead.brr"
+}
+
+#instruments
+{
+    "Electric Bass.brr" $00 $00 $DF $08 $6E ; @30
+    "Kick.brr"          $00 $00 $DF $01 $13 ; @31
+    "Snare.brr"         $00 $00 $DF $01 $AE ; @32
+    "Organ.brr"         $00 $00 $DF $0A $FC ; @33
+    "Synth Lead.brr"    $00 $00 $D6 $07 $FA ; @34
+    "Synth Lead.brr"    $00 $00 $D8 $07 $FA ; @35
+}
+
+;==================;
+; Volume  /  Tempo ;
+;==================;
+   w160       t58
+
+; Original volumes: w145
+
+;==================;
+;      Macros      ;
+;==================;
+"I30 = @30      $DE $06 $08 $10 (!reset,-1) (!gainB0,1,$1C)"
+"I33 = @33 o3   $DE $0A $10 $15 (!reset,-1) (!gainB0,1,$1A)"
+"I34 = @34 v210 $DE $00 $12 $10             (!gainAA,1,$25)"
+"I35 = @35 v175 $DE $56 $06 $6C             (!gainAD,1,$1C)"
+
+;==================;
+;     Commands     ;
+;==================;
+ "reset = 900"
+"gainB0 = 901"
+"gainAA = 902"
+"gainD8 = 903"
+"gainAD = 904"
+ (!reset)[$F4 $09]
+(!gainB0)[$ED $80 $B0]
+(!gainAA)[$ED $80 $AA]
+(!gainAD)[$ED $80 $AD]
+
+;==================;
+;    Channel #0    ;
+;==================;
+#0 $F0 $F4 $02
+I30 o2 l8 r1^1
+v250 y5 a4 v225 y11 > a v242 y14 < a
+v250 y16 > c4 $DD $12 $0A >c< v222 y9 d v235 y13 > d
+v250 y15 << g+4 v255 y17 > g+ v222 y9 < g+
+v238 y13 b v231 y8 > b v245 y6 d v230 y11 > d /
+v235 y7 << a4 v245 y5 > a v230 y11 < a
+v250 y16 > c v235 y10 > c v238 y13 < d v245 y6 > d
+y14 << g+4 y4 > g+ v255 y3 < g+
+y2 b v235 y10 > b y9 d v230 y8 e
+y11 < a4 v235 y8 > a y12 < a
+v245 y5 > c v235 y7 > c v250 y5 < d v244 y14 > d
+v220 y9 << g+4 v225 > g+ v244 y6 < g+
+v230 y7 > c y11 > c y7 << b v250 y3 g+
+v255 y2 a4 v230 y10 > a v245 y13 < a
+v250 y16 > c y17 > c v255 y18 < d v230 y10 > d
+v241 y7 << g+4 v250 y4 > g+ v230 y11 < g+
+v240 y14 b v235 y9 > b y13 d y8 e
+v240 y5 < a4 v252 y4 > a v255 y3 < a
+y2 > c v230 y10 > c v240 y7 < d v230 y12 > d
+y7 << g+4 v245 y5 > g+ v250 y4 < g+
+v220 y11 b v240 y7 > b v250 y5 d v255 y4 e
+y3 < a4 y2 > a < a
+v230 y10 > c v240 y7 > c v230 y12 < d y7 > d
+v235 y12 << g+4 y8 > g+ v245 y5 < g+
+v230 y11 b v242 y14 > b v250 y16 d v220 y9 > d
+v235 y13 << a4 y8 > a v245 y6 < a
+v230 y11 > c v235 y7 > c y12 < d v240 y15 > d
+v252 y16 << g+4 v255 y18 > g+ v230 y10 < g+
+v240 y13 b v250 y15 > b v225 y9 d v242 y6 > d
+v235 y11 << a4 y7 > a v245 y5 < a
+v225 y11 > c v235 y7 > c v250 y5 < d v225 y11 > d
+v235 y7 << g+4 y12 > g+ v240 y15 < g+
+v250 y16 > c v255 y17 > c y18 << b g+
+v230 y10 a4 v245 y7 > a v235 y11 < a
+v245 y14 > c v230 y9 > c y13 < d v245 y15 > d
+v250 y17 << g+4 v222 y9 > g+ v245 y7 < g+
+v250 y4 > c v225 y11 > c v235 y7 << b v250 y5 g+
+v255 y4 a4 y3 > a y2 < a
+v230 y10 > c v240 y7 > c v250 y5 < d v225 y11 > d
+v242 y14 << g+4 v250 y16 > g+ v220 y9 < g+
+v230 y13 b y8 > b y13 d v245 y15 e
+v252 y16 < a4 v255 y17 > a v230 y10 < a
+v240 y13 > c v250 y15 > c v255 y17 < d y18 > d
+v230 y10 << g+4 v245 y7 > g+ v235 y11 < g+
+v245 y14 b v230 y9 > b y13 d y8 e
+
+;==================;
+;    Channel #1    ;
+;==================;
+#1
+@31 y10 o5 l8
+[
+[[v255 f v160 f v255 f v120 f v255 f4]]2
+v255 f v160 f v255 f v120 f
+]2 / *10
+
+;==================;
+;    Channel #2    ;
+;==================;
+#2
+@32 v215 y10 o5 r4
+[[f+2 f+2]]3 f+2 f+4 / ^4
+[[f+8 v90 f+4. v215 f+2]]19
+f+8 v90 f+4 v215 f+8 f+8 f+8
+
+;==================;
+;    Channel #3    ;
+;==================;
+#3 [[r2]]8 /
+I33
+v150 y12 d+1
+y8 d4.
+v170 y0 d2
+v160 y5 d8
+v153 y7 d+1
+v155 y13 d2.
+v165 y5 f1^4 y10
+
+I34 < a1 a+1 a1
+I35 > a+1 a2. > c4 < a+1. e1.
+I34 << a2 > c2 < a+1. > c+2 $DD $30 $30 <g>
+I35 a+2. a+4 a1 a+1 a1
+
+;==================;
+;    Channel #4    ;
+;==================;
+#4 [[r2]]8 / ^8
+I33
+v155 y8 a+4.
+v170 y20 b4.
+v150 y11 f4
+v160 y6 a+4.
+v170 y0 b4
+v155 y12 g+4.
+v150 a+4.
+y11 b4.
+v165 y16 f4
+y15 a+4.
+y5 f+2 y10
+
+I34 < a+1. > c1^4 c2. c1^4
+I35 a+2. > c+1. < a1
+I34 << a+1 a1 a+1 a2 > c+2 $DD $30 $30 <g>
+I35 > c+2. c+4 c+1 c+1 c+1
+
+;==================;
+;    Channel #5    ;
+;==================;
+#5 [[r2]]8 / ^4.
+I33
+v160 y14 d+4.
+v150 y8 f+2..
+v155 y13 a+2.
+y8 d+4.
+v150 y11 f+=120
+v155 d1^1^1^1^1^1^1^1^=120 y10
+
+I35 < c1.
+I34 c1. < a1
+I35 >> f2. f4 e1 f1 e1

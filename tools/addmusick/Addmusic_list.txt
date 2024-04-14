@@ -33,3 +33,4 @@ Locals:
 1D  originals/29 Special World.txt
 1E  originals/30 IntroScreen.txt
 1F  hydrocity\hydrocity.txt
+20  Addams_CreepyCreatures\05 Creepy Creatures.txt

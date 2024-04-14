@@ -9,6 +9,7 @@ SampleGroupPtrs:
 
 dw $0000, SGPointer01, SGPointer02, SGPointer03, SGPointer04, SGPointer05, SGPointer06, SGPointer07, SGPointer08, SGPointer09, SGPointer0A, SGPointer0B, SGPointer0C, SGPointer0D, SGPointer0E, SGPointer0F
 dw SGPointer10, SGPointer11, SGPointer12, SGPointer13, SGPointer14, SGPointer15, SGPointer16, SGPointer17, SGPointer18, SGPointer19, SGPointer1A, SGPointer1B, SGPointer1C, SGPointer1D, SGPointer1E, SGPointer1F
+dw SGPointer20
 
 
 SGPointer01:
@@ -95,4 +96,7 @@ dw $0017, $0018, $0019, $001A, $001B, $001C, $001D, $001E, $001F, $0020, $0021, 
 SGPointer1F:
 db $21
 dw $0017, $0018, $0019, $001A, $001B, $001C, $001D, $001E, $001F, $0020, $0021, $0022, $0023, $0016, $0025, $0016, $0027, $0016, $0029, $002A, $0014, $0015, $002B, $002C, $002D, $002E, $002F, $002F, $0030, $0031, $0032, $0033, $0034
+SGPointer20:
+db $1B
+dw $0000, $0001, $0002, $0003, $0004, $0005, $0006, $0007, $0008, $0009, $000A, $000B, $000C, $0016, $000E, $0016, $0010, $0016, $0012, $0013, $0014, $0015, $0035, $0036, $0037, $0038, $0039
 SGEnd:
