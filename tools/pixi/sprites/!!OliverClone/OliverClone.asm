@@ -112,14 +112,14 @@ endif
 
 !StartRAM						= $41B900		; FreeRAM start address to backup the sprites.
 
-!FreezeMiscTables				= 0		; If set, the miscellaneous sprite tables which control various sprite behaviours will also be frozen.
+!FreezeMiscTables				= 1		; If set, the miscellaneous sprite tables which control various sprite behaviours will also be frozen.
 							; This can prevent jank with certain sprites and enables freezing for sprites not controlled by their X/Y speeds and positions.
 							; However, it uses a lot more freeRAM than if disabled (see below). It also isn't guaranteed to behave nicely with custom sprites.
 
 if read1($00FFD5) == $23
-	!sprite_slots					= $0C
-else		
 	!sprite_slots					= $16
+else		
+	!sprite_slots					= $0C
 endif
 
 !maxtile_pointer_max = $6180
@@ -2999,21 +2999,30 @@ KillMarioSprite:
 FreezeAllSprites:
 LDX #!sprite_slots-1
 .loop
-LDA !9E,x								;/
+LDA !7FAB10,x
+AND #$08
+BNE .isCustom
+
+LDA !9E,x
+.checkBulletBill
+CMP #$1C
+BEQ +
+
 .checkGoalTape
 CMP #$7B								;| Don't freeze the goal tape.
-BNE .checkMarioSprite					;|
-JMP .next
+BNE +
+JMP Next
 
+.isCustom
 .checkMarioSprite
 LDA !7FAB9E,x
 CMP #!MarioSpriteNumber					;| Don't freeze the MarioSprite.
 BNE +									;|
-JMP .next
+JMP Next
 +
 
-LDA $9D
-BEQ .restoreSpriteTables	; As soon as done teleporting, unfreeze all sprites
+;LDA $9D
+;BEQ .restoreSpriteTablesBridge	; As soon as done teleporting, unfreeze all sprites
 
 if !FreezeMiscTables
 CMP !StartRAM+(!sprite_slots*28),x		; If the sprite number changed last frame (e.g. Parakoopa to Koopa when jumped on), backup the sprite tables instead.
@@ -3062,7 +3071,10 @@ BEQ .DontCheckChange					;\ backup the sprite tables.
 +
 -
 JSR SprRAMTransfer
-JMP .next
+JMP Next
+
+.restoreSpriteTablesBridge
+BRA .restoreSpriteTables
 
 .CheckPChange
 LDA !163E,x				;/
@@ -3075,7 +3087,7 @@ CMP #$0B				;| Backup the tables if the sprite is carried or a goal coin (but ac
 BCC +					;\
 -
 JSR SprRAMTransfer
-JMP .next
+JMP Next
 +
 CMP #$08								; If the sprite isn't alive (or empty/init), backup the tables.
 BCC -
@@ -3125,10 +3137,17 @@ BCC +								;| Don't ever change 1540 for the normal Koopas (prevents spawn jan
 %RAMToSpr(!1540, 13)				;|
 +									;\
 
+
+LDA !7FAB10,x
+AND #$08
+BEQ .vanilla ; if EQ, is vanilla
+
 LDA !7FAB9E,x
 CMP #$1B
-BEQ ++
-%RAMToSpr(!154C, 14) ; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell.asm
+BEQ ++					; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell.asm
+
+.vanilla
+%RAMToSpr(!154C, 14)
 ++
 %RAMToSpr(!1558, 15)
 %RAMToSpr(!1564, 16)
@@ -3147,10 +3166,10 @@ endif
 STZ !14EC,x							;/
 STZ !14F8,x							;\ Zero the fraction bits to prevent jittering.
 
-.next
+Next:
 DEX
 BMI +
-JMP .loop
+JMP FreezeAllSprites_loop
 +
 LDA $187A|!addr						;/
 if !FreezeMiscTables				;|
@@ -3165,13 +3184,27 @@ RTS;RTL
 BackupAllSpriteProperties:					; Pretty much the same stuff but for backing up the sprite tables in freeRAM when not frozen.
 LDX #!sprite_slots-1
 .loop
+LDA !7FAB10,x
+AND #$08
+BNE .isCustom
+
 LDA !9E,x
+.checkBulletBill
+CMP #$1C
+BEQ +
+
 CMP #$7B
 BEQ .next
+
+BRA .checkStatus
+
+.isCustom
 .checkMarioSprite
 LDA !7FAB9E,x
 CMP #!MarioSpriteNumber
 BEQ .next
+
+.checkStatus
 LDA !14C8,x
 BEQ .next
 CMP #$01
@@ -3220,10 +3253,16 @@ BCC +
 %SprToRAM(!1540, 13)
 +
 
+LDA !7FAB10,x
+AND #$08
+BEQ .vanilla ; if EQ, is vanilla
+
 LDA !7FAB9E,x
 CMP #$1B
-BEQ ++
-%SprToRAM(!154C, 14) ; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell.asm
+BEQ ++					; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell.asm
+
+.vanilla
+%SprToRAM(!154C, 14)
 ++
 %SprToRAM(!1558, 15)
 %SprToRAM(!1564, 16)

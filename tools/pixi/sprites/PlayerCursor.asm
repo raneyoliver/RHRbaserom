@@ -195,7 +195,6 @@ DrawGraphicsIfNotTeleporting:
 	BEQ .noGraphics
 
 .killed
-	WDM #$01
 	JSL $00F606|!bank     ;kill mario
 
 .alive
