@@ -20,6 +20,7 @@
 413:049 SpawnCarryableSprite.asm
 414:04A SpawnCarryableSprite.asm
 419:025 SpriteOneWay-AllowGoingLeft.asm
+42E:1F0 Collectable.asm
 439:025 SpriteOneWay-AllowGoingRight.asm
 450:025 spinyblock.asm
 

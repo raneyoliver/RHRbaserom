@@ -4,8 +4,11 @@
 ; - other sprite types have special considerations, see PIXI's readme for more details.
 
 ; Add your sprites here
+11 MultiBounceShellGreen.json
+12 KoopaShellTeleports.json
 14 !!OliverClone\OliverClone.json
 15 PlayerCursor.cfg
+16 GreyPlatformOnOffToggledFix.cfg
 1B KoopaShellGreen.json
 5B SpinyShell.json
 

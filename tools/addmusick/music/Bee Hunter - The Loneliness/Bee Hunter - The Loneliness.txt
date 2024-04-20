@@ -1,0 +1,320 @@
+#define ECHO_ON 1
+
+#amk 2
+
+#spc
+{
+#title "The Loneliness"
+#game "N/A"
+#author "bee hunter of j a z z"
+#comment "Ported by brickblock369"
+}
+
+#path "Bee Hunter - The Loneliness"
+
+#samples
+{
+"../optimized/00 SMW @0.brr"
+"../optimized/01 SMW @1.brr"
+"../optimized/02 SMW @2.brr"
+"../optimized/03 SMW @3.brr"
+"../optimized/04 SMW @4.brr"
+"../optimized/05 SMW @8.brr"
+"../optimized/06 SMW @22.brr"
+"../optimized/07 SMW @5.brr"
+"../optimized/08 SMW @6.brr"
+"../EMPTY.brr"
+"../optimized/0A SMW @9.brr"
+"../optimized/0B SMW @10.brr"
+"../optimized/0C SMW @13.brr"
+"../EMPTY.brr"
+"../optimized/0E SMW @29.brr"
+"../EMPTY.brr"
+#if ECHO_ON == 1
+"../EMPTY.brr"
+#endif
+#if ECHO_ON == 0
+"../optimized/10 SMW @12.brr"
+#endif
+"../EMPTY.brr"
+"../optimized/12 SMW @15.brr"
+"../EMPTY.brr"
+"01 Synth Bass.brr"
+"02 Slap.brr"
+"03 Bass Drum.brr"
+"04 Snare Drum.brr"
+"05 Hi-Hat.brr"
+"06 Hi-Hat Open.brr"
+"07 Major Chord.brr"
+"08 Major First Inversion.brr"
+"09 Minor Chord.brr"
+"10 Sawtooth.brr"
+"11 Robotic.brr"
+"12 Robotic Lower Envelope.brr"
+"13 Robotic Bass Added.brr"
+"14 Windy Sound Effect.brr"
+"15 Bell Minor3.brr"
+"16 Bell Major3.brr"
+}
+
+#instruments
+{
+"01 Synth Bass.brr" $00 $00 $7F $02 $00 ;30
+"02 Slap.brr" $00 $00 $7F $02 $00 ;31
+"03 Bass Drum.brr" $00 $00 $7F $02 $00 ;32
+"04 Snare Drum.brr" $00 $00 $7F $02 $00 ;33
+"05 Hi-Hat.brr" $00 $00 $7F $02 $00 ;34
+"06 Hi-Hat Open.brr" $00 $00 $7F $02 $00 ;35
+"07 Major Chord.brr" $00 $00 $7F $02 $00 ;36
+"08 Major First Inversion.brr" $00 $00 $7F $02 $00 ;37
+"09 Minor Chord.brr" $00 $00 $7F $02 $00 ;38
+"10 Sawtooth.brr" $00 $00 $7F $02 $00 ;39
+"11 Robotic.brr" $00 $00 $7F $02 $00 ;40
+"12 Robotic Lower Envelope.brr" $00 $00 $7F $02 $00 ;41
+"13 Robotic Bass Added.brr" $00 $00 $7F $02 $00 ;42
+"14 Windy Sound Effect.brr" $00 $00 $7F $02 $00 ;43
+"15 Bell Minor3.brr" $00 $00 $7F $02 $00 ;44
+"16 Bell Major3.brr" $00 $00 $7F $02 $00 ;45
+}
+
+
+;Vibrato, speed: MODULE X 1.75 and round the number, depth: MODULE X 22 in DEC;
+"451=$DE$00$09$16"
+"461=$DE$00$0B$16"
+"472=$DE$00$0C$2C"
+"473=$DE$00$0C$42"
+"482=$DE$00$0E$2C"
+"483=$DE$00$0E$42"
+"493=$DE$00$10$42"
+"4A4=$DE$00$12$58"
+
+;Volume V command, NUMBER/64, X 150, + 100;
+"V64=v255"
+"V42=v198"
+"V48=v213"
+
+;Volume C Command, convert hex to dec, NUMBER/64, X 150, + 100;
+"C19=v159"
+"C10=v138"
+"C06=v114"
+"C05=v111"
+"C04=v109"
+"C03=v107"
+"C01=v100"
+"RegularC=$FA$01$7F"
+
+
+#if ECHO_ON == 1
+$EF$FF$D0$20
+$F1$01$D0$01
+#endif
+
+t51 
+$F4$02
+#0  w150 y11
+o5 [@31  r4 V64 [[g+8. f+8. g+8. C10 g+8. C03 g+8 V64 c+8]]3 g+8. f+8.  g+8. C10 g+16 V64 c+8]2
+< 
+/
+(1045)[@39 V42 $F4$01  [[ $FA$01$DC  c=1$FA$01$91^=11]]64 > [[ $FA$01$DC  c=1$FA$01$91^=11]]64 $F4$01 ]
+< $FA$01$7F
+(1001)[@39 V42 a+8$DD$00$18>c 473^16 $DF  < a+16$FA$01$91^8 $FA$01$7F g8 f16$FA$01$91^16  $FA$01$7F g16 451 $EA$18 f8 473 ^16 $DF d+16$FA$01$91^16 $FA$01$7F
+4A4 f8. $DF c16$FA$01$91^8  $FA$01$7F
+
+@40 V48 a16 @41 a16 > @42 c16 @41 < a16 C10 a16 V48 @40 g16 C10 g16 @41 V48 a16 @42 a16 C10 a16
+@39 $FA$01$7F
+V42
+a+8.$DD$00$18>c < a+16$FA$01$91^8 $FA$01$7F g8 a+16$FA$01$91^16 $FA$01$7F g16 a+8 > c16$FA$01$91^8
+$FA$01$7F 4A4 d+8. $DF c16 @38 C19 4A4  c4 @43 V64 < $DF $FA$01$7F c=1$FA$01$91^=11 $FA$01$7F ^=1$FA$01$91^=11 $FA$01$7F ^=1$FA$01$91^=11$FA$01$7F ^=1$FA$01$91^=11$FA$01$7F
+
+@40 V48 a16  @41 > c16 @42 < e16 @40 C10 e16
+
+@39 V42
+a+8.$DD$00$18>c < a+16$FA$01$91^8 $FA$01$7F g8 f16$FA$01$91^16  $FA$01$7F g16 4A4 f8 ^16 $DF d+16$FA$01$91^16 $FA$01$7F
+f8 d+16 f16$FA$01$91^16 $FA$01$7F 4A4 g8. $DF f8 d+16$FA$01$91^16 $FA$01$7F f8 d+16 c16$FA$01$91^4^8  $FA$01$7F
+
+> @44 V64 c8 @45 c8. < a+8. > @44 d8
+<
+@43
+$FA$01$7F c=1$FA$01$8F^=11 $FA$01$7F ^=1$FA$01$8F^=11 $FA$01$7F ^=1$FA$01$8F^=11 $FA$01$7F ^=1$FA$01$8F^=11$FA$01$7F
+>
+@38 C19 c16 4A4 ^16 < $DF @36 C19 a+16 4A4 ^16 >  $DF 
+@40 V48 l16 c @41 < a @42 > d @41 c @40 e @41 d @42 g @41 e]
+
+(1001)
+(1045)
+
+(1067)[@39 V42 f8$DD$00$0Eg f16 d+16 f16 4A4 d+16 $DF $E8$30$6A c16^8.$DD$00$24<g V64 > @44 f4 f8
+@43 < c=1$FA$01$8F^=11 $FA$01$7F $FA$01$8F^16 $FA$01$7F $FA$01$8F^16$FA$01$7F $FA$01$8F^16$FA$01$7F  $FA$01$8F^16$FA$01$7F  $FA$01$8F^16$FA$01$7F
+@44 > f4 f8 @45 f8 f8
+
+@39 V42 f8$DD$00$0Eg a+16 g16 a+16 4A4 g16 $DF $E8$30$6A c16^8.$DD$00$24d+ V64 @44 f4 f8
+@38 C19 c16$FA$01$8F^16 < @36 a+16 4A4 ^8. > @44 V64 $DF f8 g8 g8. C10 g16  @45 V64 a+8
+
+@39 V42 f8$DD$00$0Eg [[V42  f16 d+16 f16 4A4 d+16 $DF $E8$30$6A c16^8.$DD$00$30<g]]2 >
+V42 l16 fd+f 4A4 g $DF fd+fgfd+c<a+>fd+ <
+a+8$DD$00$0E>c 482 ^16 493 ^16 4A4 ^16 $E8$48$70 ^4. ^16 $DF
+[[V48 @40 l16 e V48 @41 d V48 @42 c V48  @41 d]]3 @40 < a8 C10 a8 @43 > V64 a8 a8
+]2
+<
+(1089)[ V42
+@39 461 g+16 472^16 483^4 $FA$01$8F^8 $DF > @37 C19 c16$FA$01$8F^16 $FA$01$7F c16$FA$01$8F^16
+4A4 @39 V42 c4 $DF c4$DD$00$0Cd c8$FA$01$8F^8 $FA$01$7F < 461 a+16 472^16 483^8 > $DF d8
+d8$DD$00$0Cd+ 461^16 472^16 483^4 $FA$01$8F^4 $FA$01$7F $DF d16$FA$01$8F^16 @44 V64 f8
+461 @39 V42 c16 472^16 483^4^16 $E8$3C$60 ^8.^8 $DF V48 @40 << l16 a > @41 a C10 a < @42 V48 a > @41 a @40 g
+
+@39 461 g+16 472^16 483^4 $FA$01$8F^8 $DF > @37 C19 c16$FA$01$8F^16 $FA$01$7F c16$FA$01$8F^16
+4A4 @39 V42 c4 $DF c4$DD$00$0Cd d+16$FA$01$8F^16 $FA$01$7F @37 C19 d8 4A4 @39 V42 f4 $DF
+g16$FA$01$8F^16 $FA$01$7F @45 V64 f8
+@39 < V42 a+8$DD$00$0C>c 461^16 472^16 483^1 $E8$48$80^4. @43 V64 $E8$48$B0 $DF c4.]
+
+
+(1045) <
+
+(1011)[
+@39 V42 $FA$01$7F a+8$DD$00$0C>c  c=1$FA$01$8F^=23 < $FA$01$7F a+=1$FA$01$8F^=23 $FA$01$7F g=1$FA$01$8F^=23 > $FA$01$7F f8$DD$00$0Cg @44 V64 f8 @45 f8 @44  c8.
+V42 @39 l16 gf+fd+c<a+b>c8 < g16$FA$01$8F^16 @43 > V64 $FA$01$7F c16$FA$01$91^16$FA$01$7F$FA$01$91^16$FA$01$7F$FA$01$91^16$FA$01$7F
+
+V42 @39 g8$DD$00$0Ca+  g=1$FA$01$8F^=23 $FA$01$7F f8  d+=1$FA$01$8F^=23 $FA$01$7F f8 g8$E8$30$80^4
+@40 V48 < l16 a @41 e @42 d @41 e @40 a > @41 e @42 d @41 c  < @40 a8 @41  g8 > @42 e @41 d @40  c @41 <g
+>
+@39 V42 l16 c<gfd+c<a+ga+>$E8$48$38 c4.
+@44 V64 f8 @45 a+8 @39 V42 cd+f8 V64 @45 a+8 > @44 c8 < @39 V42 ff+g8a+8>c=1$FA$01$8F^=23 $FA$01$7F
+<
+@43 V64 c=1$FA$01$91^=11 > $FA$01$7F g=1$FA$01$91^=11 << $FA$01$7F g=1$FA$01$91^=11 > $FA$01$7F g=1$FA$01$91^=11
+$FA$01$7F a=1$FA$01$91^=11 $FA$01$7F d=1$FA$01$91^=11 $FA$01$7F $E8$60$38 c2$DD$00$60<c
+>
+V48 [[@42 aa @41 aa @40 aa @41 aa]]2
+]
+
+(1089)
+
+(1045)
+
+(1001)
+
+(1011)
+
+(1089)
+
+
+#1
+y9
+[r4. @30 V64 l16 o5 ccd+8d+8f8d+g8.c8. C10 c8. C05 c8. C01 c16^4]
+@44 V64 f8. C10 f8. C04 f2 <
+V48 @40 l16 e @41 g @42 a C10 a V48 @41 g @40 a C10 a V48 @41 g @42 a @41 g > @40 c @41 < a
+@42 g C10 g @41 V48 e @40 g @41 a @42> c
+*
+@45 V64 d+8. C10 d+8. C04 d+2^8
+V64 f8. C10 f8. C04 f8
+@30 V64 l16 fgfd+c<a+ga+>
+/
+;used loop number 4,5,0
+(204)[
+@30 V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+ V64 c8 @31 g+8 bg+ @30 c8 @31 f+8 @30 c8 <a+>c8 C10 c
+V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+  V64 c8 @31 g+8 bg+ @30 c8 @31 g+16 b16 @30 c8 <a+>c8 C10 c
+]
+
+(205)[@30 V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+ V64 c8 @31 g+8 bg+ @30 c8 @31 f+8 @30 c8 <a+>c8 C10 c
+V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+  V64 c8 @31 g+8 bg+ @30 gf g+8$DD$00$06a+ g8 fgfd+]
+
+(204)
+(201)[
+@30 V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+ V64 c8 @31 g+8 bg+ @30 c8 @31 f+8 @30 c8 <a+>c8 C10 c
+V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+  V64 c8 @31 g+8 bg+ @30 c<a+ga+>c8d+cfd+]
+
+(204) (201)
+
+(204) (205) (204) 
+
+(207)[
+@30 V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+ V64 c8 @31 g+8 bg+ @30 c8 @31 f+8 @30 c8 <a+>c8 C10 c
+V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+  V64 c8 @31 g+8 bg+ @30 c8 cd+fd+g8fd+]
+
+(204) (207)
+<
+(2089)[
+@30 V64 g+8 @31 > g+8 f+g+ < @30 g+8 @31 > e8 < @30 g+8 >c<g+8 C10 g+ V64 a+8 @31 > g+8 bg+ < @30 a+8 @31 > f+8 < @30 a+8 >d<a+8 C10 a+>
+V64 c8 @31 g+8 f+g+ @30 c8 @31 e8 @30 g8 fd+8 C10 d+  V64 < g+8 @31 > g+8 bg+ < @30 g+b+ g+8 > d+dc8 <a+>c <
+
+V64 g+8 @31 > g+8 f+g+ < @30 g+8 @31 > e8 < @30 g+8 >c<g+8 C10 g+ V64 a+8 @31 > g+8 bg+ < @30 a+8 @31 > f+8 < @30 a+8 >d<a+8 C10 a+>
+V64 c8 @31 g+8 f+g+ @30 c8 @31 e+8 @30 c8 < ga+8 C10 a+ V64 > c8 @31 f8 @30 c8 @31 f8 @30 c8 @31 f+8 @30 c8 @31 f8]
+
+(204) (205) (204) (201)
+
+(2089)
+<<
+(212)[
+@39 V42 c1 f2^8 d+4. c1 a+2^8 g4.
+c1 f2^8 g4. a+4. > c2^8 >
+@30 C06 $E8$7C$FF l16 c<g>d+cfd+gfd+c<a+b>c<ga+b>
+] 
+[[(204) (201)]]2
+
+(2089)
+
+#2
+y9
+r4
+o4 
+V64 @43 $F4$01 [[c=1$FA$01$91^=11$FA$01$7F]]8 $F4$01  > a8 a16 C10 a8 a8. C03 a8. C01 a16^2.
+V64 a8 a16 C10 a16 
+$F4$01 < V64 [[c=1$FA$01$91^=11$FA$01$7F]]8 $F4$01 r2 $F4$01 [[c=1$FA$01$91^=11$FA$01$7F]]8 $F4$01 
+>
+[[@34 l16 cccccccccc @35 c8 @34 cc @35 c8]]3 @34 cccccc @33 cc @34 c @33 c @34 c @33 ccccc
+
+
+/
+
+[[(30)[@32 V64 c @34  ccc @33 c  @34 ccc @32 c @34 c @35 c8 @33 c @34 c] @35 c8
+(30) @35 c @32 c
+(30) @35 c8
+(33)[@32 c @34  ccc @33 c  @34 ccc @32 c @34 ccc @33 c @32 c @33 cc] ]]12
+
+(31)[@32 c @34 c @35 c8  @33 c @34 cc  @32 cc @34 c  @32 c @34 c @33 c @34 c  @32 c  @34 c]
+(32)[@32 c @34 c @35 c8 @33 c @34 ccc  @32 c @34 c  @32 c @34 c @33 c @34 ccc] 
+(31)
+(34)[@32 c @34 c @35 c8 @33 c @34 cc   @32c c @34 c  @32 c @34 c @33 c @32 c @33cc]
+
+(31)(32)(31)
+(35)[@32 c @34 ccc @32 c @34 ccc @32 c @34 ccc  @32 c @34 c @33 cc]
+
+[[(30) @35 c8
+(30) @35 c @32 c
+(30) @35 c8
+(33)]]4
+
+(31)(32)(31)(34)(31)(32)(31)(35)
+
+[[(30) @35 c8
+(30) @35 c @32 c
+(30) @35 c8
+(33)]]6
+
+(31)(32)(31)(34)(31)(32)(31)(35)
+
+#3
+y11
+
+@38 o4
+C04 $E8$30$A9 c1^1^1^=191q7f^=1 @37 c1^1^=191q7f^=1 @36 < a+2^4^4$DD$00$30>c
+/
+(40)[@38 4A4 V48 c8^=11q7f^=1$DF $FA$01$7F c=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^16^=2$FA$01$90^=10 <
+@37 4A4 a8^=11q7f^=1 $DF $FA$01$7F a=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F
+@36 4A4 a+8^=11q7f^=1$DF $FA$01$7F a+=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F 4A4 ^8 $DF $FA$01$7Fa+=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^16
+@37 4A4 a8$DF^8$DD$00$1Cg >
+
+@38 4A4 V48 c8.$DF $FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^16^=2$FA$01$90^=10 <
+@37 a=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F 4A4 ^=11q7f^=1 $DF a=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F 4A4 ^=11q7f^=1 $DF a=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F
+@36 4A4 a+=23q7f^=1$DF $FA$01$7F a+=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F 4A4 ^=11q7f^=1 $DF a+=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F 4A4^16 $DF a+=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F^=2$FA$01$90^=10$FA$01$7F
+@37 4A4 a8$DF^8$DD$00$1C>c]12
+
+[@37 $DF c=191q7f^=1 d=191q7f^=1 @38 c=191q7f^=1 @37 c=191q7f^=1
+@37 c=191q7f^=1 d=191q7f^=1 @36 c=191q7f^=1 @37 c=95q7f^=1 < @36 a+4^=47$DD$00$30b+q7f^=1]
+
+(40)4
+
+*
+
+(40)6
+
+*

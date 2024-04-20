@@ -1,3 +1,20 @@
+
+if read1($00FFD5) == $23		; check if the rom is sa-1
+	sa1rom
+	!SA1 = 1
+	!dp = $3000
+	!addr = $6000
+	!bank = $000000
+	!bankA = $400000
+else
+	lorom
+	!SA1 = 0
+	!dp = $0000
+	!addr = $0000
+	!bank = $800000
+	!bankA = $7E0000
+endif
+
 ; Mario will only be able to pass if he is carrying an item.
 ; Act like block 25.
 ; Created by E-Man, requested by mapsking.
@@ -8,14 +25,16 @@
 
 print "A block where it will only let the player pass if he is carrying a clone or puzzle clone."
 
-db $42						
+db $37
 JMP Mario : JMP Mario : JMP Mario
 JMP Cement : JMP Cement : JMP Cement : JMP Cement
 JMP Mario : JMP Mario : JMP Mario
+JMP Mario : JMP Mario ; when using db $37
+
 
 Mario:
-	LDA $1470	
-	ORA $148F
+	LDA $1470|!addr
+	ORA $148F|!addr
 	BEQ Cement	; carrying nothing -> auto cement
 
 	JSR CheckIfClone	; loads 0 if clone carried
@@ -25,7 +44,7 @@ Mario:
 
 .passThrough
 	LDA #$25				; Set to act like block 130, cement block.
-	STA $1693
+	STA $1693|!addr
 	LDY #$00
 
 	RTL
@@ -33,7 +52,7 @@ Mario:
 Cement:
 	; if clone not carried, set to cement block
 	LDA #$30				; Set to act like block 130, cement block.
-	STA $1693
+	STA $1693|!addr
 	LDY #$01
 	RTL
 
@@ -46,7 +65,7 @@ Cement:
 
 
 CheckIfClone:
-	LDY #$0B		;loop count (loop though all sprite number slots)
+	LDY #!sprite_slots-1		;loop count (loop though all sprite number slots)
 
 .Loop
 	PHX
@@ -69,9 +88,9 @@ CheckIfClone:
 	BNE .LoopSprSpr			;if neither, keep looping
 
 .okay
-	
+
 	STZ $00	; 0 if okay to let through
-	
+
 	PLX			;restore sprite index
 	RTS			;return.
 

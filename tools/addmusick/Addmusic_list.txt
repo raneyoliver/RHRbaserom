@@ -34,3 +34,4 @@ Locals:
 1E  originals/30 IntroScreen.txt
 1F  hydrocity\hydrocity.txt
 20  Addams_CreepyCreatures\05 Creepy Creatures.txt
+21  Bee Hunter - The Loneliness\Bee Hunter - The Loneliness.txt

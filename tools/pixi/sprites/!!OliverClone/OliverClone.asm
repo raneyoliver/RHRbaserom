@@ -170,6 +170,7 @@ endif
 !Lvl17XSpeed					= $24
 !Lvl21XSpeed					= $24
 !Lvl21YSpeed					= $AA
+!Lvl22XSpeed					= $FF-$28
 
 !TeleportingSpeed				= $60                 ; Speed the camera/teleport moves
 !StopTeleportWithin				= #$0010 ;#$0010
@@ -308,7 +309,11 @@ InitMarioSpriteProperties:
 
 .lvl22
 	LDA #$01
-	STA !JumpHeld
+	;STA !JumpHeld
+	STA !Spinning
+
+	LDA #!Lvl22XSpeed
+	STA !B6,x
 
 	BRA .return
 
@@ -691,11 +696,13 @@ HandleState:
 
 ..wohoo
 	LDA #$3A ;#$25                                ; \  play blargg roar
+	;STA $1DF9|!Base2                        ; /
 	STA $1DFC|!Base2                        ; /
 	BRA +
 
 ..ohye
 	LDA #$39 ;#$25                                ; \  play blargg roar
+	;STA $1DF9|!Base2                        ; /
 	STA $1DFC|!Base2                        ; /
 
 +	LDY $18DF|!Base2
@@ -868,9 +875,9 @@ HandleState:
 	STZ $1419|!Base2                        ;  |
 
 	STZ $9D
-	PHX
-	JSR FreezeAllSprites	; Call this to unfreeze all sprites with $9D == 0
-	PLX
+	; PHX
+	; JSR FreezeAllSprites	; Call this to unfreeze all sprites with $9D == 0
+	; PLX
 
 	;Set state back to idle
 	LDA !State       ; Load the value of !State into the accumulator
@@ -2534,6 +2541,10 @@ SpriteAndSpecialBlockInteraction:
         CMP #$13        ; spiny is 13
         BEQ .tryBounce
 
+.bulletBillCheck
+		CMP #$1C
+		BEQ .tryBounce
+
 .jumpingPirhanaPlantCheck
 		CMP #$4F
 		BEQ .tryBounce
@@ -2546,22 +2557,7 @@ SpriteAndSpecialBlockInteraction:
 		CMP #$C4
 		BNE .none
 
-		; This code kickstarts the platform falling routine
-		LDA !14C8,x
-		CMP #$0A
-		BEQ .return	; clone not kicked
-
-		LDA !AA,x
-		CMP #$80
-		BCS .return	; clone not moving up
-
-		; platform itself
-		LDA !AA,y               ;\    
-		BNE .platform           ;/ If the Y speed is non-zero, there's no need to continue.
-		LDA.b #$03              ;\                
-		STA !AA,y               ;/ Initial Y speed when stood on.
-		LDA.b #$18  			;\              
-		STA.w !1540,y           ;/ Timer it takes to fall down initially when stood upon.
+		JSR KickstartGreyPlatformFalling
 		BRA .platform
 
 .none
@@ -2573,10 +2569,28 @@ SpriteAndSpecialBlockInteraction:
 		LDA !7FAB9E,x ;!9E,x
 	PLX
 
+.OnOffGreyPlatformCheck
+	CMP #$16
+	BNE .return
 
-	CMP #$09
-	BEQ .platform
-	BRA .return
+	LDA !7FAB10,y
+	AND #$04
+	CMP #$04
+	BNE ..invertedOnOffBehavior
+
+..regularOnOffBehavior
+	LDA $14AF|!addr  ; #$00 is ON
+	BNE .return      ; if off, platform is off
+	BRA ..continue
+
+..invertedOnOffBehavior
+	LDA $14AF|!addr
+	BEQ .return      ; if on, platform is off
+
+..continue
+	JSR KickstartGreyPlatformFalling
+	BRA .platform
+
 
 .tryBounce
 	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
@@ -2591,6 +2605,27 @@ SpriteAndSpecialBlockInteraction:
 	BCS .return
 
 	JSR OnPlatform
+
+.return
+	RTS
+
+KickstartGreyPlatformFalling:
+	; This code kickstarts the platform falling routine
+	LDA !14C8,x
+	CMP #$0A
+	BEQ .return	; clone not kicked
+
+	LDA !AA,x
+	CMP #$80
+	BCS .return	; clone not moving up
+
+	; platform itself
+	LDA !AA,y               ;\    
+	BNE .return           ;/ If the Y speed is non-zero, there's no need to continue.
+	LDA.b #$03              ;\                
+	STA !AA,y               ;/ Initial Y speed when stood on.
+	LDA.b #$18  			;\              
+	STA.w !1540,y           ;/ Timer it takes to fall down initially when stood upon.
 
 .return
 	RTS
@@ -2937,11 +2972,11 @@ CheckIfMarioSpriteOnTop:
     LDA !1588,x ;$72
 	AND #$04                ; else, if both MarioSprite and
     BNE KillMarioSprite     ; touched sprite on ground, kill
-++  LDA !1656,y ;x
-    AND #$10                ;| If the sprite can be bounced on, jump.
-    BNE CheckIfMarioSpriteJumpingOnJumpableSprite        ;/
+;++  LDA !1656,y ;x
+;    AND #$10                ;| If the sprite can be bounced on, jump.
+;    BNE CheckIfMarioSpriteJumpingOnJumpableSprite        ;/
 	; Otherwise, return to SpriteAndSpecialBlockInteraction to try spin.
-	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
+++	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
 
 CheckIfMarioSpriteJumpingOnJumpableSprite:
 	; x = MarioSprite, y = contact sprite
@@ -2999,6 +3034,7 @@ KillMarioSprite:
 FreezeAllSprites:
 LDX #!sprite_slots-1
 .loop
+WDM #$01
 LDA !7FAB10,x
 AND #$08
 BNE .isCustom
@@ -3242,6 +3278,12 @@ if !FreezeMiscTables
 %SprToRAM(!151C, 10)
 %SprToRAM(!1528, 11)
 %SprToRAM(!1534, 12)
+
+LDA !7FAB10,x
+AND #$08
+BNE .customSprite ; if EQ, is vanilla
+
+.vanilla
 LDA !9E,x
 CMP #$2F   ; added by
 BEQ +      ; SJC
@@ -3253,15 +3295,18 @@ BCC +
 %SprToRAM(!1540, 13)
 +
 
-LDA !7FAB10,x
-AND #$08
-BEQ .vanilla ; if EQ, is vanilla
+%SprToRAM(!9E, 28)		;vanilla sprite number
+BRA .toRAM
+
+.customSprite
+%SprToRAM(!1540, 13)
+%SprToRAM(!7FAB9E, 28)	;custom sprite number
 
 LDA !7FAB9E,x
 CMP #$1B
 BEQ ++					; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell.asm
 
-.vanilla
+.toRAM
 %SprToRAM(!154C, 14)
 ++
 %SprToRAM(!1558, 15)
@@ -3277,7 +3322,7 @@ BEQ ++					; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell
 %SprToRAM(!1626, 25)
 %SprToRAM(!163E, 26)
 %SprToRAM(!187B, 27)
-%SprToRAM(!9E, 28)
+
 endif
 
 RTS
