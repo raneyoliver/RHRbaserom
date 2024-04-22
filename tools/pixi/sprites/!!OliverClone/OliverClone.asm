@@ -124,6 +124,7 @@ endif
 
 !maxtile_pointer_max = $6180
 
+!MultiBounceShell				= $11	; in pixi_list.txt
 !MarioSpriteNumber				= $14	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !KoopaShell						= $1B	; in pixi_list.txt
@@ -690,6 +691,11 @@ HandleState:
 	STA $9D
 
 	JSR EraseFireballs
+
+	LDA $14
+	LSR #2
+	AND #$01
+	BEQ +
 
 	LDA !IsMario
 	BEQ ..ohye
@@ -1421,7 +1427,7 @@ SetCarryIfShell:	;requires sprite in y
 
 	PHX
 		TYX
-		LDA !7FAB9E,x
+		LDA !9E,x
 	PLX
 
 	CMP #$DA		; DA-DF vanilla shells
@@ -1436,6 +1442,10 @@ SetCarryIfShell:	;requires sprite in y
 		TYX
 		LDA !7FAB9E,x ;!9E,x
 	PLX
+.multiBounceShellCheck
+	CMP #!MultiBounceShell
+	BEQ .isShell
+
 .tpShellCheck
 	CMP #!KoopaShellTeleports
 	BEQ .isShell	; try bounce if
@@ -2499,9 +2509,14 @@ CheckLavaTiles:
 SpriteAndSpecialBlockInteraction:
 
 	LDA !BouncingSpeed
-	BNE .return
+	BEQ .sprsprContact
+
+.returnBridge
+	RTS
+
 ; Spin Interaction
 ; Get Sprite-Sprite Contact
+.sprsprContact
 	JSR SprSprContact       ; clone = x, sprite in contact = y
 
 ; If Contact Not Found, Try Blocks
@@ -2515,9 +2530,14 @@ SpriteAndSpecialBlockInteraction:
 	BCC .typeCheck
 
 .spriteIsVanillaShell
+	WDM #$01
 	JMP MarioSpriteInteractWithVanillaShell
 
 .typeCheck
+	LDA !14C8,y
+	CMP #$08
+	BCC .return
+
 	; check type of sprite found
 	PHX
 		TYX
@@ -2530,7 +2550,7 @@ SpriteAndSpecialBlockInteraction:
 .notCustom
 	PHX
 		TYX
-		LDA !7FAB9E,x
+		LDA !9E,x
 	PLX
 .koopaCheck
         CMP #$0D        ; vanilla koopas are <= 0C
@@ -2543,6 +2563,10 @@ SpriteAndSpecialBlockInteraction:
 
 .bulletBillCheck
 		CMP #$1C
+		BEQ .tryBounce
+
+.urchinCheck
+		CMP #$3B
 		BEQ .tryBounce
 
 .jumpingPirhanaPlantCheck
@@ -2569,9 +2593,13 @@ SpriteAndSpecialBlockInteraction:
 		LDA !7FAB9E,x ;!9E,x
 	PLX
 
+.BowserFireballCheck
+	CMP #$13
+	BEQ .tryBounce
+
 .OnOffGreyPlatformCheck
 	CMP #$16
-	BNE .return
+	BNE .urchinDisassemblyCheck
 
 	LDA !7FAB10,y
 	AND #$04
@@ -2591,6 +2619,11 @@ SpriteAndSpecialBlockInteraction:
 	JSR KickstartGreyPlatformFalling
 	BRA .platform
 
+.urchinDisassemblyCheck
+	CMP #$17
+	BEQ .tryBounce
+
+	BRA .return
 
 .tryBounce
 	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
@@ -2662,11 +2695,7 @@ OnPlatform:
 
 MarioSpriteInteractWithVanillaShell:
 	LDA !154C,x
-	BNE .return
-
-	; if IFrames on shell, don't interact
-	LDA !154C,y
-	BNE .return
+	BNE .returnBridge
 
 	; if shell carried AND MarioSprite is grounded, don't interact
 	LDA !14C8,y
@@ -2675,9 +2704,11 @@ MarioSpriteInteractWithVanillaShell:
 
 	LDA !1588,x
 	AND #$04
-	BNE .return
+	BNE .returnBridge
 
 	; if shell carried and MarioSprite in air, only bounce
+	JSR OnlyBounceOnSpinyShellIfSpinning
+	BCC .returnBridge
 	JMP MarioSpriteTryBounceOrSpin
 
 .checkStationary
@@ -2686,6 +2717,10 @@ MarioSpriteInteractWithVanillaShell:
 	BEQ .tryKickShell
 
 .tryBounceOffKickedShell
+	; if IFrames on shell, don't interact (commented out for leniency)
+	LDA !154C,y
+	BNE .return
+
 	PHY
 		JSR MarioSpriteTryBounceOrSpin
 	PLY
@@ -2695,7 +2730,7 @@ MarioSpriteInteractWithVanillaShell:
 		LDA !7FAB9E,x
 	PLX
 	CMP #!KoopaShellTeleports
-	BNE .dontSetTPShellCarried		; if not TPShell, continue
+	BNE .setToStationary		; if not TPShell, continue
 
 .setTPShellCarried
 	; unless player not holding X or Y
@@ -2703,16 +2738,41 @@ MarioSpriteInteractWithVanillaShell:
 	;Controller buttons currently held down. Format: byetUDLR.
 	;b = A or B; y = X or Y; e = select; t = Start; U = up; D = down; L = left, R = right.
 	AND #$40                                ;  | 01000000, so check if X or Y pressed.
-	BEQ .dontSetTPShellCarried					;byetUDLR | if not pressed, do normal behavior
+	BEQ .setToStationary					;byetUDLR | if not pressed, do normal behavior
 
 	%SetSpriteStatus(#$0B, y)
+
+.returnBridge
 	BRA .return
 
-.dontSetTPShellCarried
+.setToStationary
+	PHX
+		TYX
+		LDA !7FAB9E,x
+	PLX
+	CMP #!SpinyShell	; don't .setToStationary the shell if it's a spiny shell
+	BEQ .return
+
+	CMP #!MultiBounceShell
+	BNE +
+
+	PHX
+		TYX
+		DEC !1504,x			; if multibounce shell, also decrease its available bounces left
+	PLX
+
++
 	%SetSpriteStatus(!StationaryCarryable, y)
 	BRA .return
 
 .tryKickShell
+	PHX
+		TYX
+		LDA !7FAB9E,x
+	PLX
+	CMP #!SpinyShell	; always ok to kick spiny shell
+	BEQ ..okToKick
+
 	; if spinning, don't kick, just kill the shell
 	LDA !Spinning
 	BEQ ..okToKick
@@ -2749,6 +2809,26 @@ MarioSpriteInteractWithVanillaShell:
 	;points
 	JSR GivePoints
 
+.return
+	RTS
+
+OnlyBounceOnSpinyShellIfSpinning:
+	PHX
+		TYX
+		LDA !7FAB9E,x
+	PLX
+	CMP #!SpinyShell
+	BNE .canBounce
+
+	LDA !Spinning
+	BNE .canBounce	; if spiny shell, only interact if spinning
+
+.cannotBounce
+	CLC
+	BRA .return
+
+.canBounce
+	SEC
 .return
 	RTS
 
@@ -2900,17 +2980,17 @@ SprSprContact:
 	BEQ .LoopSprSpr
 
 ; If spinyshell.asm (5B), and it's stationary or interaction disabled, skip
-	CMP #$5B
-	BNE +
+; 	CMP #$5B
+; 	BNE +
 
-	LDA !14C8,x
-	CMP #$09
-	BEQ .LoopSprSpr
+; 	LDA !14C8,x
+; 	CMP #$09
+; 	BEQ .LoopSprSpr
 
-	LDA !154C,x             ;\ If contact is disabled, skip interaction.
-	BNE .LoopSprSpr
+; 	LDA !154C,x             ;\ If contact is disabled, skip interaction.
+; 	BNE .LoopSprSpr
 
-+
+; +
 	PLX					;restore sprite index.
 	JSL $03B6E5|!BankB	;get sprite B clipping (this sprite)
 	PHX					;preserve sprite index
@@ -3034,7 +3114,6 @@ KillMarioSprite:
 FreezeAllSprites:
 LDX #!sprite_slots-1
 .loop
-WDM #$01
 LDA !7FAB10,x
 AND #$08
 BNE .isCustom

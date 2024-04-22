@@ -73,8 +73,19 @@ CMP #$0A
 BNE +
 JSL $01803A|!BankB		;interact with player and sprites
 +
+CMP #$0B
+BNE .Re
+
+LDA !sprite_tweaker_1686,x			; \ set "don't interact with other sprites" flag
+ORA #$08							; |
+STA !sprite_tweaker_1686,x			; /
+BRA ++
 
 .Re
+LDA !sprite_tweaker_1686,x			; \ unset "don't interact with other sprites" flag
+AND #($FF-$08)							; |
+STA !sprite_tweaker_1686,x			; /
+++
 LDA #$00            ;looks like after interaction is checked, it messes with offscreen situation in some way
 %SubOffScreen()            ;it looks like it marks sprite as "process offscreen" but also as "respawn when nearby", which can lead to duplication. odd.
 RTS
@@ -88,7 +99,8 @@ YDisp:
 db $F1,$00,$F0,$00
 
 XFlip:
-db $00,$00,$00,$40		;only last byte is flip for one of shell's frames
+    db $00,$00,$00,$00
+    ;db $00,$00,$00,$40		;only last byte is flip for one of shell's frames
 
 GFX:
 %GetDrawInfo()

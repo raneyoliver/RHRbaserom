@@ -6,9 +6,11 @@
 ; Add your sprites here
 11 MultiBounceShellGreen.json
 12 KoopaShellTeleports.json
+13 statue_fireball.cfg
 14 !!OliverClone\OliverClone.json
 15 PlayerCursor.cfg
 16 GreyPlatformOnOffToggledFix.cfg
+17 urchin_3A+3B.json
 1B KoopaShellGreen.json
 5B SpinyShell.json
 

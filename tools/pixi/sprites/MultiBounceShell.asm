@@ -148,6 +148,9 @@ BEHAVIOR:
         +++
 
     ;.STUFF
+        LDA !1504,x
+        BMI .DESTROY
+
         LDA !14C8,x
         CMP #$0A
         BNE +
