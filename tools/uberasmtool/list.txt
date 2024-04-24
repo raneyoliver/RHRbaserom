@@ -9,7 +9,7 @@ level:
 16 MarioGFXAndPaletteChangeOnTrigger.asm
 17 MarioGFXAndPaletteChangeOnTrigger.asm
 20 MarioGFXAndPaletteChangeOnTrigger.asm
-22 MarioGFXAndPaletteChangeOnTrigger.asm
+22 lvl22.asm
 
 ; Overworld resources
 overworld:

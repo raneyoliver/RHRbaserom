@@ -784,8 +784,12 @@ HandleState:
 	; Auto-Scroll
 	LDA $40010B ; ($7E010B&$FFFF)|bankA
 	CMP #!RunningLevel
+	BEQ .autoscroll
+
+	CMP #$22	; lvl 22 autoscroll?
 	BNE +
 
+.autoscroll
 	; If autoscrolling level, just instantly tp the player to the sprite and continue
 	JSR TPPlayerToSprite
 
@@ -3143,7 +3147,6 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	BCS ..jumpSoundAndPoints
 
 ..spawnSquishedKoopa
-	WDM #$01
 	PHY
     LDA !9E,y ;#$01
     CLC
