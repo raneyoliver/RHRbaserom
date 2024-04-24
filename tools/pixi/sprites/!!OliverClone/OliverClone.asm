@@ -237,6 +237,10 @@ endmacro
 ;;;;;;;;; FUNCTIONS ;;;;;;;;;
 
 InitMarioSpriteProperties:
+	; Set Tweaker Byte "Don't get stuck in walls (carryable sprites)"
+	LDA !190F,x
+	ORA #$80
+	STA !190F,x
 
 	; Set MarioSprite Stationary/Carryable
 	%SetSpriteStatus(!StationaryCarryable, x)
@@ -2511,7 +2515,7 @@ SpriteAndSpecialBlockInteraction:
 	LDA !BouncingSpeed
 	BEQ .sprsprContact
 
-.returnBridge
+.returnBridge1
 	RTS
 
 ; Spin Interaction
@@ -2530,13 +2534,12 @@ SpriteAndSpecialBlockInteraction:
 	BCC .typeCheck
 
 .spriteIsVanillaShell
-	WDM #$01
 	JMP MarioSpriteInteractWithVanillaShell
 
 .typeCheck
 	LDA !14C8,y
 	CMP #$08
-	BCC .return
+	BCC .returnBridge
 
 	; check type of sprite found
 	PHX
@@ -2579,12 +2582,15 @@ SpriteAndSpecialBlockInteraction:
 
 .greyPlatformCheck
 		CMP #$C4
-		BNE .none
+		BNE .returnBridge
+
+		JSR CheckIfAbove
+		BCC .return
 
 		JSR KickstartGreyPlatformFalling
 		BRA .platform
 
-.none
+.returnBridge
 		BRA .return
 
 .isCustom
@@ -2600,6 +2606,9 @@ SpriteAndSpecialBlockInteraction:
 .OnOffGreyPlatformCheck
 	CMP #$16
 	BNE .urchinDisassemblyCheck
+
+	JSR CheckIfAbove
+	BCC .return
 
 	LDA !7FAB10,y
 	AND #$04
@@ -2639,6 +2648,32 @@ SpriteAndSpecialBlockInteraction:
 
 	JSR OnPlatform
 
+.return
+	RTS
+
+CheckIfAbove:
+	; Checks if MarioSprite is above sprite in y
+	LDA !14D4,y
+    XBA
+    LDA !D8,y
+    REP #$20
+    STA $00
+    SEP #$20
+
+    LDA !14D4,x
+    XBA
+    LDA !D8,x
+    REP #$20
+    SEC : SBC $00
+    SEP #$20
+	BPL .notAbove
+
+.above
+	SEC
+	BRA .return
+
+.notAbove
+	CLC
 .return
 	RTS
 
@@ -2844,7 +2879,7 @@ GetMarioSpriteRightOfContactSprite:
     XBA
     LDA !E4,x
     REP #$20
-    CLC : SBC $00
+    SEC : SBC $00
     SEP #$20
 
     RTS
@@ -3058,6 +3093,14 @@ CheckIfMarioSpriteOnTop:
 	; Otherwise, return to SpriteAndSpecialBlockInteraction to try spin.
 ++	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
 
+KillMarioSprite:
+	LDA #!DeadTopLeftTile
+	STA !Frame
+	JSR Graphics	;rerun graphics before mario dies
+
+	JSL $00F606|!bank     ;kill mario
+	RTS
+
 CheckIfMarioSpriteJumpingOnJumpableSprite:
 	; x = MarioSprite, y = contact sprite
 	; Check if Sprite is Able to be Bounced On
@@ -3079,11 +3122,52 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	STA !BouncingSpeed
 ..checkIfSpriteNeedsToBeKilled
 	LDA !1656,y
-	AND #$20
-	BEQ ..jumpSoundAndPoints
+	AND #$20				; "Dies when jumped on"
+	BNE ..squish
 
-..alsoKillSprite
+	LDA !1662,y
+	AND #$80				; "Falls straight down when killed"
+	BNE ..fallDown
+
+	BRA ..jumpSoundAndPoints
+
+..squish
 	%SetSpriteStatus(#$03, y) ; LDA #$03 : STA !14C8,y (squish)
+
+	LDA !7FAB10,y
+	AND #$08
+	BNE ..isCustom
+
+	LDA !9E,y
+	CMP #$0D        ; vanilla koopas are <= 0C
+	BCS ..jumpSoundAndPoints
+
+..spawnSquishedKoopa
+	WDM #$01
+	PHY
+    LDA !9E,y ;#$01
+    CLC
+    %SpawnSprite()
+    BCS ..spawnFailed
+
+    LDA #$03 ; state, smushed
+    STA !14C8,y
+    LDA #$20
+    STA.w !1540,y
+	LDA #$00
+    STA !B6,y
+    STA !AA,y
+	PLY
+
+	BRA ..jumpSoundAndPoints
+
+..fallDown
+	%SetSpriteStatus(#$02, y) ; LDA #$02 : STA !14C8,y (fall off screen)
+	BRA ..jumpSoundAndPoints
+
+..spawnFailed
+	PLY
+..isCustom
 ..jumpSoundAndPoints
 	STZ $00 : STZ $01
 	LDA #$08 : STA $02
@@ -3098,14 +3182,6 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	JSR KillMarioSprite
 
 .return
-	RTS
-
-KillMarioSprite:
-	LDA #!DeadTopLeftTile
-	STA !Frame
-	JSR Graphics	;rerun graphics before mario dies
-
-	JSL $00F606|!bank     ;kill mario
 	RTS
 
 
