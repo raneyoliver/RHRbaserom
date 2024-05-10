@@ -18,8 +18,8 @@
 !Speed0          = $00
 !FractionSpeed0  = $94
 
-!Speed1          = $02
-!FractionSpeed1  = $00
+!Speed1          = $01
+!FractionSpeed1  = $4F
 
 ; Don't edit from here, unless you know what you're doing!
 !ScrollDir      = $55
@@ -90,6 +90,7 @@ endif
     !Instr1
 ;if !FractionSpeed != $00
     ;Fraction bits based on screen we're currently at?
+
     rep #$20
     lda !PosLow
     cmp.w #!Start1

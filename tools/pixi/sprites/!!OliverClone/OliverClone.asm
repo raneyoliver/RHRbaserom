@@ -178,6 +178,7 @@ endif
 
 !BounceDelay					= $08
 !NumPixelsAboveSpriteRequiredToBounce	= $00 ;$02
+!XDistToInstantlyTP				= $00E0
 
 !NonSpikyLowBounce				= $E6
 !NonSpikyHighBounce				= $AA
@@ -696,10 +697,10 @@ HandleState:
 
 	JSR EraseFireballs
 
-	LDA $14
-	LSR #2
-	AND #$01
-	BEQ +
+	; LDA $14
+	; LSR #2
+	; AND #$01
+	; BEQ +
 
 	LDA !IsMario
 	BEQ ..ohye
@@ -787,8 +788,25 @@ HandleState:
 	BEQ .autoscroll
 
 	CMP #$22	; lvl 22 autoscroll?
-	BNE +
+	BEQ .autoscroll
 
+	; Or if close enough already?
+	LDA !15A0,x	; sprite off screen flag
+	BNE .movePlayerToSprite
+
+	LDA !14E0,x                             ; \
+	XBA                                     ;  | calculate the distance
+	LDA.w !E4,x                             ;  | between the screen and the sprite
+	REP #$20                                ;  |
+	WDM #$01
+	SEC : SBC $1462|!addr                           ;  |
+
+	BPL + : EOR #$FFFF : INC : +            ; \
+	CMP #!XDistToInstantlyTP
+	SEP #$20                                
+	BCS .movePlayerToSprite                 
+
+.instantlyTP
 .autoscroll
 	; If autoscrolling level, just instantly tp the player to the sprite and continue
 	JSR TPPlayerToSprite
@@ -796,7 +814,7 @@ HandleState:
 	INC !State
 	RTS
 
-+
+.movePlayerToSprite
 	JSR SetTeleportingXSpeed                ; \  move the player to the other pipe
 	JSR SetTeleportingYSpeed                ; /
 
@@ -3323,11 +3341,11 @@ BEQ +								;| Don't ever change C2 for Yoshi.
 LDA !9E,x							;/
 CMP #$2F                            ; added by SJC
 BEQ +
-CMP #$04							;|
-BCC .NotKoopa						;|
-CMP #$08							;|
-BCC +								;| Don't ever change 1540 for the normal Koopas (prevents spawn jank with the sliding koopa when a normal Koopa is bounced on).
-.NotKoopa							;|
+; CMP #$04							;|
+; BCC .NotKoopa						;|
+; CMP #$08							;|
+; BCC +								;| Don't ever change 1540 for the normal Koopas (prevents spawn jank with the sliding koopa when a normal Koopa is bounced on).
+; .NotKoopa							;|
 %RAMToSpr(!1540, 13)				;|
 +									;\
 
@@ -3445,11 +3463,11 @@ BNE .customSprite ; if EQ, is vanilla
 LDA !9E,x
 CMP #$2F   ; added by
 BEQ +      ; SJC
-CMP #$04
-BCC .NotKoopa
-CMP #$08
-BCC +
-.NotKoopa
+; CMP #$04
+; BCC .NotKoopa
+; CMP #$08
+; BCC +
+; .NotKoopa
 %SprToRAM(!1540, 13)
 +
 
