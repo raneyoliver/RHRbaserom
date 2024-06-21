@@ -105,4 +105,5 @@ patches = [
 	"resources/patches/sprite_remaps.asm",
 	"resources/patches/tweaks.asm",
 	"resources/patches/MarioTileDMAMergedPaletteChange.asm",
+	"resources/patches/reverse_gravity.asm",
 ]

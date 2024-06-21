@@ -798,7 +798,6 @@ HandleState:
 	XBA                                     ;  | calculate the distance
 	LDA.w !E4,x                             ;  | between the screen and the sprite
 	REP #$20                                ;  |
-	WDM #$01
 	SEC : SBC $1462|!addr                           ;  |
 
 	BPL + : EOR #$FFFF : INC : +            ; \

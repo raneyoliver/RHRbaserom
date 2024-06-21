@@ -19,6 +19,11 @@ DA	Disco Shell
 9B	Hammer Brother (throws frequently)
 AB	Rex, squished
 E0	Triple Ball n' Chain
+10	Green Koopa
+	Green Shell (stationary)
+	Green Shell (stationary, Koopa inside)
+	Green Shell (kicked)
+	Disco Shell
 11	Green Multi Bounce Shell
 	Green Multi Bounce Shell (infinite bounces)
 	Green Multi Bounce Shell (spawn kicked)

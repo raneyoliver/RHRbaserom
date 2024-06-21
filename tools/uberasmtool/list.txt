@@ -6,6 +6,7 @@ verbose: on
 
 ; Level resources
 level:
+15 on_off_gravity.asm
 16 MarioGFXAndPaletteChangeOnTrigger.asm
 17 MarioGFXAndPaletteChangeOnTrigger.asm
 20 MarioGFXAndPaletteChangeOnTrigger.asm
