@@ -53,7 +53,7 @@ main:
 
 ThingToDo:
 	REP #$20
-        LDA $41C0FC
+        LDA $7FC0FC
         AND #$0001
         BNE .noSoundEffect
 
@@ -67,10 +67,11 @@ ThingToDo:
 	STA $1DFC|!addr ;$1DFC|!Base2
 
 .noSoundEffect
+    WDM #$01
     REP #$20
-        LDA $41C0FC
+        LDA $7FC0FC
         ORA #$0001		;trigger 0 = 1st bit = 2^0 = #$1
-        STA $41C0FC
+        STA $7FC0FC
 	SEP #$20
 
     LDA #$00
@@ -80,9 +81,9 @@ ThingToDo:
 
 Nope:
 	REP #$20
-	LDA $41C0FC
+	LDA $7FC0FC
 	AND	#$0001^$FFFF	; invert the value to set it to 0.
-	STA $41C0FC
+	STA $7FC0FC
 	SEP #$20
 
     LDA $9D

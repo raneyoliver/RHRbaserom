@@ -135,6 +135,10 @@
 419	0	Solid for sprites ONLY (block-interactable sprites) when they go right, but allows left
 42e	0	This block is simply erased when Mario touches it. It's used for several purposes in the baserom: a 1F0 that disappears after you touch it; disappearing indicators, etc.
 439	0	Solid for sprites ONLY (block-interactable sprites) when they go left, but allows right
+43b	0	An on-off block which only becomes solid when the switch is turned on, but which is triggered by a different switch and RAM address ($7FC0FC) than the normal $14AF|$6000 switch.
+43e	0	Teleports you to whatever level the screen exit for the current screen is set to.
+44b	0	An on-off block which only becomes solid when the switch is turned off, but which is triggered by a different switch and RAM address ($7FC0FC) than the normal $14AF|$6000 switch.
+44e	0	Growing vine block, vine moves downward when hit. Customizable speed.
 450	0	A block that acts like a mid-air suspended Spiny. If Yoshi's going to eat it, this will need sprite GFX02 in SP4.
 200 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 201 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.

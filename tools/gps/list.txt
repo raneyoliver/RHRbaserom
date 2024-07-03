@@ -22,6 +22,10 @@
 419:025 SpriteOneWay-AllowGoingLeft.asm
 42E:1F0 Collectable.asm
 439:025 SpriteOneWay-AllowGoingRight.asm
+43B:025 OnSolid-CustomTriggerRAM.asm
+43E:025 TeleportToScreenExitWhenTouched.asm
+44B:025 OffSolid-CustomTriggerRAM.asm
+44E:130 RotVineBlock_Down.asm
 450:025 spinyblock.asm
 
 ; BASEROM RESERVED BLOCKS BELOW -------------------------------------;

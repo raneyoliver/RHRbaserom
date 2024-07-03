@@ -503,7 +503,7 @@ UnsetCustomFTrigger:
 	; Unset Custom F Trigger (1-up color: mario-off, luigi-on)
 	REP #$20
 	LDA $41C0FC	; custom triggers 0-F bits
-	AND #$41FF	; 0 only first bit
+	AND #$7FFF ;#$41FF	; 0 only first bit
 	STA $41C0FC	; switch off first bit
 	SEP #$20
 	RTS
