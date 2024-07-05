@@ -6,7 +6,10 @@ verbose: on
 
 ; Level resources
 level:
+0A MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 0B MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
+0C MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
+0D MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 15 on_off_gravity.asm
 16 MarioGFXAndPaletteChangeOnTrigger.asm
 17 MarioGFXAndPaletteChangeOnTrigger.asm

@@ -791,7 +791,11 @@ HandleState:
 	BEQ .autoscroll
 
 	; Or if close enough already?
-	LDA !15A0,x	; sprite off screen flag
+	LDA !15A0,x	; sprite off screen flag, horiz
+	BNE .movePlayerToSprite
+
+	WDM #$01
+	LDA !186C,x ; sprite off screen flag, vert
 	BNE .movePlayerToSprite
 
 	LDA !14E0,x                             ; \
