@@ -129,6 +129,7 @@ endif
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !KoopaShell						= $1B	; in pixi_list.txt
 !SpinyShell						= $5B	; in pixi_list.txt
+!KoopaBlockActAs				= $0403
 
 ;;;;;;;;; PLAYER PROPERTIES ;;;;;;;;;
 
@@ -178,12 +179,14 @@ endif
 
 !BounceDelay					= $08
 !NumPixelsAboveSpriteRequiredToBounce	= $00 ;$02
+!NumPixelsBelowSprite			= $0011
+!XOffset						= $08
 !XDistToInstantlyTP				= $00E0
 
 !NonSpikyLowBounce				= $E6
 !NonSpikyHighBounce				= $AA
 !NonSpikyLowSpin				= $FE
-!NonSpikyHighSpin				= $FC
+!NonSpikyHighSpin				= $DC	;$FC
 
 !SpikyLowSpin					= $D3	;$E2
 !SpikyHighSpin					= $AA	; estimated
@@ -349,17 +352,17 @@ GivePoints:
 	PHY
 
 	; Trigger Custom F to make 1-up green
-	LDA !IsMario
-	BNE .mario
+; 	LDA !IsMario
+; 	BNE .mario
 
-.luigi
-	REP #$20
-	LDA $41C0FC	; custom triggers 0-F bits
-	ORA #$8000	; first bit (F)
-	STA $41C0FC	; switch on first bit
-	SEP #$20
+; .luigi
+; 	REP #$20
+; 	LDA $41C0FC	; custom triggers 0-F bits
+; 	ORA #$8000	; first bit (F)
+; 	STA $41C0FC	; switch on first bit
+; 	SEP #$20
 
-.mario
+; .mario
     INC !1626,x	        	;|
 	JSR RememberPoints
     LDA $1697|!addr        	;\
@@ -794,7 +797,6 @@ HandleState:
 	LDA !15A0,x	; sprite off screen flag, horiz
 	BNE .movePlayerToSprite
 
-	WDM #$01
 	LDA !186C,x ; sprite off screen flag, vert
 	BNE .movePlayerToSprite
 
@@ -1456,7 +1458,7 @@ SetCarryIfShell:	;requires sprite in y
 
 	PHX
 		TYX
-		LDA !9E,x
+		LDA !7FAB9E,x	; !9E,x
 	PLX
 
 	CMP #$DA		; DA-DF vanilla shells
@@ -2156,8 +2158,8 @@ HandleCarryableSpriteStuff:
 
 HandleBlockHit:
 
-        LDA #$01
-        STA $1DF9|!Base2
+        ; LDA #$01
+        ; STA $1DF9|!Base2
 
         LDA !15A0,x
         BNE .return
@@ -2359,6 +2361,46 @@ SafeGetMap16:
 	%GetMap16()
 	RTS
 
+SafeGetMap16_ActAs_BelowSprite:
+	LDA $0F
+	PHA
+	JSR GetPositionBelowSprite
+	PLA
+	STA $0F
+
+	%GetMap16_ActAs()
+	; Output:
+	;  - Y: acts as high byte ($FF if block in invalid range)
+	;  - A: acts as low byte (also stored in $1693)
+	RTS
+
+GetPositionBelowSprite:
+	LDA !14D4,x		; high Y
+	XBA
+	LDA !D8,x		; low Y
+	REP #$20
+	CLC : ADC #!NumPixelsBelowSprite
+	STA $98
+	SEP #$20
+
+	LDA !14E0,x		; high X
+	XBA
+	LDA !E4,x		; low X
+	CLC : ADC #!XOffset
+    BCC .store
+
+    XBA
+    INC A
+    XBA
+
+.store
+	REP #$20
+	STA $9A
+	SEP #$20
+
+	STZ $1933|!addr
+	RTS
+
 SafeGetMap16DifferentXPos:
 	; Get X, Y position of block from $19138
 	LDA $0F
@@ -2387,13 +2429,12 @@ ReturnHelper:
 
 CheckInteractableBlocksList:
 
-	JSR SafeGetMap16
-
-	;Koopa Block is 299 (#$0299)
+	; Koopa Block Act As
+	; JSR SafeGetMap16_ActAs_BelowSprite
 	; REP #$20
-	; CMP #$0299
+	; CMP #!KoopaBlockActAs
 	; SEP #$20
-	;BEQ .koopaBlock        I decided to handle this directly from KoopaBlock.asm for better or worse
+	; BEQ .koopaBlock
 
 ; .switchONDeathBlock
 ; 	REP #$20
@@ -2420,6 +2461,7 @@ CheckInteractableBlocksList:
 ; 	BRA ReturnHelper
 
 .lavaBlock
+	JSR SafeGetMap16
 	JSR CheckLavaTiles
 	BCS .lavaTile
 
@@ -2468,34 +2510,37 @@ CheckInteractableBlocksList:
 	BRA .return
 
 .koopaBlock
-	LDA !Spinning
-	BEQ ..notSpinning
+	JSR GivePoints
 
-..spinning
-	LDA !JumpHeld
-	BEQ ..low
+; .koopaBlockBounce
+; 	LDA !Spinning
+; 	BEQ ..notSpinning
 
-..high
-	LDA #!NonSpikyHighSpin
-	BRA +
-..low
-	LDA #!NonSpikyLowSpin
-+
-	STA !BouncingSpeed
-	BRA .return
+; ..spinning
+; 	LDA !JumpHeld
+; 	BEQ ..low
 
-..notSpinning
-	LDA !JumpHeld
-	BNE ..highJump
+; ..high
+; 	LDA #!NonSpikyHighSpin
+; 	BRA +
+; ..low
+; 	LDA #!NonSpikyLowSpin
+; +
+; 	STA !BouncingSpeed
+; 	BRA .return
 
-..lowJump
-	LDA #!NonSpikyLowBounce
-	STA !BouncingSpeed
-	BRA .return
+; ..notSpinning
+; 	LDA !JumpHeld
+; 	BNE ..highJump
 
-..highJump
-	LDA #!NonSpikyHighBounce
-	STA !BouncingSpeed
+; ..lowJump
+; 	LDA #!NonSpikyLowBounce
+; 	STA !BouncingSpeed
+; 	BRA .return
+
+; ..highJump
+; 	LDA #!NonSpikyHighBounce
+; 	STA !BouncingSpeed
 .return
 	RTS
 

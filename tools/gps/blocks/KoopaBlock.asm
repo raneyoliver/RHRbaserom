@@ -33,11 +33,13 @@ endif
 
 !CloneLowBounce =           $E6
 !CloneHighBounce =          $AA
-!CloneHighSpin =            $FC
+!CloneHighSpin =            $F8 ;$FC
 !CloneLowSpin =             $FE
 !CloneJumpHeld =        $41A018
 !CloneSpinning =        $41A00C
 !CloneContact =         $41A01C
+
+!PlayerOnlyStomped         		= $41A024
 
 print "A block that acts like a stationary Swooper."
 
@@ -52,7 +54,9 @@ Bounce:
     BNE .cloneBounce
 
 .marioBounce
+    ;JSR GivePoints
     %stomped_points()	; Give points to the player.
+    ;JSR RememberPoints
     %erase_block()		; Erase block.
 
     LDA $140D|!addr		; Check if Mario is spin jumping.
@@ -72,7 +76,9 @@ Bounce:
 	                            ;| so it doesn't react to
 	                            ;| where the players at
 
-    %stomped_points()	; Give points to the player.
+    JSR GivePoints
+    ;%stomped_points()	; Give points to the player.
+    ;JSR RememberPoints
     %erase_block()		; Erase block.
 
     LDA !CloneSpinning		    ; Check if Clone is spin jumping.
@@ -376,5 +382,85 @@ KillMarioSpriteAndExit:
     LDA #$03
     STA !14C8,x
     RTL
+
+RememberPoints:
+	LDA !14C8,x
+	CMP #$0B
+	BEQ .checkPlayer	; If sprite carried, check if player airborne
+
+	;First, set SpriteStomped
+	LDA !1588,x             ; Check if sprite is blocked downward (on ground)
+	AND #$04
+	BEQ .inAir		     	; If sprite is not on ground (airborne), branch
+
+	STZ !1626,x
+
+.checkPlayer
+	LDA $72                 ; Check if player is airborne
+	BNE .inAir              ; If player is airborne, branch to .inAir
+
+	; At this point, both player and sprite are on the ground
+	BRA .updateAndExit      ; Branch to update and exit logic if both are on ground
+
+.inAir
+	; If here, either player or sprite is airborne
+	LDA $1697|!addr          	; Get number of consecutive enemies stomped
+	SBC !1626,x					; Subtract SpriteStomped
+	BMI .restore
+	CMP !PlayerOnlyStomped     	; Compare to previous frame
+	BCS .updateAndExit        	; If >=, branch to update and exit logic
+
+.restore
+	; If <, restore the counter and proceed
+	LDA !PlayerOnlyStomped
+	CLC : ADC !1626,x
+	STA $1697|!addr        		; Restore consecutive enemies count
+
+.updateAndExit
+	LDA $1697|!addr            	; Get number of consecutive enemies stomped
+	SEC : SBC !1626,x			; isolate player count
+	STA !PlayerOnlyStomped     	; Save for next frame
+	RTS                      	; Return from subroutine
+
+GivePoints:
+	STY $02
+	PHY
+
+	; Trigger Custom F to make 1-up green
+; 	LDA !IsMario
+; 	BNE .mario
+
+; .luigi
+; 	REP #$20
+; 	LDA $41C0FC	; custom triggers 0-F bits
+; 	ORA #$8000	; first bit (F)
+; 	STA $41C0FC	; switch on first bit
+; 	SEP #$20
+
+; .mario
+    INC !1626,x	        	;|
+	JSR RememberPoints
+    LDA $1697|!addr        	;\
+    ;CLC                    	;|	Don't add SpriteStomped--It should already be added via RememberPoints
+    ;ADC !1626,x		       	;|
+    TAY                    	;| Play bounce SFX when $1697+$1626,x < #$08
+    ;INY                    	;| (if >= @$08, it spawns a 1up score sprite which plays the SFX)
+    CPY #$08               	;|
+    BCS +                  	;|
+
+    LDA .SFX-1,y            ;|
+    STA $1DF9|!addr         ;/
++   TYA                     ;\
+    CMP #$08                ;|
+    BCC +                   ;| Give points accordingly (input capped to $08 = 1up)
+
+    LDA #$08                ;|
++   JSL $02ACE5|!bank       ;/
+
+	PLY
+    RTS
+
+.SFX:
+    db $13,$14,$15,$16,$17,$18,$19
 
 	print "Block version of an immobile koopa. Place it on a 1F0 or sprite-only block to give the illusion that it's a sprite. Will also spawn the actual 'smushed' koopa when jumped on from above."

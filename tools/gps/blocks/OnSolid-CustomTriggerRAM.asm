@@ -104,20 +104,6 @@ db $37
 
 !CustomTrigger = $7FC0FC
 
-macro invoke_snes(addr)
-	LDA.b #<addr>
-	STA $0183
-	LDA.b #<addr>/256
-	STA $0184
-	LDA.b #<addr>/65536
-	STA $0185
-	LDA #$D0
-	STA $2209
--	LDA $018A
-	BEQ -
-	STZ $018A
-endmacro
-
 JMP OnSolid : JMP OnSolid : JMP OnSolid
 JMP OnSolid : JMP OnSolid
 JMP OnSolid : JMP OnSolid

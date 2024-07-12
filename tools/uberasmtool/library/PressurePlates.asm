@@ -24,6 +24,8 @@ endif
 
 !TileNumber = $0131
 
+!CustomTrigger = $7FC0FC
+
 !FramesSinceButtonPressed = $41A028
 !NumFramesBetweenSounds = $18
 
@@ -52,13 +54,14 @@ main:
 	BCC Nope
 
 ThingToDo:
-	REP #$20
-        LDA $7FC0FC
-        AND #$0001
-        BNE .noSoundEffect
+    LDA !CustomTrigger
+    ;LDA $00
+    REP #$20
+    AND #$0001
+    SEP #$20
+    BNE .noSoundEffect
 
 .soundEffect    ; only play sound when going from trigger == 0 to trigger == 1
-    SEP #$20
     LDA !FramesSinceButtonPressed
     CMP #!NumFramesBetweenSounds
     BCC .noSoundEffect
@@ -67,12 +70,7 @@ ThingToDo:
 	STA $1DFC|!addr ;$1DFC|!Base2
 
 .noSoundEffect
-    WDM #$01
-    REP #$20
-        LDA $7FC0FC
-        ORA #$0001		;trigger 0 = 1st bit = 2^0 = #$1
-        STA $7FC0FC
-	SEP #$20
+    JSR SetCustomTrigger
 
     LDA #$00
     STA !FramesSinceButtonPressed
@@ -80,11 +78,7 @@ ThingToDo:
 	BRA Return
 
 Nope:
-	REP #$20
-	LDA $7FC0FC
-	AND	#$0001^$FFFF	; invert the value to set it to 0.
-	STA $7FC0FC
-	SEP #$20
+    JSR UnsetCustomTrigger
 
     LDA $9D
     BNE Return
@@ -165,14 +159,6 @@ GetPositionBelowMario:
         STA $98
     SEP #$20
 
-	; LDA $D4			; PlayerPosYHigh
-	; XBA
-	; LDA $D3			; PlayerPosYLow
-	; CLC : ADC #!NumPixelsBelowMario
-	; REP #$20
-	; STA $98
-	; SEP #$20
-
 	LDA $D2			; PlayerPosXHigh
 	XBA
 	LDA $D1			; PlayerPosXLow
@@ -190,6 +176,27 @@ GetPositionBelowMario:
 
 	STZ $1933|!addr
 	RTS
+
+GetCustomTrigger:
+    LDA !CustomTrigger
+	STA $00
+    RTS
+
+SetCustomTrigger:
+    REP #$20
+        LDA !CustomTrigger
+        ORA #$0001		;trigger 0 = 1st bit = 2^0 = #$1
+        STA !CustomTrigger
+	SEP #$20
+    RTS
+
+UnsetCustomTrigger:
+	REP #$20
+        LDA !CustomTrigger
+        AND	#$0001^$FFFF	; invert the value to set it to 0.
+        STA !CustomTrigger
+	SEP #$20
+    RTS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; GetBlock - SA-1 Hybrid version

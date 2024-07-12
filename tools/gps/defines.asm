@@ -49,6 +49,21 @@ endmacro
 
 %assert_lm_version(257, "EXLEVEL") ; Ex level support
 
+; For accessing WRAM from SA-1
+macro invoke_snes(addr)
+	LDA.b #<addr>
+	STA $0183
+	LDA.b #<addr>/256
+	STA $0184
+	LDA.b #<addr>/65536
+	STA $0185
+	LDA #$D0
+	STA $2209
+-	LDA $018A
+	BEQ -
+	STZ $018A
+endmacro
+
 ; Sets a couple of defines for sprite tables with proper SA-1 remapping if needed.
 ; example remap: LDA $14C8,x => LDA !14C8,x or LDA !sprite_status,x
 
