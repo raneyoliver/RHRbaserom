@@ -35,3 +35,6 @@ Locals:
 1F  hydrocity\hydrocity.txt
 20  Addams_CreepyCreatures\05 Creepy Creatures.txt
 21  Bee Hunter - The Loneliness\Bee Hunter - The Loneliness.txt
+22  Addams_DangerousTerrain/03 Dangerous Terrain.txt
+23  mitotic\mitotic.txt
+24  Underworld Forest\Underworld Forest.txt

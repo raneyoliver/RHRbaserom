@@ -19,8 +19,12 @@ level:
 15 MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 16 MarioGFXAndPaletteChangeOnTrigger.asm
 17 MarioGFXAndPaletteChangeOnTrigger.asm
+18 MarioGFXAndPaletteChangeOnTrigger.asm
+1F MarioGFXAndPaletteChangeOnTrigger.asm
 20 MarioGFXAndPaletteChangeOnTrigger.asm
+21 MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 22 lvl22.asm
+23 MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 
 ; Overworld resources
 overworld:

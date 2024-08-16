@@ -36,6 +36,9 @@ E0	Triple Ball n' Chain
 14	Oliver Clone
 17	Urchin, fixed vertical/horizontal (X&1)
 	Urchin, wall detect v/h (X&1)
+18	Stationary Flying Parakoopa
+19	Ghost Shell (Stunned)
+	Ghost Shell (Kicked)
 1B	Green Koopa
 	Green Shell (stationary)
 	Green Shell (stationary, Koopa inside)

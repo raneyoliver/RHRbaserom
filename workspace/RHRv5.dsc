@@ -140,6 +140,7 @@
 44b	0	An on-off block which only becomes solid when the switch is turned off, but which is triggered by a different switch and RAM address ($7FC0FC) than the normal $14AF|$6000 switch.
 44e	0	Growing vine block, vine moves downward when hit. Customizable speed.
 450	0	A block that acts like a mid-air suspended Spiny. If Yoshi's going to eat it, this will need sprite GFX02 in SP4.
+4a8	0	This block spawns a sprite, automatically carried, with the block erasing itself afterwards. Note that the bobomb and mechakoopa require the correct sprite GFX to display properly.
 200 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 201 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.
 202 0 Tile that can be used with Lunar Magic's Layer 3 tide Act As feature.

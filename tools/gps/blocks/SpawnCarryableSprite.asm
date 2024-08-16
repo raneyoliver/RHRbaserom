@@ -19,6 +19,7 @@ endif
 
 !StunTimer = $FF ; for bobomb, galoomba, etc.
 
+!GhostShell 	= $19
 
 !sfx 			 = $10
 !sfx_bank		 = $1DF9
@@ -53,8 +54,16 @@ Next:
     LDA $1693|!addr
     CPY #$00
     CMP #$4A
-    BNE Return
+    BNE GhostShell
 	LDA #$1B					; KoopaShell.asm (custom)
+    BRA NoTimer
+
+GhostShell:
+    LDA $1693|!addr
+    CPY #$00
+    CMP #$4B
+    BNE Return
+	LDA #!GhostShell
     BRA NoTimer
 
 NoTimer:
@@ -72,7 +81,7 @@ NoTimer:
 
 ; +
 ; 	CLC
-++
+.spawn
 	%spawn_sprite()
 	BCS Return
 	%move_spawn_into_block()	;move sprite position to block

@@ -27,6 +27,7 @@
 44B:025 OffSolid-CustomTriggerRAM.asm
 44E:130 RotVineBlock_Down.asm
 450:025 spinyblock.asm
+4A8:04B SpawnCarryableSprite.asm
 
 ; BASEROM RESERVED BLOCKS BELOW -------------------------------------;
 ; The following blocks are largely on Pages 02 and 03 of Map16

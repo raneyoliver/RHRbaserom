@@ -12,6 +12,8 @@
 15 PlayerCursor.cfg
 16 GreyPlatformOnOffToggledFix.cfg
 17 urchin_3A+3B.json
+18 StationaryFlyingParakoopa.json
+19 ShellDoesntInteractWithOtherSprites.json
 1B KoopaShellGreen.json
 5B SpinyShell.json
 66 RotatingVine.json

@@ -1,0 +1,258 @@
+#amk 2
+
+#spc
+{
+    #title   "Dangerous Terrain"
+    #game    "Addams Family Values"
+    #author  "Keith Tirman"
+    #comment "Ported by KevinM"
+}
+
+#path "addams-terrain"
+
+#samples
+{
+    #default
+    "sample_00.brr"
+    "sample_01.brr"
+    "sample_04.brr"
+    "sample_05.brr"
+    "sample_02.brr"
+    "sample_06.brr"
+    "sample_03.brr"
+}
+
+#instruments
+{
+    "sample_00.brr" $00 $00 $C8 $06 $BB ; @30
+    "sample_01.brr" $00 $00 $DB $01 $0C ; @31
+    "sample_04.brr" $00 $00 $D8 $08 $00 ; @32
+    "sample_05.brr" $00 $00 $D9 $07 $03 ; @33
+    "sample_02.brr" $00 $00 $CB $04 $BF ; @34
+    "sample_06.brr" $00 $00 $DB $08 $00 ; @35
+    "sample_03.brr" $00 $00 $DF $01 $5F ; @36
+}
+
+;==================;
+; Volume  /  Tempo ;
+;==================;
+   w190       t61
+
+; Original volumes: w144
+
+;==================;
+;      Macros      ;
+;==================;
+"I30 = @30 $DE $12 $0C $28 (!gainA1,1,$5E)"
+"I31 = @31 o3 l4           (!gainBF,1,$06)"
+"I32 = @32 $DE $08 $0C $20 (!gainAB,1,$04)"
+"I33 = @33 $DE $06 $0C $18 (!gainAA,1,$07)"
+"I34 = @34 $DE $0C $0C $38 (!gainA8,1,$30)"
+"I35 = @35 $DE $0C $0C $14 (!0,0) (!reset,-1)"
+"I36 = @36 y10 o5          (!gainB5,1,$01)"
+
+"GAIN_ = $ED $80 $"
+
+;==================;
+;     Commands     ;
+;==================;
+ "reset = 901"
+"gainA1 = 902"
+"gainBF = 903"
+"gainB5 = 904"
+"gainAB = 905"
+"gainAA = 906"
+"gainA8 = 907"
+ (!reset)[$F4 $09]
+(!gainA1)[GAIN_A1]
+(!gainBF)[GAIN_BF]
+(!gainB5)[GAIN_B5]
+(!gainAB)[GAIN_AB]
+(!gainAA)[GAIN_AA]
+(!gainA8)[GAIN_A8]
+
+;==================;
+;    Channel #0    ;
+;==================;
+#0 $F0 $F4 $02 (!reset,-1)
+I30 y10 o2
+v90 f+=90 $E8 $10 $6E ^2^8 $E8 $0C $82 ^2 $E8 $08 $96 ^2 $E8 $08 $AA ^2 $E8 $0C $B4 ^1
+          $E8 $0C $C8 ^2   $E8 $0C $D2 ^2 $E8 $0C $DC ^2 $E8 $0E $EB ^2 $E8 $0E $F5 ^=78
+v190 f+1^1^2 v205 ^2 /
+v205 f+1^1^=30 v220 ^=36^2 v240 ^=30
+v180 f+1^1^2 v205 ^2 f1^1^2 v220 ^2
+v255 f1^1^=60 v220 ^2 v240 ^=36
+v205 f+1^1^1
+v160 f+1^1^=84 v180 ^4 v205 ^4 v220 ^16
+v205 f1^1^=60 v220 ^=36^2
+v205 f+1^1^=60 v220 ^=36^2 f+1^1^1
+v205 f+1^1^=60 v220 ^=36^2
+v210 f+1^1 v205 ^1 f1^1 v210 ^1
+v220 f1^1^1
+[v180 f+1^1^2^=36 v205 ^4 v220 ^16]2
+$FA $02 $FF *2
+$FA $02 $00 *
+
+;==================;
+;    Channel #1    ;
+;==================;
+#1 (!reset,-1)
+I31 v220 y10 [q76 b q73 b q74 b q72 b q71 b2]
+q76 b q74 b q71 b q73 b q71 b2
+*
+q7B b q74 b b q73 b q71 b2
+q79 b q76 b q75 b q74 b q72 b. q73 b8
+q7B b q79 b q76 b q73 b q71 b2 /
+(81)[q7F b q79 b q76 b q73 b q71 b2]2
+(82)[q7F b q76 b q75 b q74 b q72 b. q73 b8]
+(81)3
+(83)[q7F b q79 b q76 b q74 b q73 b. q71 b8]
+(81)27
+(82)
+(83)
+
+;==================;
+;    Channel #2    ;
+;==================;
+#2 (!reset,-1)
+I30 y10 o1 v160 f+1^1^1 v205 f+1^1^1^1^1^1 /
+
+I32 v150 >>> f+1^2
+< a+1^2 GAIN_A0 ^8 GAIN_B4 ^1^1^8
+f+2. > f1^2
+< a1^2  GAIN_A0 ^8 GAIN_B4 ^1^1^2..
+
+I30 v90 f+1^1^1 v120 f+1^1^4 v160 f+2.
+
+I33 < e=3 GAIN_B5 ^=45
+v120 e=3 GAIN_B5 ^=45
+v90 e=3 GAIN_B5 ^=45
+v60 y0 e=3 GAIN_B5 ^=45^1^1
+
+I34 v200 y10 > c1^1^1
+
+I30 v90 < f+1^1^1^1^1^1
+
+I35 v175 >> d+=2 GAIN_AE ^=46^2
+> d+=2 GAIN_AE ^=22^2. GAIN_A0 ^=15 GAIN_AB ^=9^2.
+< b=2 GAIN_AE ^=94
+d=2 GAIN_AE ^=46^2
+d=2 GAIN_AE ^=22^2. GAIN_A0 ^=15 GAIN_AB ^=9^1^1^1^1^1^1^1^4
+
+I32 v150 << d+1^2 GAIN_A0 ^8 GAIN_B4 ^1^2^8 > g2
+d1^2 GAIN_A0 ^8 GAIN_B4 ^1^1^1^1^1^1^2^8
+
+;==================;
+;    Channel #3    ;
+;==================;
+#3 (!reset,-1)
+I30 y10 o2 v160 f+1^1^1 v120 f+1^1^1^1^1^1 / ^2.
+
+I32 v150 y10 >> f1^2 GAIN_A0 ^8 GAIN_B4 ^1^1^1^8
+< g+1^4 > e1^2 GAIN_A0 ^8 GAIN_B4 ^2^8
+
+I33 <<< v130 d=3 GAIN_B5 ^=93^1^1^2
+v205 d=3 GAIN_B5 ^=45 v130 ^4 v90 ^8. v50 ^1^1^=60
+
+I30 v120 > f+1^2
+
+I34 v200 >> g1^2
+
+I30 v120 < f1^1^1
+
+I34 v160 > c1^1^1
+
+I33 v95 y9 <<< d=3 GAIN_B5 ^=93^1^1^1^1^1^1
+
+I35 y10 >>>
+v175 f+=2 GAIN_AE ^=22^2. GAIN_A0 ^=15 GAIN_AB ^=9
+v110 d+=2 GAIN_AE ^=46^2
+v175 a+=2 GAIN_AE ^=94
+f+=2 GAIN_AE ^=94
+a=2 GAIN_AE ^=22^2. GAIN_A0 ^=15 GAIN_AB ^=57
+v105 y9 d=2 GAIN_AE ^=46^2
+
+I33 v120 y10 <<<
+a=3 GAIN_B5 ^=45 v130 ^1^4 $E8 $0C $A0 ^2. $E8 $10 $AF ^1^1^1^1^2
+
+I32 v150 > d+1^2 > a+1^4
+d+1^2 GAIN_A0 ^8 GAIN_B4 ^1^2^8
+
+I33 v95 y9 << d=3 GAIN_B5 ^=45^1^1^1^1^1^2.
+
+;==================;
+;    Channel #4    ;
+;==================;
+#4 (!reset,-1)
+I34 v120 y10 o2 r1^1^1 c1^1^1^1^1^1 / ^2
+
+I32 v90 >> f+1^2 < a+1^2 GAIN_A0 ^8 GAIN_B4 ^1^1^8
+v150 a+2. v90 > f1^2 GAIN_A0 ^8 GAIN_B4 ^2..
+
+I33 << v120 (40)[e=3 GAIN_B5 ^=45]
+v160 *
+v120 *
+v90 *
+v70 *
+v50 *
+v90 *
+e=3 GAIN_B5 ^=45 v120 ^2 v160 ^4 v180 ^4
+v205 f=3 GAIN_B5 ^=45 v120 ^4 v110 ^4 v50 ^1^1^4
+
+I34 v200 >> c1^1^4 > c2. < b1^2 f+1^2
+
+I33 << v120 [f=3 GAIN_B5 ^=45]
+v90 *2 v70 * f=3 GAIN_B5 ^=93^1^2
+v180 f=3 GAIN_B5 ^=93^1^1^2 f=3 GAIN_B5 ^=45^1^1^1
+
+I35 v175 >> f=2 GAIN_AE ^=22^2. GAIN_A0 ^=15 GAIN_AB ^=57^1^1
+a+=2 GAIN_AE ^=22^2. GAIN_A0 ^=15 GAIN_AB ^=9^1^2
+
+I33 << v160 (40) v120 (40)2 v110 (40) e=3 GAIN_B5 ^=93^1^2
+v180 f=3 GAIN_B5 ^=81 $E8 $0E $96 ^4. $E8 $0C $6E ^4 $E8 $0C $5A ^=60 $E8 $0C $32 ^1^2^8
+
+I32 v150 > d+1^2 GAIN_A0 ^8 GAIN_B4 ^2^8
+> d+2. < f2 a1^2 GAIN_A0 ^8 GAIN_B4 ^2..
+
+I33 <
+v180 e=3 GAIN_B5 ^=53 $E8 $0E $96 ^4. $E8 $0E $6E ^=64 $E8 $0C $5A ^4. $E8 $0C $32 ^1^2^8
+v160 f=3 GAIN_B5 ^=29 $E8 $0E $AF ^2 $E8 $0E $8C ^4. $E8 $0C $78 ^4. $E8 $0E $64 ^1^4 $E8 $22 $32 ^3
+
+;==================;
+;    Channel #5    ;
+;==================;
+#5 (!reset,-1)
+I36 r1^1^1
+v130 (50)[a=10 GAIN_A0 ^=2  GAIN_B5 ^8.]
+v205 (51)[a=10 GAIN_A0 ^=2  GAIN_B5 ^16]4
+     (52)[a=10 GAIN_A0 ^=14 GAIN_B5 ^8 ]
+(51)4
+v120 (50)
+v205 (51)4 (50) (51)4
+v120 (50) (51)2
+v160 (51)2
+v180 (52)
+v205 (51)4
+[[ (50) (51)4 ]]2 /
+
+[
+       a=10 GAIN_A0 ^=2  GAIN_B5 ^8.
+v160   a=10 GAIN_A0 ^=2  GAIN_B5 ^16
+v180   a=10 GAIN_A0 ^=2  GAIN_B5 ^16
+v205 [[a=10 GAIN_A0 ^=2  GAIN_B5 ^16]]2
+       a=10 GAIN_A0 ^=14 GAIN_B5 ^8
+     [[a=10 GAIN_A0 ^=2  GAIN_B5 ^16]]4
+       a=10 GAIN_A0 ^=2  GAIN_B5 ^8.
+     [[a=10 GAIN_A0 ^=2  GAIN_B5 ^16]]4
+       a=10 GAIN_A0 ^=2  GAIN_B5 ^8.
+     [[a=10 GAIN_A0 ^=2  GAIN_B5 ^16]]4
+]2
+
+$FA $02 $FF *2
+$FA $02 $00 *2
+$FA $02 $FF *
+$FA $02 $00 *4
+$FA $02 $FF *2
+$FA $02 $00 *2
+$FA $02 $FF *2
+$FA $02 $00 *

@@ -127,6 +127,7 @@ endif
 !MultiBounceShell				= $11	; in pixi_list.txt
 !MarioSpriteNumber				= $14	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
+!GhostShell						= $19	; in pixi_list.txt
 !KoopaShell						= $1B	; in pixi_list.txt
 !SpinyShell						= $5B	; in pixi_list.txt
 !KoopaBlockActAs				= $0403
@@ -618,8 +619,10 @@ HandleState:
 .idle
 	JSR HandleInteraction
 
-	LDA $18			;  | initiate teleporting if you press R
-	AND #$10		;  | 00010000 -> AXLR---- , so check if R pressed.
+	LDA $18			;  | initiate teleporting if you press...
+	AND #$30		;  | 00110000 -> AXLR---- , so check if L/R pressed.
+	;AND #$20		;  | 00100000 -> AXLR---- , so check if L pressed.
+	;AND #$10		;  | 00010000 -> AXLR---- , so check if R pressed.
 	BNE ..check
 	RTS
 
@@ -705,19 +708,7 @@ HandleState:
 	; AND #$01
 	; BEQ +
 
-	LDA !IsMario
-	BEQ ..ohye
-
-..wohoo
-	LDA #$3A ;#$25                                ; \  play blargg roar
-	;STA $1DF9|!Base2                        ; /
-	STA $1DFC|!Base2                        ; /
-	BRA +
-
-..ohye
-	LDA #$39 ;#$25                                ; \  play blargg roar
-	;STA $1DF9|!Base2                        ; /
-	STA $1DFC|!Base2                        ; /
+	JSR PlaySound
 
 +	LDY $18DF|!Base2
 	BEQ ..noYoshi
@@ -928,6 +919,36 @@ HandleState:
 
 ..return
         RTS
+
+PlaySound:
+	BRA .blarrg
+
+	LDA $40010B ;($7E010B&$FFFF)|bankA		; Get current level
+	CMP #$18	; mitotic song not compatible w/ some sounds
+	BNE .notBlarrg
+
+.blarrg
+	LDA #$25
+	STA $1DF9|!Base2
+	BRA .return
+
+.notBlarrg
+	LDA !IsMario
+	BEQ .ohye
+
+.wohoo
+	LDA #$3A ;#$25                                ; \  play blargg roar
+	;STA $1DF9|!Base2                        ; /
+	STA $1DFC|!Base2                        ; /
+	BRA .return
+
+.ohye
+	LDA #$39 ;#$25                                ; \  play blargg roar
+	;STA $1DF9|!Base2                        ; /
+	STA $1DFC|!Base2                        ; /
+
+.return
+	RTS
 
 GivePSpeed:
 ;		ground		|air
@@ -1456,11 +1477,17 @@ SetCarryIfShell:	;requires sprite in y
 	AND #$08
 	BNE .isCustom
 
+.isVanilla
 	PHX
 		TYX
 		LDA !7FAB9E,x	; !9E,x
 	PLX
 
+.ghostShellCheck
+	CMP #!GhostShell
+	BEQ .isShell
+
+.vanillaShellCheck
 	CMP #$DA		; DA-DF vanilla shells
 	BCC .isNotShell
 	CMP #$E0
@@ -1487,7 +1514,10 @@ SetCarryIfShell:	;requires sprite in y
 
 .spinyShellCheck
 	CMP #!SpinyShell
-	BNE .isNotShell
+	BEQ .isShell
+
+.none
+	BRA .isNotShell
 
 .isShell
 	SEC
@@ -2702,6 +2732,10 @@ SpriteAndSpecialBlockInteraction:
 	CMP #$17
 	BEQ .tryBounce
 
+.stationaryFlyingKoopa
+	CMP #$18
+	BEQ .tryBounce
+
 	BRA .return
 
 .tryBounce
@@ -3074,11 +3108,11 @@ SprSprContact:
 
 	; If button, skip (bug where clone can spin on button sprites)
 	LDA !7FAB9E,x
-	CMP #$18
-	BEQ .LoopSprSpr
+	; CMP #$18
+	; BEQ .LoopSprSpr
 
-	CMP #$19
-	BEQ .LoopSprSpr
+	; CMP #$19
+	; BEQ .LoopSprSpr
 
 ; If PlayerCursor Sprite (above mario's head), skip
 	CMP #$15
