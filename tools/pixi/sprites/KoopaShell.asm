@@ -16,6 +16,7 @@ else
 endif
 
 !CloneIndex = $41A01A
+!CloneNum   = $14
 
 !Frozen =           $41A021 ;from npc2.asm
 !WasFrozen =        !1534,x
@@ -449,6 +450,8 @@ GetCloneContact:
     RTS
 
 SetCloneContact:
+    RTS
+
 	LDY #!SprSize-1		;loop count (loop though all sprite number slots)
 .Loop
 	PHX
@@ -470,8 +473,7 @@ SetCloneContact:
 	CMP $07			;compare with cursor's number from scratch RAM
 	BEQ .loopSprSprBridge		;if equal, keep looping.
 
-	CMP #$1D            ;compare with clone index
-	BNE .loopSprSprBridge 	;if not clone, keep looping.
+	CMP #!CloneNum            ;compare with clone
 
 	PLX     			;restore sprite index.
 	JSL $03B6E5|!BankB	;get sprite A clipping (this sprite)
@@ -1379,7 +1381,14 @@ KickedGFX:
 ;============================================================;
 SprMarioInteract:
     jsl $01803A|!bank       ;\ Interact with sprites, and check for contact with Mario.
-    bcc .Return             ;/ Return if no contact.
+    bcs .contact             ;/ Return if no contact.
+    
+    ;LDA !CloneIndex
+    ;BNE .contact
+
+    BRA .Return
+
+.contact
     lda $1490|!addr         ;\ If Mario has a star
     beq NoStar              ;|
     lda !167A,x             ;| and the sprite can be starkilled

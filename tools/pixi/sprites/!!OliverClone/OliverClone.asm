@@ -126,6 +126,7 @@ endif
 
 !MultiBounceShell				= $11	; in pixi_list.txt
 !MarioSpriteNumber				= $14	; in pixi_list.txt
+!PlayerCursor					= $15	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !GhostShell						= $19	; in pixi_list.txt
 !KoopaShell						= $1B	; in pixi_list.txt
@@ -154,6 +155,7 @@ endif
 !Spinning						= $41A00C
 !CloneSpeedX					= $41A00E
 !CloneSpeedY					= $41A00F
+!KoopaContact					= $41A01A
 !TeleportReady					= $41A016
 !JumpHeld						= $41A018
 !TempSpinning					= $41A019
@@ -893,6 +895,7 @@ HandleState:
 
 	;also take player's speed
 	LDA !PlayerSpeedX
+	WDM #$01
 	STA !B6,x
 	LDA !PlayerSpeedY
 	STA !AA,x
@@ -2163,19 +2166,9 @@ HandleCarryableSpriteStuff:
 
         JSR HandleBlockHit
 
-        ; reverse x speed if wall hit
-        ; LDA !B6,x
-        ; ASL
-        ; PHP
-        ; ROR !B6,x
-        ; ASL
-        ; ROR !B6,x
-        ; PLP
-        ; ROR !B6,x
-
         ; kill x speed if wall hit (this code never runs?)
-        LDA #$00
-        STA !B6,x
+        ;LDA #$00
+        ;STA !B6,x
 
 ;.notOnGround
 .notAgainstWall
@@ -2650,13 +2643,13 @@ SpriteAndSpecialBlockInteraction:
 	AND #$08
 	BNE .isCustom
 
-.notCustom
+.vanilla
 	PHX
 		TYX
 		LDA !9E,x
 	PLX
 .koopaCheck
-        CMP #$0D        ; vanilla koopas are <= 0C
+        CMP #$0D        ; vanilla naked koopas are < 0D
         BCS .spinyCheck
         BRA .tryBounce
 
@@ -2666,6 +2659,10 @@ SpriteAndSpecialBlockInteraction:
 
 .bulletBillCheck
 		CMP #$1C
+		BEQ .tryBounce
+
+.thwompCheck
+		CMP #$26
 		BEQ .tryBounce
 
 .urchinCheck
@@ -3101,35 +3098,16 @@ SprSprContact:
 	CMP $07				;compare with this sprite's number from scratch RAM
 	BEQ .LoopSprSpr		;if equal, keep looping.
 
-	; If squished koopa, skip
+	; If dead, skip
 	LDA !14C8,x
-	CMP #$03
-	BEQ .LoopSprSpr
+	CMP #$08
+	BCC .LoopSprSpr
 
-	; If button, skip (bug where clone can spin on button sprites)
 	LDA !7FAB9E,x
-	; CMP #$18
-	; BEQ .LoopSprSpr
-
-	; CMP #$19
-	; BEQ .LoopSprSpr
-
-; If PlayerCursor Sprite (above mario's head), skip
-	CMP #$15
+	; If PlayerCursor Sprite (above mario's head), skip
+	CMP #!PlayerCursor
 	BEQ .LoopSprSpr
 
-; If spinyshell.asm (5B), and it's stationary or interaction disabled, skip
-; 	CMP #$5B
-; 	BNE +
-
-; 	LDA !14C8,x
-; 	CMP #$09
-; 	BEQ .LoopSprSpr
-
-; 	LDA !154C,x             ;\ If contact is disabled, skip interaction.
-; 	BNE .LoopSprSpr
-
-; +
 	PLX					;restore sprite index.
 	JSL $03B6E5|!BankB	;get sprite B clipping (this sprite)
 	PHX					;preserve sprite index
@@ -3226,8 +3204,8 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	STA !BouncingSpeed
 ..checkIfSpriteNeedsToBeKilled
 	LDA !1656,y
-	AND #$20				; "Dies when jumped on"
-	BNE ..squish
+	AND #$30				; "Dies when jumped on" or "Can be jumped on" (non-spiky)
+	BNE ..checkKoopas
 
 	LDA !1662,y
 	AND #$80				; "Falls straight down when killed"
@@ -3235,18 +3213,20 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 
 	BRA ..jumpSoundAndPoints
 
-..squish
-	%SetSpriteStatus(#$03, y) ; LDA #$03 : STA !14C8,y (squish)
-
+..checkKoopas
 	LDA !7FAB10,y
 	AND #$08
 	BNE ..isCustom
 
 	LDA !9E,y
-	CMP #$0D        ; vanilla koopas are <= 0C
+	CMP #$08        ; vanilla koopas are <= 07
 	BCS ..jumpSoundAndPoints
 
+	CMP #$04
+	BCS ..hurtWalkingKoopa
+
 ..spawnSquishedKoopa
+	%SetSpriteStatus(#$03, y) ; LDA #$03 : STA !14C8,y (squish)
 	PHY
     LDA !9E,y ;#$01
     CLC
@@ -3262,6 +3242,10 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
     STA !AA,y
 	PLY
 
+	BRA ..jumpSoundAndPoints
+
+..hurtWalkingKoopa
+	%SetSpriteStatus(#$09, y)
 	BRA ..jumpSoundAndPoints
 
 ..fallDown

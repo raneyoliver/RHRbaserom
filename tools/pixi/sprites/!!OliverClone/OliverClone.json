@@ -59,6 +59,8 @@
   "Map16": "AhkSGQMZExkiGTIZIxkzGSAZMBkhGTEZ",
   "Displays": [
     {
+      "X": 0,
+      "Y": 0,
       "Description": "Controllable Mario Sprite - made by Oliver",
       "ExtraBit": false,
       "Tiles": [
@@ -73,8 +75,7 @@
           "map16 tile": 768
         }
       ],
-      "X": 0,
-      "Y": 0,
+      "GFXInfo": {},
       "DisplayText": "",
       "UseText": false
     }
@@ -96,5 +97,6 @@
       "Extra Property Byte 11": 0,
       "Extra Property Byte 12": 0
     }
-  ]
+  ],
+  "DisplayType": "XY"
 }

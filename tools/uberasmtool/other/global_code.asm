@@ -28,6 +28,22 @@ init:
 ;	 rts
 main:
     jsl mario_exgfx_main
+
+; .NoOverworld
+; 	LDA $0100|!addr
+; 	CMP #$10
+; 	BNE +
+; 	JSL NoOverworld_PreLoadLevel ; this happens at gamemode 10 (init)
+; +
+; 	CMP #$14
+; 	BNE +
+; 	JSL NoOverworld_DuringLevel ; this happens at gamemode 14 (main)
+; +
+; 	CMP #$0C
+; 	BNE +
+; 	JSL NoOverworld_SkipOW ; this happens at gamemode 0C (init)
+; +
+; .NoOverworld_end
     ; you can add other code here
 
 pushpc

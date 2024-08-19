@@ -120,6 +120,7 @@
 35c	0	Changes the pipe direction from left to up or down to right.
 35d	0	Changes the pipe direction from down to left or right to up.
 36f	0	Part of pipe that is passable.
+3f4	0	This block is designed so that if you upthrow a sprite like a shell or throwblock at two of these blocks together, the sprite won't get caught between the two and lose its angular momentum, falling straight down. Do NOT place this block such that sprites can be thrown at it horizontally, or else they'll simply pass through it.
 400	0	Kills Mario instantly, even if on Yoshi.
 402	0	A block where it will only let the player pass if he is carrying a clone or puzzle clone.
 403	0	A block that acts like a stationary Swooper.

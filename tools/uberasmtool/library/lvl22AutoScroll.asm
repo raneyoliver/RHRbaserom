@@ -19,7 +19,7 @@
 !FractionSpeed0  = $94
 
 !Speed1          = $01
-!FractionSpeed1  = $D0
+!FractionSpeed1  = $B8 ;$D0
 
 ; Don't edit from here, unless you know what you're doing!
 !ScrollDir      = $55

@@ -7,6 +7,7 @@
 ; -------------------------------------------------------------------;
 
 ; Add your blocks here
+3F4:404 WontZeroSpeedUpthrownSprites.asm
 400:130 killmario.asm
 402:130 passifcarrying.asm
 403:025 KoopaBlock.asm
