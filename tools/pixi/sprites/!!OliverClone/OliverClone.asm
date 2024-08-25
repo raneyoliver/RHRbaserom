@@ -2166,9 +2166,9 @@ HandleCarryableSpriteStuff:
 
         JSR HandleBlockHit
 
-        ; kill x speed if wall hit (this code never runs?)
-        ;LDA #$00
-        ;STA !B6,x
+        ; kill x speed if wall hit
+        LDA #$00
+        STA !B6,x
 
 ;.notOnGround
 .notAgainstWall

@@ -22,7 +22,7 @@ Locals:
 12  originals/18 Switch Palace.txt
 13  originals/19 Welcome.txt
 14  originals/20 Rescue Egg.txt
-15  originals/21 Title.txt
+15  69 - Automated Anger\Automated Anger.txt
 16  originals/22 Valley of Bowser Appears.txt
 17  originals/23 Overworld.txt
 18  originals/24 Yoshi's Island.txt
