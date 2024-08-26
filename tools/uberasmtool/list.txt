@@ -21,6 +21,9 @@ level:
 16 MarioGFXAndPaletteChangeOnTrigger.asm
 17 MarioGFXAndPaletteChangeOnTrigger.asm
 18 MarioGFXAndPaletteChangeOnTrigger.asm
+1A Cursor.asm
+1B Cursor.asm
+1E Cursor.asm
 1F MarioGFXAndPaletteChangeOnTrigger.asm
 20 MarioGFXAndPaletteChangeOnTrigger.asm
 21 MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm

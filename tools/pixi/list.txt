@@ -4,6 +4,7 @@
 ; - other sprite types have special considerations, see PIXI's readme for more details.
 
 ; Add your sprites here
+09 Cursor.cfg
 10 ReverseGravKoopaShellGreen.json
 11 MultiBounceShellGreen.json
 12 KoopaShellTeleports.json
