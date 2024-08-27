@@ -1,7 +1,7 @@
 {
   "$1656": {
     "Object Clipping": 0,
-    "Can be jumped on": false,
+    "Can be jumped on": true,
     "Dies when jumped on": false,
     "Hop in/kick shell": false,
     "Disappears in cloud of smoke": false
@@ -59,6 +59,8 @@
   "Map16": "",
   "Displays": [
     {
+      "X": 0,
+      "Y": 0,
       "Description": "Undefined Sprite",
       "ExtraBit": false,
       "Tiles": [
@@ -78,8 +80,7 @@
           "map16 tile": 7
         }
       ],
-      "X": 0,
-      "Y": 0,
+      "GFXInfo": {},
       "DisplayText": "",
       "UseText": false
     }
@@ -101,5 +102,6 @@
       "Extra Property Byte 11": 0,
       "Extra Property Byte 12": 0
     }
-  ]
+  ],
+  "DisplayType": "XY"
 }

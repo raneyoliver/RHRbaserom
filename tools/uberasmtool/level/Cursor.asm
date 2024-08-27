@@ -346,6 +346,8 @@ BEQ ++					; leave 154C (contact disabled flag) alone for 1B: sprites/KoopaShell
 %SprToRAM(!1558, 15)
 %SprToRAM(!1564, 16)
 %SprToRAM(!1570, 17)
+LDA #$01
+STA !157C,x	; force all sprites to face left for spectator mode
 %SprToRAM(!157C, 18)
 %SprToRAM(!1594, 19)
 %SprToRAM(!15AC, 20)

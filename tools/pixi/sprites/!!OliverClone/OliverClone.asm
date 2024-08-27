@@ -178,7 +178,11 @@ endif
 !Lvl22XSpeed					= $FF-$28
 
 !TeleportingSpeed				= $60                 ; Speed the camera/teleport moves
-!StopTeleportWithin				= #$0010 ;#$0010
+!StopTeleportWithin				= $0010 ;#$0010
+!PlayerMinX						= $02
+!PlayerMaxX						= $DF
+!PlayerMinY						= $02
+!PlayerMaxY						= $BE
 
 !BounceDelay					= $08
 !NumPixelsAboveSpriteRequiredToBounce	= $00 ;$02
@@ -189,7 +193,7 @@ endif
 !NonSpikyLowBounce				= $E6
 !NonSpikyHighBounce				= $AA
 !NonSpikyLowSpin				= $FE
-!NonSpikyHighSpin				= $DC	;$FC
+!NonSpikyHighSpin				= $FC ;$DC	;$FC
 
 !SpikyLowSpin					= $D3	;$E2
 !SpikyHighSpin					= $AA	; estimated
@@ -284,6 +288,9 @@ InitMarioSpriteProperties:
 	CMP #$22
 	BEQ .lvl22
 
+	CMP #$24
+	BEQ .lvl24
+
 	CMP #$AF
 	BEQ .lvlAF
 
@@ -326,6 +333,18 @@ InitMarioSpriteProperties:
 
 	LDA #!Lvl22XSpeed
 	STA !B6,x
+
+	BRA .return
+
+.lvl24
+	LDA #$01
+	STA !JumpHeld			; level 21 JumpHeld and slight left X speed
+
+	LDA #!Lvl21XSpeed
+	STA !B6,x
+
+	LDA #!Lvl21YSpeed
+	STA !AA,x
 
 	BRA .return
 
@@ -555,6 +574,7 @@ RememberPoints:
 
 
 CheckIfKilled:
+		WDM #$01
         LDA !14C8,x
 		CMP #$06
 		BCC .killPlayer
@@ -808,9 +828,7 @@ HandleState:
 .autoscroll
 	; If autoscrolling level, just instantly tp the player to the sprite and continue
 	JSR TPPlayerToSprite
-
-	INC !State
-	RTS
+	BRA .doneTeleporting
 
 .movePlayerToSprite
 	JSR SetTeleportingXSpeed                ; \  move the player to the other pipe
@@ -820,12 +838,12 @@ HandleState:
 	ORA $7D                                 ;  | if the player doesn't need to move anymore
 	ORA $17BC|!Base2                        ;  | and the screen has caught up with them too,
 	ORA $17BD|!Base2                        ;  | we're done teleporting
-	BNE ..keepTeleporting                   ; /
+	BNE .keepTeleporting                   ; /
 
-..doneTeleporting
+.doneTeleporting
 	INC !State
 
-..keepTeleporting
+.keepTeleporting
 	STZ !B6,x
 	STZ !AA,x
 
@@ -841,7 +859,7 @@ HandleState:
 	STA $9D
 
 	; Teleport Player to Sprite
-	JSR TPPlayerToSprite
+	;JSR TPPlayerToSprite
 
 	;also take sprite's speed
 	LDA !OnPlatform
@@ -895,7 +913,6 @@ HandleState:
 
 	;also take player's speed
 	LDA !PlayerSpeedX
-	WDM #$01
 	STA !B6,x
 	LDA !PlayerSpeedY
 	STA !AA,x
@@ -1102,6 +1119,12 @@ SetupAttributesOfClone:
 ; determines where to move the player horizontally when teleporting
 
 SetTeleportingXSpeed:
+		LDA $7E
+		CMP #!PlayerMinX
+		BCC .return
+
+		CMP #!PlayerMaxX
+		BCS .return
 
         LDA !14E0,x                             ; \
         XBA                                     ;  | calculate the distance
@@ -1111,7 +1134,7 @@ SetTeleportingXSpeed:
         STA $00                                 ; /
 
         BPL + : EOR #$FFFF : INC : +            ; \
-        CMP !StopTeleportWithin                              ;  |
+        CMP #!StopTeleportWithin                              ;  |
         SEP #$20                                ;  | if the distance is less than a tile,
         BCS .notCloseEnough                     ;  | stop moving
 .closeEnough                                    ;  | (it doesn't need to be an exact match,
@@ -1138,6 +1161,12 @@ SetTeleportingXSpeed:
 ; determines where to move the player vertically when teleporting
 
 SetTeleportingYSpeed:
+		LDA $80
+		CMP #!PlayerMinY
+		BCC .return
+
+		CMP #!PlayerMaxY
+		BCS .return
 
         LDA !14D4,x
         XBA
@@ -1148,7 +1177,7 @@ SetTeleportingYSpeed:
 
         BPL + : EOR #$FFFF : INC : +
 
-        CMP !StopTeleportWithin
+        CMP #!StopTeleportWithin
         SEP #$20
         BCS .notCloseEnough
 .closeEnough
