@@ -31,6 +31,7 @@ level:
 22 lvl22.asm
 23 MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 24 MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
+25 Cursor.asm
 
 ; Overworld resources
 overworld:

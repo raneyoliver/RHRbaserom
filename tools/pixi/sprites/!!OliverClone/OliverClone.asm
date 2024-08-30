@@ -1328,8 +1328,20 @@ Graphics:
         BEQ .jumpNotHeld
 
 .jumpHeld
-        JSR DisplaySparkle
+        JSR CheckHorzOffscreen
+        BCS ..noSparkle
 
+		LDA $14	; Increments each frame
+        AND #$03 ; Equivalent to A % 4
+        CMP #$00
+        BNE ..noSparkle
+
+		PHY
+		LDA #$02
+        JSR DisplaySparkle
+		PLY
+
+..noSparkle
 .jumpNotHeld
         LDA !IsMario
         BNE .mario
@@ -1562,20 +1574,8 @@ SetCarryIfShell:	;requires sprite in y
 	RTS
 
 DisplaySparkle:
-        JSR CheckHorzOffscreen
-        BCC .okay
+		PHA	; Needs a value in A to start -- type of minor sprite to spawn
 
-        RTS
-
-.okay
-		LDA $14	; Increments each frame
-        JSR GetModuloFourOfA
-        CMP #$00
-        BEQ .okay2
-
-        RTS
-
-.okay2
         LDY #$0B                ; \ find a free slot to display effect
 FindFree:
         LDA $17F0|!Base2,y             ;  |
@@ -1584,13 +1584,14 @@ FindFree:
         DEY                     ;  |
         BPL FindFree            ;  |
 
+		PLA
         RTS                     ; / RETURN if no slots open
 FoundOne:
         LDA $14
         JSR GetModuloFiveOfA
         STA $00                         ; random offset?
 
-        LDA #$02;#$05                   ; \ set effect graphic to sparkle graphic
+		PLA
         STA $17F0|!Base2,y              ; /
         LDA #$00                        ; \ set time to show sparkle
         STA $1820|!Base2,y              ; /
@@ -2906,6 +2907,13 @@ MarioSpriteInteractWithVanillaShell:
 	BEQ .setToStationary					;byetUDLR | if not pressed, do normal behavior
 
 	%SetSpriteStatus(#$0B, y)
+	PHY
+	LDA #$05
+	JSR DisplaySparkle
+	PLY
+
+	;LDA #$0C                              ;  |
+	;STA $1DF9|!Base2                       ; /
 
 .returnBridge
 	BRA .return

@@ -107,4 +107,5 @@ patches = [
 	"resources/patches/MarioTileDMAMergedPaletteChange.asm",
 	"resources/patches/reverse_gravity.asm",
 	"resources/patches/bothstart.asm",
+	"resources/patches/remove_intro.asm",
 ]
