@@ -7,12 +7,19 @@
 
 ?main:
     LDY #$00
-    LDA $96
-    SEC
-    SBC !D8,x
-    STA $0F
     LDA $97
-    SBC !14D4,x
+    XBA
+    LDA $96
+    REP #$20
+    STA $0F ; mario Y
+    SEP #$20
+    
+    LDA !14D4,x
+    XBA
+    LDA !D8,x
+    REP #$20
+    SEC : SBC $0F
+    SEP #$20
     BPL ?+
     INY
 ?+

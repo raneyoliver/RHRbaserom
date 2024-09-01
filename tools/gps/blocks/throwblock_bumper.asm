@@ -28,8 +28,13 @@ JMP ret : JMP ret : JMP ret : JMP ret
 SpriteH:
     LDA !7FAB9E,x	;\not custom throwblk = return
 	CMP #!CustomNumber	;|
-	BEQ boing		;/
+	BNE +		;/
 
+	LDA !14C8,x
+	CMP #$0B
+	BNE boing
+
++
 	LDA !9E,x	;\not throwblk = return
 	CMP #$53	;|
 	BNE ret		;/

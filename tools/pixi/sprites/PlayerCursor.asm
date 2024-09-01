@@ -21,27 +21,24 @@ else
 endif
 
 ;Here you define what tiles the cursor will use.
+	!TileIndex = $41A02D
 	!CursorTile = $84	;tile used for the cursor.
 	!BlockedTile = $86
 
 ;clone sprite index from pixi_list
 	!CloneIndex = $14
+	!CloneIsMario = $41A026
+
 
 ;Animation timer
 	!AnimationTimer = !1534,x
 
 ;player pos
 	!PlayerPosYLow = !1602,x
-	!PlayerPosYHigh = !157C,x
+	!PlayerPosYHigh = $41A02C
 
 ;offset
 	!Offset = $0011
-
-AccelYSpd:
-db $01,$FF
-
-MaxYSpd:
-db $0C,$F4
 
 print "MAIN ",pc
 PHB
@@ -52,7 +49,14 @@ PLB
 print "INIT ",pc
 RTL
 
+Tilemap:
+	db 	$84, $A0, $A2, $A4, $C0, $C2
+	;		 U    D    UD   H    DD
+
 SpriteCode:
+	JSR OffscreenRoutine
+	BCS .graphics
+
 	LDA !AnimationTimer
 	CMP #$FF
 	BEQ +
@@ -93,7 +97,181 @@ SpriteCode:
 
 	RTS
 
+OffscreenRoutine:
+	JSR GetCloneIndex
 
+	LDA !15A0,y	;horiz
+	BNE .horizontal
+
+	LDA !186C,y	;vert
+	BEQ .onScreenReturnBridge
+
+.vertical
+	; If vert: set Y to min/max depending on side, set X to clone X (should always be in bounds already)
+	PHX
+	PHY
+	TYX
+	%SubVertPos()	; Y = 1 if mario below sprite??
+	TYA
+	PLY
+	PLX
+	CMP #$00
+	BEQ ..maxY
+
+..minY
+	LDA #$01
+	STA !TileIndex
+	REP #$20
+	LDA $1464|!addr ;layer 1 y pos low-byte (highest point of screen)
+	SEP #$20
+	BRA ..storeValue
+
+..maxY
+	LDA #$02
+	STA !TileIndex
+	REP #$20
+	;layer 1 y pos low-byte + screen height (lowest point of screen)
+	LDA $1464|!addr
+	CLC : ADC #$00E0
+	SEC : SBC #$0020 ; arbitrary offset so I can see the sprite at the bottom
+	SEP #$20
+..storeValue
+	STA !D8,x
+	XBA
+	STA !14D4,x
+..cloneX
+	LDA !E4,y
+	STA !E4,x
+	LDA !14E0,y
+	STA !14E0,x
+	;BRA .offScreenReturn too far
+;".offScreenReturn"
+	SEC
+	RTS
+
+.onScreenReturnBridge
+	;BRA .onScreenReturn too far
+	LDA #$00
+	STA !TileIndex
+	CLC
+	RTS
+
+.horizontal
+	; If horiz: set X to min/max depending on side, set Y to clone Y (within bounds)
+	PHX
+	TYX
+	PHY
+	%SubHorzPos()	;Output: Y   = 0 => Mario to the right of the sprite,
+;              						1 => Mario being on the left.
+	TYA
+	PLY
+	PLX
+	STA $0E
+..minX
+	LDA #$01
+	STA !157C,x
+
+	REP #$20
+	LDA $1462|!addr	; Layer 1 X position low-byte
+	SEP #$20
+	STA !E4,x
+	XBA
+	STA !14E0,x
+	
+	LDA $0E
+	BEQ ..cloneY
+
+..maxX
+	LDA #$00
+	STA !157C,x
+
+	LDA !14E0,x
+	XBA
+	LDA !E4,x
+	REP #$20
+	CLC : ADC #$00E8
+	SEP #$20
+	STA !E4,x
+	XBA
+	STA !14E0,x
+
+..cloneY
+	LDA !14D4,y
+	XBA
+	LDA !D8,y
+	SEC : SBC #$10
+	REP #$20
+	STA $01	; contains y pos of clone
+	CMP $1464|!addr
+	SEP #$20
+	BCC ..minY
+
+	REP #$20
+	LDA $1464|!addr
+	CLC : ADC #$00E0
+	STA $03
+	CMP $01
+	SEP #$20
+	BCC ..maxY		; clone still lower than lowest screen pixel
+
+..notDiagonal
+	LDA #$04
+	STA !TileIndex
+
+	REP #$20
+	LDA $01			;clone y
+	SEP #$20
+	BRA ..storeValue
+
+..minY
+	LDA #$03
+	STA !TileIndex
+
+	REP #$20
+	LDA $1464|!addr ;layer 1 y pos low-byte (highest point of screen)
+	SEP #$20
+	BRA ..storeValue
+
+..maxY
+	LDA #$05
+	STA !TileIndex
+
+	REP #$20
+	LDA $03			;layer 1 y pos low-byte + screen height (lowest point of screen)
+	SEC : SBC #$0020 ; arbitrary offset so I can see the sprite at the bottom
+	SEP #$20
+..storeValue
+	STA !D8,x
+	XBA
+	STA !14D4,x
+	BRA .offScreenReturn
+
+.onScreenReturn
+	LDA #$00
+	STA !TileIndex
+	CLC
+	RTS
+
+.offScreenReturn
+	SEC
+	RTS
+
+GetCloneIndex:
+	PHX
+	LDY #!SprSize-1
+.loop
+	TYX
+	LDA !7FAB9E,x
+	CMP #!CloneIndex
+	BEQ .return
+
+.next
+	DEY
+	BPL .loop
+
+.return
+	PLX
+	RTS
 
 Follow:
 	LDA $D1
@@ -102,6 +280,19 @@ Follow:
 	LDA $D2                           ; right on the player's
 	STA !14E0,x
 
+	; check if cursor is too low w.r.t mario
+	LDA !14D4,x
+	XBA
+	LDA !D8,x
+	REP #$20
+	SEC : SBC $D3
+	SEP #$20
+	BMI .notTooLow
+
+	CMP #$02	; should only go as low as 2 pixels above mario
+	BCC .changeY
+
+.notTooLow
 	; if not on ground, just follow player
 	LDA $77
 	AND #$04
@@ -154,6 +345,11 @@ BobUpAndDown:
 	.NoYSpd
 	RTS
 
+AccelYSpd:
+db $01,$FF
+
+MaxYSpd:
+db $0C,$F4
 
 
 DrawGraphicsIfNotTeleporting:
@@ -244,7 +440,11 @@ STA $0301|!Base2,y
 ;LDA !FrozenFlag
 ;BNE +
 
-LDA #!CursorTile	;load tile value (normal cursor)
+PHX
+LDA !TileIndex
+TAX
+LDA Tilemap,x	;load tile value
+PLX
 ;BRA ++
 
 ;+
@@ -253,10 +453,35 @@ LDA #!CursorTile	;load tile value (normal cursor)
 ;STA $0202|!Base2,y	;store to OAM.
 STA $0302|!Base2,y
 
+LDA !157C,x             ; Load sprite direction.
+STA $03
+
 LDA !15F6,x		;load palette/properties from CFG
 ORA $64			;set priority bits from level
-;STA $0203|!Base2,y	;store to OAM.
-STA $0303|!Base2,y
+PHX
+LDX $03
+BNE NoFlip              ; If facing left, don't flip the tile.
+EOR #$40                ; If facing right, flip the tile horizontally.
+
+NoFlip:
+AND #$F1
+STA $03
+LDA !CloneIsMario       ; Load the CloneIsMario flag
+AND #$01                ; Isolate bit 0
+BEQ SetPaletteF         ; If bit 0 is 0, set palette F
+
+; If bit 0 is 1, set palette E
+LDA $03
+ORA #$0C                ; Set the CCC bits to 110 (Palette E)
+BRA StoreProperties     ; Skip to storing the properties
+
+SetPaletteF:
+LDA $03
+ORA #$0E                ; Set the CCC bits to 111 (Palette F)
+
+StoreProperties:
+PLX
+STA $0303|!Base2,y      ; Store properties to OAM.
 
 LDY #$02
 LDA #$00

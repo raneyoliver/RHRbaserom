@@ -2687,6 +2687,10 @@ SpriteAndSpecialBlockInteraction:
         CMP #$13        ; spiny is 13
         BEQ .tryBounce
 
+.pirhanaPlantCheck
+		CMP #$1A
+		BEQ .tryBounce
+
 .bulletBillCheck
 		CMP #$1C
 		BEQ .tryBounce
@@ -2707,9 +2711,14 @@ SpriteAndSpecialBlockInteraction:
 		CMP #$61
 		BEQ .platform
 
+.messageBoxCheck
+		CMP #$B9
+		BEQ .return
+
 .greyPlatformCheck
 		CMP #$C4
-		BNE .returnBridge
+		;BNE .returnBridge
+		BNE .tryBounce
 
 		JSR CheckIfAbove
 		BCC .return
@@ -2763,7 +2772,7 @@ SpriteAndSpecialBlockInteraction:
 	CMP #$18
 	BEQ .tryBounce
 
-	BRA .return
+	;BRA .return
 
 .tryBounce
 	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?

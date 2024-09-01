@@ -6,6 +6,7 @@ if read1($00FFD5) == $23		; check if the rom is sa-1
 	!addr = $6000
 	!bank = $000000
 	!bankA = $400000
+    !SprSize = $16
 else
 	lorom
 	!SA1 = 0
@@ -13,6 +14,7 @@ else
 	!addr = $0000
 	!bank = $800000
 	!bankA = $7E0000
+    !SprSize = $0C
 endif
 
 ; Does thing when Mario is touching the specified block.
@@ -29,7 +31,6 @@ endif
 !FramesSinceButtonPressed = $41A028
 !NumFramesBetweenSounds = $18
 
-!SprSize = $0C
 !NumPixelsBelowSprite = $0011
 !NumPixelsBelowMario = $0021
 !XOffset = $08
