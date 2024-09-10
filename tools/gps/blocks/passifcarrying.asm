@@ -20,14 +20,13 @@ endif
 ; Created by E-Man, requested by mapsking.
 
 ;clone sprite index from pixi_list
-	!PuzzleCloneIndex =				#$17
-	!CloneIndex =					#$14
+	!CloneIndex =		$14
 
 print "A block where it will only let the player pass if he is carrying a clone or puzzle clone."
 
 db $37
 JMP Mario : JMP Mario : JMP Mario
-JMP Cement : JMP Cement : JMP Cement : JMP Cement
+JMP Sprite : JMP Sprite : JMP Cement : JMP Cement
 JMP Mario : JMP Mario : JMP Mario
 JMP Mario : JMP Mario ; when using db $37
 
@@ -48,6 +47,19 @@ Mario:
 	LDY #$00
 
 	RTL
+
+Sprite:
+	LDA !7FAB10,x
+	AND #$08
+	BNE .isCustom
+
+.vanilla
+	BRA Mario_passThrough
+
+.isCustom
+	LDA !7FAB9E,x
+	CMP #!CloneIndex
+	BNE Mario_passThrough
 
 Cement:
 	; if clone not carried, set to cement block
@@ -81,11 +93,8 @@ CheckIfClone:
 
 	TYX					;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
-	CMP !CloneIndex 	;compare with clone index
-	BEQ .okay 	;if clone, continue.
-
-	CMP !PuzzleCloneIndex	;if not clone, check puzzle clone
-	BNE .LoopSprSpr			;if neither, keep looping
+	CMP #!CloneIndex 	;compare with clone index
+	BNE .LoopSprSpr 	;if clone, next
 
 .okay
 

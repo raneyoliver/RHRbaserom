@@ -108,4 +108,6 @@ patches = [
 	"resources/patches/reverse_gravity.asm",
 	"resources/patches/bothstart.asm",
 	"resources/patches/remove_intro.asm",
+	"resources/patches/player.asm",
+	"resources/patches/VertWrapPrep.asm",
 ]

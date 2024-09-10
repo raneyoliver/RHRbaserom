@@ -214,6 +214,19 @@ endif
 
 !ShellKickXSpeed         		= $2E
 
+; Which Koopa spawns a coin when jumped on (default = Yellow Koopa)
+!KoopaSpawnsCoin    = $07
+; Sprite number of the moving coin. Change if you want a different sprite to appear.
+!MovingCoinSprite   = $21
+; Y speed of the moving coin when spawned.
+!MovingCoinYSpeed   = $D0
+; Which sprites spawn out of a Shell with Koopa inside. By default they're the shell-less Koopas
+;                      G   R   B   Y   -  SpG
+!SpriteKoopasSpawn  = $00,$01,$02,$03,$00,$00
+; X speed of the shell-less Koopa that is spawned from the Shell when Mario jumps on it.
+!KoopaSpawnXSpeed  = -$40
+; X speed that Mario gets when jumping on the Disco Shell
+!DiscoXBoost        = $18
 ;;;;;;;;; MACROS ;;;;;;;;;
 
 macro SetSpriteStatus(status, index)
@@ -806,12 +819,16 @@ HandleState:
 	CMP #$22	; lvl 22 autoscroll?
 	BEQ .autoscroll
 
+	LDA $1411|!addr	; if no horizontal scroll, just TP
+	BEQ .instantlyTP
+
 	; Or if close enough already?
 	LDA !15A0,x	; sprite off screen flag, horiz
 	BNE .movePlayerToSprite
 
 	LDA !186C,x ; sprite off screen flag, vert
 	BNE .movePlayerToSprite
+
 
 	LDA !14E0,x                             ; \
 	XBA                                     ;  | calculate the distance
@@ -1512,38 +1529,42 @@ CheckHorzOffscreen:
 	RTS
 
 SetCarryIfShell:	;requires sprite in y
-	; check type of sprite found
 	PHX
-		TYX
-		LDA !7FAB10,x
-	PLX
+	TYX
+	LDA !14C8,x
+	CMP #$08
+	BEQ .isNotShell
 
+	; check type of sprite found
+	LDA !7FAB10,x
 	AND #$08
 	BNE .isCustom
 
 .isVanilla
-	PHX
-		TYX
-		LDA !7FAB9E,x	; !9E,x
-	PLX
-
+	LDA !7FAB9E,x	; !9E,x
 .ghostShellCheck
 	CMP #!GhostShell
 	BEQ .isShell
 
 .vanillaShellCheck
 	CMP #$DA		; DA-DF vanilla shells
-	BCC .isNotShell
+	BCC .vanillaKoopaCheck
+
 	CMP #$E0
 	BCS .isNotShell
 
 	BRA .isShell
 
+.vanillaKoopaCheck	; 04-0C koopas hit -> shell?
+	CMP #$04
+	BCC .isNotShell
+	CMP #$0D
+	BCS .isNotShell
+
+	BRA .isShell
+
 .isCustom
-	PHX
-		TYX
-		LDA !7FAB9E,x ;!9E,x
-	PLX
+	LDA !7FAB9E,x ;!9E,x
 .multiBounceShellCheck
 	CMP #!MultiBounceShell
 	BEQ .isShell
@@ -1571,7 +1592,117 @@ SetCarryIfShell:	;requires sprite in y
 	CLC
 
 .return
+	PLX
 	RTS
+
+;========================================================;
+; spawn a shell-less Koopa from it ;
+;========================================================;
+SpawnThrownKoopa:
+	PHX
+	PHY
+	TYX
+    stz $00
+    stz $01
+    stz $02
+    stz $03
+    lda !9E,x
+	PHX
+    tax
+    lda .SpriteKoopasSpawn-4,x
+    ;sta.w !9E,y
+    ;ldx $15E9|!addr
+	PLX
+    clc
+    %SpawnSprite()
+    BCS .Return
+    lda #$08                ;\ Normal state
+    sta !14C8,y             ;/
+    lda #$10                ;\ Briefly disable sprite contact.
+    sta !1564,y             ;/
+    lda !164A,x             ;\ Copy "in-liquid" flag.
+    sta !164A,y             ;/
+    lda !1540,x
+    stz !1540,x             ;> Reset stun timer.
+
+; Koopa is thrown out of the Shell (because Mario jumped on it).
+    phy
+    ;%SubHorzPos()           ;\
+	PHX
+	LDX $15E9|!addr
+	JSR GetMarioSpriteRightOfContactSprite
+	STA $00
+	PLX
+	LDA $00
+	BMI +
+
+	LDY #$01
+	BRA ++
+
++	LDY #$00
+++	lda .XSpeed,y          ;| Set X speed based on relative position with Mario
+    sty $00                 ;| (if Mario is on the left, make it go right and viceversa)
+    ply                     ;|
+    sta.w !B6,y             ;/
+    lda $00                 ;\
+    ;eor #$01                ;| Set direction based on X speed.
+    sta !157C,y             ;/
+    sta $0F
+    lda #$10                ;\ Briefly disable contact with Mario.
+    sta !154C,y             ;/
+    sta !1528,y             ;> Make the Koopa slide and be kick-killable.
+    lda !9E,x               ;\
+    cmp #!KoopaSpawnsCoin   ;| If not Yellow Shell, return.
+    bne .Return             ;/
+    ldy #$08                ;\
+-   lda !14C8,y             ;| Search for a free slot in 0-8.
+    BNE .dec     ;| (using %SpawnSprite() can cause graphical glitches)
+
+	JSR SpawnMovingCoin
+	BRA .Return
+
+.dec
+    dey                     ;|
+    bpl -                   ;/
+.Return:
+	PLY
+	PLX
+    rts
+
+.XSpeed:
+    db -!KoopaSpawnXSpeed,!KoopaSpawnXSpeed
+
+.SpriteKoopasSpawn:
+    db !SpriteKoopasSpawn
+
+;===================================================================;
+; Routine that spawns a moving coin sprite at the Koopa's position  ;
+; Input: Y = sprite slot to put the coin in.                        ;
+;===================================================================;
+SpawnMovingCoin:
+    lda #$08                ;\
+    sta !14C8,y             ;|
+    lda #!MovingCoinSprite  ;|
+    sta.w !9E,y             ;|
+    lda !E4,x               ;|
+    sta.w !E4,y             ;|
+    lda !14E0,x             ;|
+    sta !14E0,y             ;| Spawn the moving coin at the sprite's position.
+    lda !D8,x               ;|
+    sta.w !D8,y             ;|
+    lda !14D4,x             ;|
+    sta !14D4,y             ;|
+    phx                     ;|
+    tyx                     ;|
+    jsl $07F7D2|!bank       ;|
+    plx                     ;/
+    lda #!MovingCoinYSpeed  ;\ Set Y speed.
+    sta.w !AA,y             ;/
+    lda $0F                 ;\ Spawn in the same direction as the shell-less Koopa.
+    sta !157C,y             ;/
+    lda #$20                ;\ Briefly disable contact with Mario.
+    sta !154C,y             ;/
+    rts
 
 DisplaySparkle:
 		PHA	; Needs a value in A to start -- type of minor sprite to spawn
@@ -2653,6 +2784,9 @@ SpriteAndSpecialBlockInteraction:
 	JMP CheckInteractableBlocksList
 
 .sprSprContactFound
+	LDA !154C,y
+	BNE .returnBridge
+
 	JSR SetCarryIfShell
 	BCC .typeCheck
 
@@ -2679,13 +2813,16 @@ SpriteAndSpecialBlockInteraction:
 		LDA !9E,x
 	PLX
 .koopaCheck
-        CMP #$0D        ; vanilla naked koopas are < 0D
-        BCS .spinyCheck
-        BRA .tryBounce
+        CMP #$0D        ; vanilla koopas are < 0D
+        BCC .tryBounceBridge
+
+.keyholeCheck
+		CMP #$0E
+		BEQ .returnBridge
 
 .spinyCheck
         CMP #$13        ; spiny is 13
-        BEQ .tryBounce
+        BEQ .tryBounceBridge
 
 .pirhanaPlantCheck
 		CMP #$1A
@@ -2703,6 +2840,10 @@ SpriteAndSpecialBlockInteraction:
 		CMP #$3B
 		BEQ .tryBounce
 
+.powCheck
+		CMP #$3E
+		BEQ .return
+
 .jumpingPirhanaPlantCheck
 		CMP #$4F
 		BEQ .tryBounce
@@ -2710,6 +2851,14 @@ SpriteAndSpecialBlockInteraction:
 .floatingSkullsCheck
 		CMP #$61
 		BEQ .platform
+
+.growingVineCheck
+		CMP #$79
+		BEQ .return
+
+.keyCheck
+		CMP #$80
+		BEQ .return
 
 .messageBoxCheck
 		CMP #$B9
@@ -2726,6 +2875,9 @@ SpriteAndSpecialBlockInteraction:
 		JSR KickstartGreyPlatformFalling
 		BRA .platform
 
+.tryBounceBridge
+		BRA .tryBounce
+
 .returnBridge
 		BRA .return
 
@@ -2738,6 +2890,10 @@ SpriteAndSpecialBlockInteraction:
 .BowserFireballCheck
 	CMP #$13
 	BEQ .tryBounce
+
+.powBlockCheck
+	CMP #$1C
+	BEQ .return
 
 .OnOffGreyPlatformCheck
 	CMP #$16
@@ -2771,8 +2927,18 @@ SpriteAndSpecialBlockInteraction:
 .stationaryFlyingKoopa
 	CMP #$18
 	BEQ .tryBounce
-
 	;BRA .return
+
+.marioBrosShooterCheck
+	CMP #$1D
+	BEQ .return
+
+.arcadeSpinyCheck
+	CMP #$BF
+	BNE .tryBounce
+
+	LDA !163E,x		;"come out of pipe" timer
+	BNE .return
 
 .tryBounce
 	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
@@ -2894,7 +3060,7 @@ MarioSpriteInteractWithVanillaShell:
 .tryBounceOffKickedShell
 	; if IFrames on shell, don't interact (commented out for leniency)
 	LDA !154C,y
-	BNE .return
+	BNE .returnBridge
 
 	PHY
 		JSR MarioSpriteTryBounceOrSpin
@@ -2944,6 +3110,32 @@ MarioSpriteInteractWithVanillaShell:
 	PLX
 
 +
+	PHX
+		TYX
+		LDA !187B,x
+		PLX
+	BEQ ..nonDisco
+
+..disco
+	;| Boost MarioSprite's X speed based on his relative position.
+    ;%SubHorzPos()           ;\
+	PHY
+	JSR GetMarioSpriteRightOfContactSprite
+	BMI +
+
+	LDY #$00
+	BRA ++
+
++	LDY #$01
+++  lda ..XBoost,y          ;|
+    sta !B6,x                 ;/
+    PLY
+	BRA .return
+
+..XBoost:
+    db !DiscoXBoost,-!DiscoXBoost
+
+..nonDisco
 	%SetSpriteStatus(!StationaryCarryable, y)
 	BRA .return
 
@@ -3234,7 +3426,9 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	; Check if Sprite is Able to be Bounced On
 	LDA !1656,y
 	AND #$10	; J bit (can be jumped on)
-	BEQ .cannotBeJumpedOn
+	BNE .canBeJumpedOn
+
+	JMP CannotBeJumpedOn
 
 .canBeJumpedOn
 	LDA !JumpHeld
@@ -3264,7 +3458,7 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	AND #$08
 	BNE ..isCustom
 
-	LDA !9E,y
+	LDA !7FAB9E,y
 	CMP #$08        ; vanilla koopas are <= 07
 	BCS ..jumpSoundAndPoints
 
@@ -3292,6 +3486,7 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 
 ..hurtWalkingKoopa
 	%SetSpriteStatus(#$09, y)
+	JSR SpawnThrownKoopa
 	BRA ..jumpSoundAndPoints
 
 ..fallDown
@@ -3305,13 +3500,22 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	STZ $00 : STZ $01
 	LDA #$08 : STA $02
 	LDA #$02	; contact graphic
+	PHY
 	%SpawnSmoke()
+	PLY
+	LDA !187B,y	;not killable
+	BNE ..unkillable
 
 	JSR GivePoints
-
 	BRA .return
 
-.cannotBeJumpedOn	; SpikySprite+normaljump=die
+..unkillable
+	LDA #$02
+	STA $1DF9|!addr
+.return
+	RTS
+
+CannotBeJumpedOn:	; SpikySprite+normaljump=die
 	JSR KillMarioSprite
 
 .return

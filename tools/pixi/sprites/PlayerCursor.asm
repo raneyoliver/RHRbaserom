@@ -50,7 +50,7 @@ print "INIT ",pc
 RTL
 
 Tilemap:
-	db 	$84, $A0, $A2, $A4, $C0, $C2
+	db 	$84, $4A, $4C, $4E, $6A, $6C
 	;		 U    D    UD   H    DD
 
 SpriteCode:
@@ -133,7 +133,7 @@ OffscreenRoutine:
 	;layer 1 y pos low-byte + screen height (lowest point of screen)
 	LDA $1464|!addr
 	CLC : ADC #$00E0
-	SEC : SBC #$0020 ; arbitrary offset so I can see the sprite at the bottom
+	SEC : SBC #$0015 ; arbitrary offset so I can see the sprite at the bottom
 	SEP #$20
 ..storeValue
 	STA !D8,x
@@ -199,7 +199,7 @@ OffscreenRoutine:
 	LDA !14D4,y
 	XBA
 	LDA !D8,y
-	SEC : SBC #$10
+	SEC : SBC #$08	; aribtrary, kinda points to middle Y of 2-tile tall clone
 	REP #$20
 	STA $01	; contains y pos of clone
 	CMP $1464|!addr
@@ -238,7 +238,7 @@ OffscreenRoutine:
 
 	REP #$20
 	LDA $03			;layer 1 y pos low-byte + screen height (lowest point of screen)
-	SEC : SBC #$0020 ; arbitrary offset so I can see the sprite at the bottom
+	SEC : SBC #$0015 ; arbitrary offset so I can see the sprite at the bottom
 	SEP #$20
 ..storeValue
 	STA !D8,x
@@ -261,6 +261,9 @@ GetCloneIndex:
 	LDY #!SprSize-1
 .loop
 	TYX
+	LDA !14C8,x
+	BEQ .next
+
 	LDA !7FAB9E,x
 	CMP #!CloneIndex
 	BEQ .return
@@ -286,13 +289,20 @@ Follow:
 	LDA !D8,x
 	REP #$20
 	SEC : SBC $D3
+	BMI .checkTooHigh
+
 	SEP #$20
-	BMI .notTooLow
-
 	CMP #$02	; should only go as low as 2 pixels above mario
-	BCC .changeY
+	BCS .changeY
+	BRA .withinBounds
 
-.notTooLow
+.checkTooHigh
+	EOR #$FFFF : INC	; TWO'S COMPLEMENT
+	SEP #$20
+	CMP #$11
+	BCS .changeY
+
+.withinBounds
 	; if not on ground, just follow player
 	LDA $77
 	AND #$04

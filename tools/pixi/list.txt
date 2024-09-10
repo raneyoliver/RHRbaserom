@@ -17,8 +17,11 @@
 19 ShellDoesntInteractWithOtherSprites.json
 1A StationaryPiranhaPlant.json
 1B KoopaShellGreen.json
+1C PowBlock_Uncarriable.cfg
+1D MarioBrosShooter.cfg
 5B SpinyShell.json
 66 RotatingVine.json
+BF Spiny.cfg
 
 
 ; For use with the Donut block. If you remove or change this be sure to update the donut_lift.asm block

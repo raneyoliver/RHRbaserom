@@ -46,7 +46,7 @@
     "Takes 5 fireballs to kill": false,
     "Can be jumped on with upwards Y speed": false,
     "Death frame two tiles high": false,
-    "Don't turn into a coin with silver POW": false,
+    "Don't turn into a coin with silver POW": true,
     "Don't get stuck in walls (carryable sprites)": false
   },
   "AsmFile": "OliverClone.asm",

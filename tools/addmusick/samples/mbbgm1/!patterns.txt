@@ -1,0 +1,2 @@
+"square 12.5%.brr"	$FF $F5 $B8 $04 $00 $A4 $40 $40
+"gb wave.brr" 		$FF $E0 $B8 $05 $40 $A4 $40 $40

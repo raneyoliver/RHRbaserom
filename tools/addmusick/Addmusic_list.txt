@@ -39,3 +39,4 @@ Locals:
 23  mitotic\mitotic.txt
 24  Underworld Forest\Underworld Forest.txt
 25  Bird Is Float\Bird Is Float.txt
+26  MarioBrosGBA\Mario Bros. (GBA) - Stage Theme 1.txt

@@ -1,0 +1,78 @@
+#amk 2
+
+#spc
+{
+	#title "Stage Theme 1"
+	#game "Mario Bros. (GBA)"
+	#author "Nintendo Sound Team"
+	#comment "Ported by Dippy"
+}
+
+#path "mbbgm1"
+
+#samples
+{
+	#default
+	"square 12.5%.brr"
+	"gb wave.brr" 		
+}
+
+#instruments
+{
+	"square 12.5%.brr"	$FF $F6 $B8 $04 $00		;@30 
+	"gb wave.brr" 		$FF $E0 $B8 $05 $40		;@31
+	n1f 				$FF $FE $B8 $04 $00     ;@32
+	"square 12.5%.brr"	$FF $E0 $B8 $04 $00		;@33
+	@29					$FF $E0 $B8 $04 $00		;@34
+}
+
+w225 t61 $F4$02
+
+;Macros
+"K=@21 o4 v230 c"
+"S=@10 o3 v245 e"
+"P=@34 o4 v180 c"
+"H=@32 o4 v80 c"
+
+#0 / l16 ;Percussion
+(1)[ [[K4S4]]3 K4S8SS]2
+[K4S4]2S8S8K4K8S8[P]4
+(1)
+[K4S4]3 [S8]3K8
+[K4S4]3S4r8K8
+[K4S4]2S8S8K4K8S8[P]4
+(1)
+[K4S4]3 [S8]3K8
+[K4S4]2 [K4]3 [S]4
+
+#1 / l16 @31 o4 v147 ;Lead
+c8.rr2^8<g8>c8.r<r8g4a8a+8g8>
+c8.rr2^8<g8>c8.r<r8g4<g>g<a>a<b>b
+(3)[c8.egr>cre8<gr>crg8f+8gr4^16er<g8a8g8
+c8.egr>cre8<gr>crg8f+8grer<gra+4.g8
+f8rfar>crd+rd4c8<f8rfar>cr<d+rerf8r8
+f8rfar>crd+rd4c8]< g8rgbr>d8gr8.r8<g8
+(3) g8>[gf+]3gr8.r8<g8
+
+#2 / l16 @30 o5 v135 y05 ;Square 1
+[r4c4]3 r4 ccc8 [r4c4]2 r4 c8 @33 v83 p16,20,40 < b2^8 p0,0,0
+@30 v130 
+(4)[r1^4 f+8g>rf+8g>rr4r1<<<
+v50 [[a+32]]4 v70 [[a+32]]4 v90 [[a+32]]4 v110 [[a+32]]4 v130 a+8>gaa+4]
+[r1]4
+(4)
+[r1]3r8>[gf+]3g4r4
+
+#3 / l16 @30 o4 v125 y15 ;Square 2
+[r4g4]3 r4 ggg8 [r4g4]2 r4 g8 @33 v83 p16,20,40 g2^8 p0,0,0
+@30 v130
+(5)[r1^4 c+8d>rc+8d>rr4r1^64<<<
+v50 [[g32]]4 v70 [[g32]]4 v90 [[g32]]4 v110 [[g32]]3g64 v130 g8>eeg4]
+[r1]4
+(5)
+[r1]3r8>[dc+]3d4r4
+
+#4 / l8 ;Hats
+(2)[HHHH]10 [H4]4 (2)7 HH [H16]4 (2)3 Hr4H
+(2)2 [H4]4 (2)7 HH [H16]4
+(2)2 [H4]3 [H16]4

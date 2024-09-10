@@ -17,13 +17,14 @@ endif
 
 !CustomNumber = $14 ;$2E
 
+!BouncingSpeedLeft = -$30
+!BouncingSpeedRight = $2A
 
 ;A block that is bouncy to throw blocks.
 ;behaves $130
 db $42
 JMP ret : JMP ret : JMP ret : JMP SpriteV : JMP SpriteH : JMP ret
 JMP ret : JMP ret : JMP ret : JMP ret
-
 
 SpriteH:
     LDA !7FAB9E,x	;\not custom throwblk = return
@@ -49,11 +50,11 @@ SpriteH:
 boing:
 	LDA !B6,x	;\set x speed (the speed
 	BMI goingleft	;|of the shell the blue
-	LDA #$D0	;|koopa kicks)
+	LDA #!BouncingSpeedLeft ;#$D0	;|koopa kicks)
 	STA !B6,x	;|
 	BRA skipleft	;|
 goingleft:		;|
-	LDA #$30	;|
+	LDA #!BouncingSpeedRight ;#$30	;|
 	STA !B6,x	;/
 skipleft:
 	LDA #$0A	;\make it kicked
