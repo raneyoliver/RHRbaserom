@@ -6,6 +6,7 @@ verbose: on
 
 ; Level resources
 level:
+01 Lvl01AutoScroll.asm
 0A MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 0B MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
 0C MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
@@ -21,8 +22,10 @@ level:
 16 MarioGFXAndPaletteChangeOnTrigger.asm
 17 MarioGFXAndPaletteChangeOnTrigger.asm
 18 MarioGFXAndPaletteChangeOnTrigger.asm
+19 Cursor.asm
 1A Cursor.asm
 1B Cursor.asm
+1C Cursor.asm
 1D MarioGFXAndPaletteChangeOnTrigger.asm
 1E Cursor.asm
 1F MarioGFXAndPaletteChangeOnTriggerAndPressurePlates.asm
@@ -34,6 +37,8 @@ level:
 25 Cursor.asm
 26 MarioGFXAndPaletteChangeOnTrigger.asm
 27 lvl27.asm
+28 Cursor.asm
+29 Cursor.asm
 
 ; Overworld resources
 overworld:

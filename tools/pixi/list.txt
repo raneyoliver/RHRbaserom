@@ -19,6 +19,7 @@
 1B KoopaShellGreen.json
 1C PowBlock_Uncarriable.cfg
 1D MarioBrosShooter.cfg
+1E KoopaShellRed.json
 5B SpinyShell.json
 66 RotatingVine.json
 BF Spiny.cfg

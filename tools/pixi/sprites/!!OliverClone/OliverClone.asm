@@ -129,7 +129,8 @@ endif
 !PlayerCursor					= $15	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !GhostShell						= $19	; in pixi_list.txt
-!KoopaShell						= $1B	; in pixi_list.txt
+!KoopaShellGreen				= $1B	; in pixi_list.txt
+!KoopaShellRed					= $1E	; in pixi_list.txt
 !SpinyShell						= $5B	; in pixi_list.txt
 !KoopaBlockActAs				= $0403
 
@@ -587,7 +588,6 @@ RememberPoints:
 
 
 CheckIfKilled:
-		WDM #$01
         LDA !14C8,x
 		CMP #$06
 		BCC .killPlayer
@@ -1063,6 +1063,11 @@ TPPlayerToSprite:
 	STA $97
 
 .return
+	; kill x and y speed, next state will set it again
+	LDA #$00
+	STA $7B
+	STA $7D
+
 	RTS
 
 FlipMarioLuigi:
@@ -1180,10 +1185,10 @@ SetTeleportingXSpeed:
 SetTeleportingYSpeed:
 		LDA $80
 		CMP #!PlayerMinY
-		BCC .return
+		BCC .haltReturn
 
 		CMP #!PlayerMaxY
-		BCS .return
+		BCS .haltReturn
 
         LDA !14D4,x
         XBA
@@ -1213,7 +1218,10 @@ SetTeleportingYSpeed:
 +       STA $7D
 .return
         RTS
-
+.haltReturn
+		LDA #$00
+		STA $7D
+		RTS
 
 
 
@@ -1574,7 +1582,10 @@ SetCarryIfShell:	;requires sprite in y
 	BEQ .isShell	; try bounce if
 
 .customKoopaShellCheck
-	CMP #!KoopaShell
+	CMP #!KoopaShellGreen
+	BEQ .isShell
+
+	CMP #!KoopaShellRed
 	BEQ .isShell
 
 .spinyShellCheck
@@ -2784,16 +2795,16 @@ SpriteAndSpecialBlockInteraction:
 	JMP CheckInteractableBlocksList
 
 .sprSprContactFound
-	LDA !154C,y
-	BNE .returnBridge
-
 	JSR SetCarryIfShell
-	BCC .typeCheck
+	BCC .nonShell
 
 .spriteIsVanillaShell
 	JMP MarioSpriteInteractWithVanillaShell
 
-.typeCheck
+.nonShell
+	LDA !154C,y
+	BNE .returnBridge
+
 	LDA !14C8,y
 	CMP #$08
 	BCC .returnBridge
@@ -3038,18 +3049,21 @@ MarioSpriteInteractWithVanillaShell:
 	LDA !154C,x
 	BNE .returnBridge
 
-	; if shell carried AND MarioSprite is grounded, don't interact
+.groundCarry
+	; if shell carried,
 	LDA !14C8,y
 	CMP #$0B
 	BNE .checkStationary
 
+	; and MarioSprite is grounded, don't interact
 	LDA !1588,x
 	AND #$04
 	BNE .returnBridge
 
-	; if shell carried and MarioSprite in air, only bounce
+	; and MarioSprite in air, only bounce
 	JSR OnlyBounceOnSpinyShellIfSpinning
 	BCC .returnBridge
+
 	JMP MarioSpriteTryBounceOrSpin
 
 .checkStationary
@@ -3091,7 +3105,7 @@ MarioSpriteInteractWithVanillaShell:
 	;STA $1DF9|!Base2                       ; /
 
 .returnBridge
-	BRA .return
+	RTS
 
 .setToStationary
 	PHX
@@ -3110,10 +3124,7 @@ MarioSpriteInteractWithVanillaShell:
 	PLX
 
 +
-	PHX
-		TYX
-		LDA !187B,x
-		PLX
+	LDA !187B,y
 	BEQ ..nonDisco
 
 ..disco
@@ -3150,8 +3161,28 @@ MarioSpriteInteractWithVanillaShell:
 	; if spinning, don't kick, just kill the shell
 	LDA !Spinning
 	BEQ ..okToKick
+	; BEQ ..checkUpThrown
 
+..spinning
 	JMP MarioSpriteTryBounceOrSpin_spinning
+
+; ..checkUpThrown
+; 	; if shell is stationary,
+; 	LDA !14C8,y
+; 	CMP #$09
+; 	BNE ..checkDisabled
+
+; 	; and moving up,
+; 	LDA !AA,y
+; 	CMP #$80
+; 	BCS ..checkDisabled
+
+; 	; kick it
+; 	BRA ..okToKick
+
+; ..checkDisabled
+; 	LDA !154C,y
+; 	BNE .return
 
 ..okToKick
 	; set shell to kicked and don't bounce

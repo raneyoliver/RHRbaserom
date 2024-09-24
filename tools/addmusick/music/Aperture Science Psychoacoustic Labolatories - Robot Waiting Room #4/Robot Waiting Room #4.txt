@@ -1,0 +1,103 @@
+#amk 2
+
+#samples
+{
+	#optimized
+}
+
+#spc
+{
+    #author "Aperture Science Psychoacoustic Labolatories"
+    #title "Robot Waiting Room #4"
+    #game "Portal 2"
+    #comment "Ported by TadeLn"
+}
+
+;;; Song Structure:
+; Cmaj  (36 notes)
+; E7/B  (36 notes)
+; Amin  (28 notes)
+; C7    (28 notes)
+; Fmin  (44 notes)
+; Ebmaj (44 notes)
+; B7    (36 notes)
+; F#maj (24 notes)
+; Bmaj  (36 notes)
+; E7    (22 notes)
+
+; Global Settings
+w255
+
+; Tempo: 84bpm
+t61
+
+; Echo:
+$EF $FF $1F $2F
+$F1 $0D $0F $01
+
+
+
+; ========== LEAD ==========
+
+#0 @0 v150
+l8
+[o4 g <c >e <e >c <g c ]5 o4 g                     ; Cmaj  (36 notes)
+[o4 e <<b >>d <e b g+ <b]5 o4 e                    ; E7/B  (36 notes)
+[o4 c <<a >a c <a]5 o4 c <<a >a                    ; Amin  (28 notes)
+[o4 e <<a+ >>c <c a+ e <a+]4                       ; C7    (28 notes)
+[o4 g+ <<g+ >>f <c >c <f g+]6 o4 g+ <<g+           ; Fmin  (44 notes)
+[o4 a+ <<g >>d+ <c a+ d+ g]6 o4 a+ <<g             ; Ebmaj (44 notes)
+o4 d+ [o4 <d g+ f <a+ >>f <<a+ >>d]5               ; B7    (36 notes)
+[o4 f+ <<f+ >>c+ <<a+ >a+ c+ f+]3 o4 f+ <<f+ >>c+  ; F#maj (24 notes)
+[o4 f+ <<f+ >>d+ <<b >b d+ f+]5 o4 f+              ; Bmaj  (36 notes)
+[o4 e <<g+ >>d <<b >b e g+]3 o4 e <<g+             ; E7    (22 notes)
+
+
+
+; ========== BG SYNTH (two notes) ==========
+
+#1 @1 v100
+$ED $17 $18 ; ADSR
+l8
+
+[o3 c g]18    ; Cmaj  (36 notes)
+[o2 b >g+]18  ; E7/B  (36 notes)
+[o3 c a]14    ; Amin  (28 notes)
+[o3 e a+]14   ; C7    (28 notes)
+[o3 f >c]22   ; Fmin  (44 notes)
+[o3 g a+]22   ; Ebmaj (44 notes)
+[o3 f g+]18   ; B7    (36 notes)
+[o3 f+ a+]12  ; F#maj (24 notes)
+[o3 f+ b]18   ; Bmaj  (36 notes)
+[o3 g+ b]11   ; E7    (22 notes)
+
+
+
+; ========== BG SYNTH (one note) ==========
+
+#2 @17 v50 o4
+$ED $59 $1F ; ADSR
+l8
+
+$DB $00 ; Pan L
+r1^1^1^1^2   ; Cmaj  (36 notes)
+$DC $FF $13 ; Pan Fade R
+[g+]36       ; E7/B  (36 notes)
+$DC $FF $00 ; Pan Fade L
+[e]28        ; Amin  (28 notes)
+$DC $FF $13 ; Pan Fade R
+[a+]28       ; C7    (28 notes)
+$DC $FF $00 ; Pan Fade L
+[f]44        ; Fmin  (44 notes)
+$DC $FF $13 ; Pan Fade R
+[a+]44       ; Ebmaj (44 notes)
+$DC $FF $00 ; Pan Fade L
+[f]36        ; B7    (36 notes)
+$DC $FF $13 ; Pan Fade R
+[f+]12 [r]12 ; F#maj (24 notes)
+$E7 $00     ; Volume
+$E8 $FF $32 ; Volume Fade
+$DC $FF $00 ; Pan Fade L
+[d+]36       ; Bmaj  (36 notes)
+$DC $FF $13 ; Pan Fade R
+[e]22        ; E7    (22 notes)
