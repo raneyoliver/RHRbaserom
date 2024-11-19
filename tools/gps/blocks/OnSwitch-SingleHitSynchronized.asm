@@ -60,8 +60,10 @@ MarioBelow:
 
 SpriteH:
     %sprite_block_position()
-	%check_sprite_kicked_horizontal()
-	BCS Shared
+	;%check_sprite_kicked_horizontal()
+	LDA !14C8,x
+	CMP #$0A
+	BEQ Shared
     RTL
 
 SpriteV:

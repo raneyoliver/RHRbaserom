@@ -2837,11 +2837,15 @@ SpriteAndSpecialBlockInteraction:
 
 .pirhanaPlantCheck
 		CMP #$1A
-		BEQ .tryBounce
+		BEQ .tryBounceBridge
 
 .bulletBillCheck
 		CMP #$1C
 		BEQ .tryBounce
+
+.movingCoinCheck
+		CMP #$21
+		BEQ .returnBridge	;does nothing
 
 .thwompCheck
 		CMP #$26

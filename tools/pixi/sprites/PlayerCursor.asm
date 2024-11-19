@@ -199,8 +199,8 @@ OffscreenRoutine:
 	LDA !14D4,y
 	XBA
 	LDA !D8,y
-	SEC : SBC #$08	; aribtrary, kinda points to middle Y of 2-tile tall clone
 	REP #$20
+	SEC : SBC #$0008	; aribtrary, kinda points to middle Y of 2-tile tall clone
 	STA $01	; contains y pos of clone
 	CMP $1464|!addr
 	SEP #$20
