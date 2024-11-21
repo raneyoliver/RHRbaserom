@@ -16,7 +16,7 @@
     "Palette": 7,
     "Disable fireball killing": true,
     "Disable cape killing": true,
-    "Disable water splash": false,
+    "Disable water splash": true,
     "Don't interact with Layer 2": false
   },
   "$167A": {

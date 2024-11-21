@@ -210,6 +210,7 @@ endif
 !StareBackwardTopLeftTile     	= $0E
 !RunningTile					= $2C
 !RunningTile2					= $48
+!SwimmingTile					= $22
 
 ;;;;;;;;; OTHER ;;;;;;;;;
 
@@ -283,6 +284,7 @@ InitMarioSpriteProperties:
 	STA !IsMario
 	STA !1626,x
 	STA !OnPlatform
+	STA !164A,x
 
 	; Set Properties True
 	LDA #$01
@@ -1262,8 +1264,16 @@ Stationary:
 		LDA !Spinning
 		BNE .jumping
 
+		LDA !164A,x
+		BNE .noSwim
+
+.swim
+		LDA #!SwimmingTile
+		BRA ++
+		
+.noSwim
 		LDA #!JumpingTopLeftTile
-		STA !Frame
+++		STA !Frame
 		BRA .return
 
 .notCarried
@@ -1957,6 +1967,14 @@ SetFrameJumping:
 		BRA ++
 
 .noPSpeed
+		LDA !164A,x
+		BNE .noSwim
+
+.swim
+		LDA #!SwimmingTile
+		BRA ++
+
+.noSwim
         LDA #!JumpingTopLeftTile
 ++
         STA !Frame

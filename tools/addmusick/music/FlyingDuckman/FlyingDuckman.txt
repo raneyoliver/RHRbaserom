@@ -1,0 +1,640 @@
+#amk 2
+;************************
+
+; SPC Generator Info
+#SPC
+{
+    #author  "Michael Giacchino, Patrick Colli"
+    #title   "The Flying Duckman"
+    #game    "Maui Mallard in Cold Shadow"
+    #comment "Ported by Ahrion"
+}
+
+#path "FlyingDuckman"
+
+#samples
+{
+	#optimized
+	"Bell.brr"
+	"Flute.brr"
+	"Kick.brr"
+	"Pad.brr"
+	"Shaker.brr"
+	"SoloString.brr"
+	"Water.brr"
+	"Wood.brr"
+	"Accordion.brr"
+}
+
+#instruments
+{
+	"Bell.brr"	$8F $6F $00 $04 $8A ; @30
+	"Flute.brr"	$AC $69 $00 $02 $0C ; @31
+	"Kick.brr"	$8F $E0 $00 $02 $DF ; @32
+	"Pad.brr"	$84 $8B $00 $03 $BA ; @33
+	"Shaker.brr"	$00 $00 $46 $05 $1C ; @34
+	"SoloString.brr"$CF $0F $00 $04 $03 ; @35
+	"Water.brr"	$8F $E0 $00 $00 $9F ; @36
+	"Wood.brr"	$8F $E0 $00 $00 $7E ; @37
+	"Accordion.brr"	$8F $72 $00 $02 $03 ; @38
+}
+
+
+t38
+w230
+
+"Pad = v142"
+
+"VIB = $DE $12 $07 $3E"
+"VIB2 = $DE $14 $0A $43"
+"VIB3 = $DE $17 $05 $4D"
+
+"ACC1 = v45"
+"ACC2 = v54"
+"ACC3 = v73"
+"ACC4 = v93"
+"ACC5 = v107"
+"ACC6 = v66"
+"ACC7 = v98"
+"ACC8 = v79"
+
+"Kick1 = v176"
+"Kick2 = v247"
+"Kick3 = v125"
+"Kick4 = v185"
+"Kick5 = v93"
+"Kick6 = v134"
+"Kick7 = v66"
+"Kick8 = v45"
+"Kick9 = v39"
+
+"Shaker1 = v197"
+"Shaker2 = v247"
+"Shaker3 = v142"
+"Shaker4 = v176"
+"Shaker5 = v103"
+"Shaker6 = v125"
+"Shaker7 = v73"
+"Shaker8 = v87"
+"Shaker9 = v54"
+"Shaker10 = v66"
+"Shaker11 = v39"
+"Shaker12 = v45"
+
+"Wood1 = v199 $E8 $30 $FF"
+"Wood2 = v217 $E8 $30 $B9"
+"Wood3 = v244 $E8 $30 $FF"
+"Wood4 = v235"
+"Wood5 = v212 $E8 $30 $AE"
+
+"Bell1 = v165"
+"Bell2 = v117"
+"Bell3 = v87"
+"Bell4 = v54"
+
+"Bell5 = v45"
+"Bell6 = v49"
+"Bell7 = v52"
+"Bell8 = v66"
+"Bell9 = v73"
+"Bell10 = v82"
+"Bell11 = v93"
+"Bell12 = v98"
+
+"String1 = y9 v148 $E8 $60 $00 $DC $60 $12"
+"String2 = y11 v45 $E8 $48 $99 $DC $48 $00"
+"String3 = v154"
+"String4 = v169"
+
+"Flute1 = v122"
+"Flute2 = v152"
+"Flute3 = v152 $FA $03 $5E"
+"Flute4 = v182 $FA $03 $30"
+"Flute5 = v93"
+"Flute6 = v101"
+"Flute7 = v182 $FA $03 $10"
+"Flute8 = v85"
+
+"Flute1E = v82"
+"Flute2E = v102"
+"Flute3E = v115"
+"Flute4E = v122 $FA $03 $25"
+"Flute5E = v63"
+"Flute6E = v69"
+"Flute7E = v122"
+"Flute8E = v55"
+
+"Water = v155"
+
+$EF $FF $12 $12
+$F1 $04 $68 $01
+
+
+; +---------------------+
+; |     Channel #0	|
+; |     Water		|
+; |     Flute		|
+; |     Pad		|
+; +---------------------+
+
+#0
+o4
+@36 Water
+[[a4. > c+4. r8 c8 <]]2
+(11)[a+4 > c4.. c+4^16 < b8 > c4 < a+8 b4 b4 a+4 a2^8 a+4. b4^16 a+4 a8.]2
+/
+(11)
+
+r4. > c4 c+4^16 < a+4 a4. b8. a8 r2 a+8 b4 a+2^8 g+8. a+4 a8. r4. a+4 > c4.. c+4^16 < b4 a4 g+8. a+4^16 a8 r2..
+
+(12)[a+4 a2^8 a+4 > c+4 < b4 a4 g+8. a+4^16 a8]
+
+r1^2^8 b4 a+4 > c4. c+8 r8
+
+@31 y13
+< Flute2 a+8 > Flute3 c+8 Flute7 f4 f+8 f4 c+8 < a+8 g+8 > Flute8 $FA $03 $00 $DE $0C $0A $14 d+1 $DF
+
+@36 Water y10
+r2^8
+
+(12)
+
+
+@33 Pad
+VIB c1^1 $DF
+
+@36 Water
+r8. c4. c+4^16 < b8 > c4 < b2 a+8 r1^8 a+4 a2^8 a+4^16 > c4. c+4^16 < b8 > c4 < b2 a+8 r8
+a+4 > c4. c+4^16 c8 < b4 b4.. a+4 a+4 a2^8^16 a+4 > c4.. c+4^16 < b8 > c4 < a+8 b4 b4 a+4 a2^8 a+8. 
+
+
+
+; +---------------------+
+; |     Channel #1	|
+; |     Water		|
+; |     Pad		|
+; +---------------------+
+
+#1
+o4
+@36 Water
+r4 b4. a+4^16 r4^16 b4. a+4^16 r16
+
+@33 Pad
+VIB2 a+1^1 > d+1. r2 c+1^4 r4 g+1^4 r4 b1
+/
+
+f1.. r4 > c1. r2 < f1^1 > c1 < g+1 f1^1 > c1. d+1^4 r1^4 c1 < g+1 f1^1 > c1^1 < f1^1 > c1 < g+1. r2 f1 d+1.... r16 c+1. c+2 > c1. r2 < a+1. g+1^4 r4 b1 
+
+
+
+; +---------------------+
+; |     Channel #2	|
+; |     Water		|
+; |     Bell		|
+; |     Pad		|
+; +---------------------+
+
+#2
+o4
+@36 Water
+r4^16 f+2^16 r4.. f+2^16 r8 <
+
+@33 Pad
+VIB3 a+1. >> c+1 r2 g+1^1 c1^4 r4 f+1.
+/
+@33 Pad
+VIB3 c+1. g+1 r2 g+1 c+1. g+1 r1. c+1. g+2 d+1 g+1 f1^1 d+1^1 c+1. g+2 d+1 g+1 c+1. g+1 r1. << a+1. r2 >> c1. g+1. > c+2 < a+2 d+1^1 c+1 c1 < b1^2^8 r8 > $DF
+
+; 46 Bell
+@30
+Bell7 y11 d+16. Bell10 f+16. Bell12 a16 y10
+
+
+
+; +---------------------+
+; |     Channel #3	|
+; |     Accordion	|
+; |     Pad		|
+; |     Bell		|
+; +---------------------+
+
+#3
+o3
+; 1 - 3 Accordion
+@38
+r2
+
+(41)[ACC1 b=16 > b=16 < ACC2 f+=16 > b=16 < ACC3 b=16 > b=16 < ACC4 f+=16 > b=16 < ACC5 b=16 > b=16 < f+=16 >> d=16 ACC4 f+=16 e=16 ACC3 d=16 < b=16 > ACC6 e=32 ACC2 e=16 d=16 ACC1 e=32 e=16 d=16 <<]
+r2 >>
+
+; 4 - 6 Pad
+@33 Pad
+VIB f1 c1. $DF
+
+; 6 - 8 Accordion
+@38
+(42)[ACC2 e=16 < b=16 > ACC3 e=16 d=16 ACC4 e=16 < b=16 > ACC5 e=16 d=16 e=16 < b=16 > e=16 d=16 e=16 f+=16 ACC7 d=32 < b=32
+< ACC4 f+=16 > b=16 < ACC8 b=16 > b=16
+< ACC3 f+=16 > b=16 < ACC2 b=16 > b=16
+< ACC1 f+=16 > b=16 >]
+r1^2^4^8^32^96
+
+; 10 Bell
+@30
+Bell7 y11 d+16. Bell10 f+16. Bell12 a16 y10
+
+/
+
+; 11 - 36 Pad
+@33 Pad VIB2
+< a+1^1 > c1^1 < a+1^1 > d+1^1 < a+1^1 > c1^1 c+1. g+2 c1^1 < a+1^1 > c1^1 < a+1^1 > d+1^1 < a+1^1 $DF
+
+; 37 - 39 Accordion
+@38
+r2
+(41)
+
+r2
+
+; 40 Pad
+@33 Pad
+> f1
+
+; 41 - 45 Accordion
+@38
+r2
+(42)
+
+r1^2^=32
+
+; 45 - 46 Pad
+@33 Pad
+VIB f+1. 
+
+
+
+; +---------------------+
+; |     Channel #4	|
+; |     Accordion	|
+; |     Water		|
+; |     Flute		|
+; |     Pad		|
+; |     Bell		|
+; +---------------------+
+
+#4
+o4
+; 1 - 8 Accordion
+@38
+r2^=16 
+(51)[ACC1 f+=16 r=16 ACC2 f+=16 r=16 ACC3 f+=16 r=16 ACC4 f+=16 r=16 ACC5 f+=16 b=16 f+=16 ACC4 < b=16 > f+=16 ACC3 < f+=16 > f+=16 ACC6 e=16 e=16 < ACC2 b=16 > g=16 ACC1 e=16 e=16 < b=16 >]
+
+r1^1^1^=16
+
+(52)[ACC1 e=16 g=16 < ACC2 b=16 > b=16
+ACC3 e=16 g=16 < ACC4 b=16 > b=16
+ACC7 e=16 g=16 < b=16 > b=16
+e=16 b=16 < b=16 > ACC4 b=16 < b=16 > ACC8 f+=16 r=16 ACC3 f+=16 r=16 ACC2 f+=16 r=16 ACC1 f+=16 r=16 f+=16 r=16 f+=16]
+r=32
+
+; 9 - 10 Pad
+@33 Pad VIB
+b1.. r4 > $DF
+
+/
+
+; 11 - 12 Bell
+@30 Bell11
+a2^32^96 r1^4^8^=16
+
+; 13 Pad
+@33 Pad VIB
+d+1 r4 << $DF
+
+; 14 - 16 Bell
+(61)[@30 Bell1 g+8. g+4. Bell2 g+8. g+4. Bell3 g+8. g+4. Bell4 g+8. g+4.]
+
+; 17 - 18 Pad
+@33 Pad VIB
+r2 >> c1^1 r1^4 $DF
+
+; 20 - 33 Flute
+
+@31 Flute4 y13
+< a+8 > c+8 f=32 d+=32 c+=16 < a+=16 > $DE $18 $0A $10 d2 $DD $00 $18 d+ ^4 ^=60 $DD $00 $48 c+ $DF Flute6 $FA $03 $00 d+2 $DD $30 $30 c+
+r1^16
+
+Flute1 < a+8 > Flute2 d+8 Flute3 c+8 Flute4 d+8. c+8. Flute3 < a+8 > Flute4 d+=32 Flute3 f=32 c+=32 Flute4 < a+2 $DD $30 $30 g+ ^4 $DD $00 $30 a+ $DE $00 $0A $14 ^4 Flute5 $FA $03 $00 a+4. $DD $30 $18 g+ ^8 $DD $00 $18 a+ $DF
+r1^8
+
+> Flute2 f8 Flute3 g+8 > Flute7 c4 c+8 c4 < g+8 f8 c+8 $DE $0C $0A $14 a+1 Flute8 $FA $03 $00 a+4 $DF
+r1.
+
+< Flute1 a+8 > Flute2 d+8 Flute3 c+8 Flute4 d+8. Flute7 d+8. Flute3 c+8 Flute4 d+8 Flute3 f8 c+8 < Flute4 $DE $18 $0A $14 a+4. ^4 $DD $00 $30 g+ Flute5 $FA $03 $00 a+2 $DF
+
+; 34 - 35 Water
+@36 Water y10
+a+4 a2^8 a+4^16 r1^4^16 >
+
+; 36 - 37 Pad
+@33 Pad VIB
+c+1 $DF
+
+; 37 - 43 Accordion
+@38
+r=16
+(51)
+r1^1^=16
+(52)
+r1^1^1^=32
+
+
+
+; +---------------------+
+; |     Channel #5	|
+; |     Accordion	|
+; |     Flute		|
+; |     Bell		|
+; +---------------------+
+
+#5
+o4
+; 1 - 8 Accordion
+@38
+r2^=16
+
+(62)[ACC1 d=16 ACC2 r=16 d=16 ACC3 r=16 d=16 ACC4 r=16 d=16 ACC5 r=16 d=16 r=16 d=16 ACC4 r=16 d=16 ACC3 r=16 d=16 r=16 g=16 r=16 ACC1 e=16 r=16 g=16]
+
+r1^1^1^4^=32
+
+(63)[ACC2 g=16 r=48 ACC4 g=16 r=48 ACC7 g=16 r=16 g=16 r=16 g=16 ACC4 r=16 d=16 ACC8 r=16 d=16 ACC3 r=16 d=16 ACC2 r=16 d=16]
+
+
+r1^1^2
+
+/
+
+r1^1^1^1^1^1^1^1^1^2
+
+; 20 - 34 Flute
+
+@31 Flute4E y1
+a+8 > c+8 f=32 d+=32 c+=16 < a+=16 > $DE $18 $0A $10 d2 $DD $00 $18 d+ ^4 ^=60 $DD $00 $48 c+ $DF Flute6E $FA $03 $00 d+2 $DD $30 $30 c+
+r1^16
+
+Flute1E < a+8 > Flute2E d+8 Flute3E c+8 Flute4E d+8. c+8. Flute3E $FA $03 $00 < a+8 > Flute4E d+=32 Flute3E $FA $03 $00 f=32 c+=32 Flute4E < a+2 $DD $30 $30 g+ ^4 $DD $00 $30 a+ $DE $00 $0A $14 ^4 Flute5E $FA $03 $00 a+4. $DD $30 $18 g+ ^8 $DD $00 $18 a+ $DF
+r1^8 >
+
+Flute2E f8 Flute3E g+8 > Flute7E c4 c+8 c4 < g+8 f8 c+8 $DE $0C $0A $14 a+1 Flute8E a+4 $DF
+r1.
+
+< Flute1E a+8 > Flute2E d+8 Flute3E c+8 Flute4E d+8. Flute7E $FA $03 $00 d+8. Flute3 c+8 Flute4E d+8 Flute3E $FA $03 $00 f8 c+8 < Flute4E $DE $18 $0A $14 a+4. ^4 $DD $00 $30 g+ Flute5E $FA $03 $00 a+2 $DF r1 < y10
+
+; 35 - 37 Bell
+(61)
+
+; 37 - 43 Accordion
+@38
+r=16
+
+(62)
+r1^1^4^=32
+(63)
+
+r1^1^1^2
+
+
+
+; +---------------------+
+; |     Channel #6	|
+; |     Kick		|
+; |     Shaker		|
+; |     Bell		|
+; |     Wood		|
+; +---------------------+
+
+#6
+o3
+@30
+r1^1^4
+
+; 3 - 10 Bell
+(61)
+
+r1^1^1^1^1^8^16 >> Bell5 y11 c+16. Bell8 e16. Bell11 g16. r32 < 
+
+/
+
+; 11 Kick
+@32 y10
+Kick2 c16 r16 Kick3 c16 Kick4 c16 r16 Kick5 c16 Kick6 c16 r16 Kick7 c16 Kick5 c16 r16 Kick8 c16 Kick7 c16 
+
+; 11 - 12 Shaker
+(71)[@34 Shaker1 g16 Shaker2 g16 g16 Shaker3 g16 Shaker4 g16 g16 Shaker5 g16 Shaker6 g16 g16 Shaker7 g16 g16 Shaker8 g16 Shaker9 g16 Shaker10 g16 g16 Shaker11 g16 Shaker12 g16 g16]
+
+r1^1
+
+; 14 - 15 Kick
+(72)[@32 Kick1 c16 Kick2 c16 r16 Kick3 c16 Kick4 c16 r16 Kick5 c16 Kick6 c16 r16 Kick7 c16 Kick5 c16 r16 Kick8 c16 Kick7 c16 r16 Kick9 c16 Kick8 c16]
+
+
+; 16 - 17 Wood
+@37
+r2^16
+Wood3 d+4^16 Wood4 d+4^16 Wood5 d+4^16
+r4^16
+
+; 17 - 18 Shaker
+(71)
+
+; 18 - 19 Kick
+(73)[@32 Kick1 c16 Kick2 c16 r16 Kick3 c16 Kick4 c16 r16 Kick5 c16 Kick6 c16 r16 Kick7 c16 Kick5 c16 r16 Kick8 c16 Kick7 c16]
+ 
+; 19 - 20 Shaker
+(71)
+
+; 21 - 22 Wood
+@37
+r2^8
+Wood1 g4^16 $EE $60 g4^16 Wood2 $EE $00 g4^16
+r4..
+
+; 22 - 23 Kick
+(72)
+r1^2^4^16
+
+; 25 - 26 Shaker
+(71)
+
+; 26 - 27 Kick
+(73)
+
+; 27 - 28 Shaker
+(71)
+
+; 29 - 30 Wood
+@37
+r2^8
+Wood3 d+4^16 Wood4 d+4^16 Wood5 d+4^16
+r4..
+
+; 30 - 31 Kick
+(72)
+r1^2^4^16
+
+; 33 - 34 Shaker
+(71)
+
+; 34 - 35 Kick
+(73)
+
+; 35 -36 Shaker
+(71)
+
+; 37 - 38 Wood
+@37
+r2^8
+Wood1 g4^16 $EE $60 g4^16 Wood2 $EE $00 g4^16
+r4..
+
+;  38 - 39 Kick
+(73)
+
+; 39 - 40 Shaker
+(71)
+r16
+
+; 41 - 44 Pad
+@33 Pad
+> c1 r2 g+1 r1^16 <
+
+; 44 - 45 Wood
+@37
+Wood3 d+4^16 Wood4 d+4^16 Wood5 d+4^16
+r1^8^16 >
+
+; 46 Bell
+@30
+Bell5 y11 c+16. Bell8 e16. Bell11 g16. r32
+
+
+
+; +---------------------+
+; |     Channel #7	|
+; |     String		|
+; |     Wood		|
+; |     Bell		|
+; |     Pad		|
+; +---------------------+
+
+#7
+o4
+r1^1^1^1^2^16
+
+; 5 - 9 Wood
+@37
+Wood1 g4^16 $EE $60 g4^16 Wood12 $EE $00 g4^16
+r1^1^16
+Wood3 d+4^16 Wood4 d+4^16 Wood5 d+4^16
+
+
+r1^8^16^32 >
+; 10 Bell
+@30
+Bell6 y11 d16. Bell9 f16. Bell11 g+16. y10
+
+/
+y10
+; 11 String
+@35 String1
+(81)[f+=4]23
+r=16
+
+; 11 - 12 Wood
+@37 y10
+< Wood1 g4^16 $EE $60 g4^16 Wood2 $EE $00 g4^16 r8 >
+
+; 12 - 14 String
+@35 String2
+(81)18
+
+y10
+(82)[
+String3 $E8 $FF $40
+y5 $DC $60 $0F
+> d16 c+16 < a16 f+16
+> d16 c+16 < a16 f+16
+y15 $DC $60 $05
+> d16 c+16 < a16 f+16
+> d16 c+16 < a16 f+16
+y5 $DC $60 $0F
+> d16 c+16 < a16 f+16
+> d16 c+16 < a16 f+16
+] y10
+
+; 14 - 15 Pad
+@33 Pad VIB
+<<<< d1 r1. >>>> $DF
+
+; 17 - 22 String
+@35
+(83)[
+String4 y10 $E8 $F0 $40
+$DC $30 $05
+a16 > c+16 e16 <
+a16 > $DC $60 $0F c+16 e16 <
+a16 > c+16 e16 <
+a16 > c+16 e16 <
+$DC $60 $05 a16 > c+16 e16 <
+a16 > c+16 e16 <
+]
+a16 r2^4^16 y10
+
+String1
+(81)23 
+r1^2^64^192 y10
+
+(82)
+r2 y10
+
+; 23 - 24 Pad
+@33 Pad VIB
+< a+1^1 > $DF
+
+; 25 - 26 String
+@35
+(83)
+a16 r16 y10 <<
+
+; 26 - 28 Bell
+(61) r2
+
+>>
+
+; 29 - 30 String
+@35
+(82) y10
+
+; 30 - 31 Pad
+@33 Pad VIB
+<<<< d1 r1. >>>> $DF
+
+; 33 - 41 String
+@35
+(83)
+a16
+r1^1^2^4^16 y10
+
+(83)
+a16
+r1^1^2^4^16 y10
+
+(83)
+a16
+r16
+
+; 42 - 44 Bell
+<< (61) r1^1^8^16^32
+
+>> Bell6 y11 d16. Bell9 f16. Bell11 g+16. y10

@@ -41,4 +41,6 @@ Locals:
 25  Bird Is Float\Bird Is Float.txt
 26  MarioBrosGBA\Mario Bros. (GBA) - Stage Theme 1.txt
 27  Aperture Science Psychoacoustic Labolatories - Robot Waiting Room #4/Robot Waiting Room #4.txt
+28  FlyingDuckman/FlyingDuckmanNoAccordion.txt
+
 
