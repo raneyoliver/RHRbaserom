@@ -30,6 +30,7 @@ endif
 !CloneLowSpin =             $FE
 !CloneJumpHeld =        $41A018 ;jumpHeld in npc2.asm TODO: change to sprite table
 !CloneSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
+!CloneCarriedItemIndex = $41B82E
 
 ;=======================================================================================;
 ; Koopa / Shell disassembly + additional features (sprites 4-7, DA-DF)                  ;
@@ -56,10 +57,10 @@ endif
 ;   a = animate twice as fast in air, - = unused, j = jump over Shells,                 ;
 ;   f = follow Mario, l = stay on ledges, s = move faster.                              ;
 ;    The vanilla values for each Koopa are the following:                               ;
-;     - 04 (G): $40                                                                     ;
-;     - 05 (R): $42                                                                     ;
-;     - 06 (B): $43                                                                     ;
-;     - 07 (Y): $45                                                                     ;
+;     - 04 (G): $40, in binary: 01000000                                                ;
+;     - 05 (R): $42, in binary: 01000010                                                ;
+;     - 06 (B): $43, in binary: 01000011                                                ;
+;     - 07 (Y): $45, in binary: 01000101                                                ;
 ;                                                                                       ;
 ; Note that these also matter if spawning the sprite in Shell state, since it can       ;
 ; become a Koopa if a shell-less Koopa enters it.                                       ;
@@ -449,7 +450,7 @@ GetCloneContact:
     XBA
     RTS
 
-SetCloneContact:
+SetCloneContact: ;unused
     RTS
 
 	LDY #!SprSize-1		;loop count (loop though all sprite number slots)
@@ -816,8 +817,11 @@ HandleStationary:
 
 +
     jsr HandleStunned       ;> Handle stunned timer and stuff.
+    LDA !CloneCarriedItemIndex
+    CMP #$FF
+    BNE +
     jsl $01802A|!bank       ;> Update X/Y positions with gravity and interact with blocks.
-    lda !1588,x             ;\
++   lda !1588,x             ;\
     and #$04                ;| If on the ground, make it bounce on it.
     beq +                   ;|
     jsr BounceOnGround      ;/
@@ -865,7 +869,11 @@ HandleStationary:
 +
     JSR SetCloneContact
 
+    ; LDA !CloneCarriedItemIndex  
+    ; CMP #$FF
+    ; BNE +
     jsr SprMarioInteract    ;> Interact with sprites and Mario.
++
 .DrawGraphics:
     jsr StationaryGFX       ;> Draw GFX.
     lda #$00                ;\ Handle offscreen.
@@ -977,7 +985,8 @@ Unstun:
     lda #$10                ;\ Briefly disable contact with Mario.
     sta !154C,y             ;/
     sta !1528,y             ;> Make the Koopa slide and be kick-killable.
-    lda !9E,x               ;\
+    ; lda !9E,x               ;\
+    LDA !7FAB9E,x
     cmp #!KoopaSpawnsCoin   ;| If not Yellow Shell, return.
     bne .Return             ;/
     ldy #$08                ;\

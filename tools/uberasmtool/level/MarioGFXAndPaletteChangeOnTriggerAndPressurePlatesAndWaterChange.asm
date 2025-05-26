@@ -51,34 +51,35 @@ init:
 ; !ChangeToLuigi = 0
 
 main:
-	JSR PutAllSpritesInWater
+	STA $85 ; set swim level
+	JSR PutAllSpritesInWater ; put all sprites except clone in water
 	JSR GetMarioSpriteIndex	; A = mario sprite index
-	STA $00
+	STA $00 ; save mario sprite index
 
-	LDA !CloneIsMario
-	BEQ .noSwim
+	LDA !CloneIsMario ; check if clone is mario
+	BEQ .noSwim ; if clone is mario, swim luigi
 
-.swimming
+.swimmingLuigi
 	; if you're luigi, he swims in this level.
 	LDA #$01
-	STA $75
-	STA $85
-	PHX
-	LDX $00
-	STZ !164A,x
-	PLX
-	BRA .pressurePlates
+	STA $75 ; set player swimming
+	;STA $85 ; set swim level
+	PHX ; save index
+	LDX $00 ; load mario sprite index
+	STZ !164A,x ; reset clone swimming
+	PLX ; restore index
+	BRA .pressurePlates ; then go to pressure plates
 
 .noSwim
-	STZ $75
-	STZ $85
-	PHX
-	LDX $00
+	STZ $75 ; reset player swimming
+	;STZ $85 ; reset swim level
+	PHX ; save index
+	LDX $00 ; load mario sprite index	
 	LDA #$01
-	STA !164A,x
-	PLX
+	STA !164A,x ; make clone swim
+	PLX ; restore index
 .pressurePlates
-	JSL PressurePlates_main
+	JSL PressurePlates_main ; check for pressure plates
     ;if !ChangeToLuigi = 1
 	;LDX $0DB3 ; actually change player to Luigi
 	;TXA
@@ -121,46 +122,46 @@ BackToMario:
     RTL
 
 
-GetMarioSpriteIndex:
-	PHX
-	LDA #$15
-	TAX
+GetMarioSpriteIndex: ; get mario sprite index
+	PHX ; save index
+	LDA #$15 ; load sprite slot
+	TAX ; transfer to X
 .loop
-	LDA !7FAB9E,x
-	CMP #!MarioSpriteNumber
-	BNE .next
+	LDA !7FAB9E,x ; load sprite number
+	CMP #!MarioSpriteNumber ; compare to mario sprite number
+	BNE .next ; if not mario, go to next sprite
 
 .found
-	TXA
-	BRA .done
+	TXA ; transfer X to A
+	BRA .done ; then return
 
 .next
-	DEX
-	BPL .loop
+	DEX ; decrement X
+	BPL .loop ; if X is positive, loop
 
 .done
-	PLX
-	RTS
+	PLX ; restore index
+	RTS ; return
 
 PutAllSpritesInWater:
-	PHX
-	LDA #$15
-	TAX
+	PHX ; save index
+	LDA #$15 ; load sprite slot
+	TAX ; transfer to X
 .loop
-	LDA !7FAB9E,x
-	CMP #!MarioSpriteNumber
-	BEQ .next
+	LDA !7FAB9E,x ; load sprite number
+	CMP #!MarioSpriteNumber ; compare to mario sprite number
+	BEQ .next ; if mario, go to next sprite
 
 	LDA #$01
 	STA !164A,x ; make all other sprites in water regardless
 
 .next
-	DEX
-	BPL .loop
+	DEX ; decrement X
+	BPL .loop ; if X is positive, loop
 
 .done
-	PLX
-	RTS
+	PLX ; restore index
+	RTS ; return
 
 ; Palettes:
 

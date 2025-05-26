@@ -33,7 +33,7 @@ endif
 
 !NumPixelsBelowSprite = $0011
 !NumPixelsBelowMario = $0021
-!XOffset = $08
+!XOffset = $0008
 
 init:
     LDA #$00
@@ -137,25 +137,19 @@ GetPositionBelowSprite:
 	LDA !14E0,x		; high X
 	XBA
 	LDA !E4,x		; low X
-	CLC : ADC #!XOffset
-    BCC .store
-
-    XBA
-    INC A
-    XBA
-
-.store
-	REP #$20
-	STA $9A
-	SEP #$20
-
+    REP #$20
+        CLC : ADC #!XOffset
+        STA $9A
+    SEP #$20
 	STZ $1933|!addr
 
 	RTS
 
 GetPositionBelowMario:
+    LDA $D4			; PlayerPosYHigh
+    XBA
+    LDA $D3			; PlayerPosYLow
     REP #$20
-        LDA $D3			; PlayerPosYLow
         CLC : ADC #!NumPixelsBelowMario
         STA $98
     SEP #$20
@@ -163,18 +157,10 @@ GetPositionBelowMario:
 	LDA $D2			; PlayerPosXHigh
 	XBA
 	LDA $D1			; PlayerPosXLow
-	CLC : ADC #!XOffset
-    BCC .store
-
-    XBA
-    INC A
-    XBA
-
-.store
-	REP #$20
-	STA $9A
-	SEP #$20
-
+    REP #$20
+        CLC : ADC #!XOffset
+        STA $9A
+    SEP #$20
 	STZ $1933|!addr
 	RTS
 

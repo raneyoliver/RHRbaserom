@@ -96,6 +96,16 @@ E0 0112 1,16,1D6 3,32,1D6 0,48,1C4 16,48,1C5 0,64,1D4 16,64,1D5 12,-10,1D6 24,-2
 85 0012 0,0,225 0,-8,10A
 85 0000 A poison mushroom. Hurts or kills depending on extra bit settings. Currently set to Hurt.
 85 0010 A poison mushroom. Hurts or kills depending on extra bit settings. Currently set to Kill.
+06 0020 A Green Koopa.
+06 0022 0,-14,10 0,2,20
+06 0030 A Green Shell.
+06 0032 0,1,30
+07 0020 A Green Koopa.
+07 0022 0,-14,10 0,2,20
+07 0030 A Green Shell.
+07 0032 0,1,30
+08 0020 This is a disassembly of sprite 80 in SMW - Key.
+08 0022 0,0,B
 10 0020 A Green Koopa.
 10 0022 0,-14,10 0,2,20
 10 0030 A Green Shell.

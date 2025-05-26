@@ -7,7 +7,7 @@
     "Disappears in cloud of smoke": false
   },
   "$1662": {
-    "Sprite Clipping": 12,
+    "Sprite Clipping": 0,
     "Use shell as death frame": false,
     "Fall straight down when killed": false
   },
@@ -47,7 +47,7 @@
     "Can be jumped on with upwards Y speed": false,
     "Death frame two tiles high": false,
     "Don't turn into a coin with silver POW": true,
-    "Don't get stuck in walls (carryable sprites)": false
+    "Don't get stuck in walls (carryable sprites)": true
   },
   "AsmFile": "OliverClone.asm",
   "ActLike": 54,

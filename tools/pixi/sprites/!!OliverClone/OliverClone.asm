@@ -131,6 +131,8 @@ endif
 !GhostShell						= $19	; in pixi_list.txt
 !KoopaShellGreen				= $1B	; in pixi_list.txt
 !KoopaShellRed					= $1E	; in pixi_list.txt
+!KoopaShellBlue					= $06	; in pixi_list.txt
+!KoopaShellYellow				= $07	; in pixi_list.txt
 !SpinyShell						= $5B	; in pixi_list.txt
 !KoopaBlockActAs				= $0403
 
@@ -156,7 +158,7 @@ endif
 !Spinning						= $41A00C
 !CloneSpeedX					= $41A00E
 !CloneSpeedY					= $41A00F
-!KoopaContact					= $41A01A
+!CloneIndex						= $41A01A
 !TeleportReady					= $41A016
 !JumpHeld						= $41A018
 !TempSpinning					= $41A019
@@ -169,7 +171,17 @@ endif
 !SpriteDirection				= $41A027
 !OnPlatform						= $41A029
 !PreviousState					= $41A02A
-
+!CloneCarriedItemIndex			= $41B82E
+!PlayerCarriedItemIndex			= $41B82F
+!CloneXPosLow					= $41B830
+!CloneXPosHigh					= $41B831
+!CloneYPosLow					= $41B832
+!CloneYPosHigh					= $41B833
+!LandingTimer					= $41B834
+!PreviousXSpeed					= $41B835
+!LandingFrameCounter			= $41B836
+!LandingFrameIndex				= $41B837
+!NumFramesInsideWall			= $41B838
 !RunningLevel					= $AF
 
 !Lvl18XSpeed					= $24
@@ -179,17 +191,20 @@ endif
 !Lvl22XSpeed					= $FF-$28
 
 !TeleportingSpeed				= $60                 ; Speed the camera/teleport moves
-!StopTeleportWithin				= $0010 ;#$0010
+!StopTeleportWithin				= $0020 ;#$0010
 !PlayerMinX						= $02
 !PlayerMaxX						= $DF
 !PlayerMinY						= $02
 !PlayerMaxY						= $BE
 
+!NumFramesInsideWallToKill		= $06
 !BounceDelay					= $08
+!TimeToSpendLanding				= $24
 !NumPixelsAboveSpriteRequiredToBounce	= $00 ;$02
 !NumPixelsBelowSprite			= $0011
-!XOffset						= $08
+!XOffset = $0008
 !XDistToInstantlyTP				= $00E0
+!YDistToInstantlyTP				= $00E0
 
 !NonSpikyLowBounce				= $E6
 !NonSpikyHighBounce				= $AA
@@ -200,7 +215,9 @@ endif
 !SpikyHighSpin					= $AA	; estimated
 
 !StationaryHatTLTile			= $00
-!WalkingTopLeftTile     		= $20
+!AltHatTile						= $48
+!StationaryTile     			= $20
+!WalkingTile					= $6E
 !JumpingTopLeftTile     		= $04
 !JumpingPSpeedTLTile			= $02
 !SpinningForwardTopLeftTile    	= $06
@@ -211,10 +228,13 @@ endif
 !RunningTile					= $2C
 !RunningTile2					= $48
 !SwimmingTile					= $22
+!HoldingTile					= $2E
+!HoldingTileInAir				= $22
 
 ;;;;;;;;; OTHER ;;;;;;;;;
-
+!CeilingTileNumber = $0130
 !ShellKickXSpeed         		= $2E
+!NumPixelsAboveSpriteToHitCeiling = $0008
 
 ; Which Koopa spawns a coin when jumped on (default = Yellow Koopa)
 !KoopaSpawnsCoin    = $07
@@ -285,6 +305,14 @@ InitMarioSpriteProperties:
 	STA !1626,x
 	STA !OnPlatform
 	STA !164A,x
+	STA !LandingTimer
+	STA !LandingFrameCounter
+	STA !LandingFrameIndex
+	STA !NumFramesInsideWall
+
+	LDA #$FF
+	STA !CloneCarriedItemIndex
+	STA !PlayerCarriedItemIndex
 
 	; Set Properties True
 	LDA #$01
@@ -292,6 +320,9 @@ InitMarioSpriteProperties:
 
 	; Level-specific
 	LDA $40010B ;($7E010B&$FFFF)|bankA		; Get current level
+	CMP #$07
+	BEQ .lvl07
+	
 	CMP #$0A
 	BEQ .lvl0A
 
@@ -312,6 +343,15 @@ InitMarioSpriteProperties:
 
 	CMP #$B0
 	BEQ .lvlB0
+
+	BRA .return
+
+.lvl07
+	LDA #!Lvl21XSpeed
+	STA !B6,x
+
+	LDA #!Lvl21YSpeed
+	STA !AA,x
 
 	BRA .return
 
@@ -474,7 +514,17 @@ print "MAIN ",pc
 
 	JSR PerLevelSettings
 
-	; will check and re-enable this frame if on platform
+	LDA !State
+	BNE .dontResetPlayerCarriedItemIndex	; don't reset player carried item index if teleporting
+	JSR GetPlayerCarriedItemIndex	; leaves at #$FF if player has no item
+
+.dontResetPlayerCarriedItemIndex
+
+	; give index of clone to other sprites every frame
+	LDA $15E9|!addr
+	STA !CloneIndex
+
+	; check every frame if on platform
 	LDA #$00
 	STA !OnPlatform
 
@@ -491,6 +541,12 @@ print "MAIN ",pc
 	JSR HandleCarryableSpriteStuff
 
 .noCarry
+	LDA !State
+	BNE .handleState
+
+	JSR SetTile	; if not teleporting, can update sprite tile
+
+.handleState
 	; Teleporting Function
 	JSR HandleState
 
@@ -504,10 +560,9 @@ print "MAIN ",pc
 	PLX
 
 .notTeleporting
-	LDA $9D
-	BNE .return
+	; LDA $9D
+	; BNE .return
 
-	JSR Stationary
 	BRA .return
 
 .killPlayer
@@ -525,6 +580,15 @@ print "MAIN ",pc
 	LDA !14C8,x
 	STA !PreviousState
 
+	LDA !LandingTimer
+	CMP #$02
+	BCC .noLanding	; if 0 or 1, not landing
+
+	LDA !B6,x
+	STA !PreviousXSpeed
+.noLanding
+	; key carried
+	JSR HandleCloneCarriedItemPosition
 	JSR Graphics
 	RTS
 
@@ -539,6 +603,9 @@ PerLevelSettings:
 
 .return
 	RTS
+
+XPosOffset:
+	dw $000B, $FFF5
 
 UnsetCustomFTrigger:
 	; Unset Custom F Trigger (1-up color: mario-off, luigi-on)
@@ -593,20 +660,44 @@ CheckIfKilled:
         LDA !14C8,x
 		CMP #$06
 		BCC .killPlayer
-        ; BEQ .killPlayer
+        
+		CMP #$0B
+		BEQ .dontKillPlayer
 
-        ; CMP #$02
-        ; BEQ .killPlayer
+		; JSR SafeGetMap16_ActAsInsideClone
+		; XBA
+		; TYA
+		; XBA
+		; REP #$20
+		; CMP #$0130
+		; SEP #$20
+		; CMP
+		; BNE .outsideWall
 
-        ; CMP #$03
-        ; BEQ .killPlayer
+		LDA !1588,x
+		PHA
+		JSL $019138|!BankB
+		PLA
+		STA !1588,x
+		;horizontal
+		LDA $1860|!BankA
+		LDA $1862|!BankA
+		;vertical
+		LDA $185F|!BankA
+		LDA $18D7|!BankA
+		BRA .outsideWall
 
-        ; CMP #$04
-        ; BEQ .killPlayer
+.insideWall
+		LDA !NumFramesInsideWall
+		INC A
+		STA !NumFramesInsideWall
+		CMP #!NumFramesInsideWallToKill
+		BCS .killPlayer
+		BRA .dontKillPlayer
 
-        ; CMP #$05
-        ; BEQ .killPlayer
-
+.outsideWall
+		LDA #$00
+		STA !NumFramesInsideWall
 .dontKillPlayer
         LDA #$00
         STA $00
@@ -619,7 +710,7 @@ CheckIfKilled:
 
 UpdateMarioSpriteStareTimer:
 	LDA !Frame
-	CMP #$04        ;was on ground if less	(!WalkingTopLeftTile)
+	CMP #$04        ;was on ground if less	(!StationaryTile)
 	BCC .marioSpriteOnGround
 
 	CMP #$0C        ;was on ground if more (!StareForwardTopLeftTile or !StareBackwardTopLeftTile)
@@ -678,17 +769,16 @@ HandleState:
 	RTS
 
 ..beginTeleporting
-	; ;temp delay
-	; LDA !154C,x
-	; BNE ..dontTeleportBridge
+..checkCarryClone
+	LDA !14C8,x
+	CMP #$0B
+	BEQ ..dontTeleportBridge
 
-	LDA $1470|!Base2                        ; \
-	ORA $148F|!Base2                        ;  | don't allow teleporting if you're carrying something
-	BNE ..dontTeleportBridge                      ; /
-
+..checkMessageBox
 	LDA $1426|!Base2                        ; \  don't allow teleporting if a message box is active
 	BNE ..dontTeleportBridge                      ; /
 
+..checkTeleportReady
 	LDA !TeleportReady                      ; \ don't allow teleporting if the sprite is not touched yet
 	BEQ ..dontTeleportBridge                      ; /
 
@@ -718,33 +808,27 @@ HandleState:
 	BRA ..dontTeleport
 
 ..doTeleport
-	; ;temp delay
-	; LDA #$20
-	; STA !154C,x
-
+	JSR FlipMarioLuigi
 	LDA #$01
 	STA !Frozen
-
 	LDA #$00
 	STA !StareTimer
-
 	JSR SetupAttributesOfClone
+	JSR SetTile
+	JSR MoveCloneToPlayer
 
-	; Backup sprite properties to use in freezing
 	PHX
 	JSR BackupAllSpriteProperties
-	PLX
 
+	PLX
 	LDA #$FF
 	STA $9D
-
 	JSR EraseFireballs
 
 	; LDA $14
 	; LSR #2
 	; AND #$01
 	; BEQ +
-
 	JSR PlaySound
 
 +	LDY $18DF|!Base2
@@ -824,7 +908,7 @@ HandleState:
 	LDA $1411|!addr	; if no horizontal scroll, just TP
 	BEQ .instantlyTP
 
-	; Or if close enough already?
+	; Or if definitely not close enough
 	LDA !15A0,x	; sprite off screen flag, horiz
 	BNE .movePlayerToSprite
 
@@ -832,16 +916,34 @@ HandleState:
 	BNE .movePlayerToSprite
 
 
-	LDA !14E0,x                             ; \
+	LDA !CloneXPosHigh                             ; \
 	XBA                                     ;  | calculate the distance
-	LDA.w !E4,x                             ;  | between the screen and the sprite
+	LDA !CloneXPosLow                             ;  | between the screen and the sprite
 	REP #$20                                ;  |
 	SEC : SBC $1462|!addr                           ;  |
-
-	BPL + : EOR #$FFFF : INC : +            ; \
+	BPL +
+	
+	EOR #$FFFF
+	INC
+	CLC : ADC #$0100	; add one screen width if comparing to right side of screen
+	BMI .movePlayerToSprite ; if still negative, this means the sprite is too far to the left to teleport
+	+            ; \
 	CMP #!XDistToInstantlyTP
 	SEP #$20                                
-	BCS .movePlayerToSprite                 
+	BCS .movePlayerToSprite
+
+	; check if screen too high to teleport
+	LDA !CloneYPosHigh
+	XBA
+	LDA !CloneYPosLow
+	REP #$20
+	SEC : SBC $1464|!addr 	; subtract screen y
+	BPL +
+	EOR #$FFFF : INC
+	CLC : ADC #$0100	; if clone was higher than screen, make distance positive and add a screen height to the distance
++	CMP #!YDistToInstantlyTP ; if clone was lower than screen, only teleport if it's less than $E0 = 224 pixels away
+	SEP #$20
+	BCS .movePlayerToSprite	; if larger than y distance to instantly tp, don't teleport
 
 .instantlyTP
 .autoscroll
@@ -872,13 +974,12 @@ HandleState:
 	RTS
 
 .exitingPipe
-        JSR FlipMarioLuigi
 ..nextState
 	LDA #$FF
 	STA $9D
 
 	; Teleport Player to Sprite
-	;JSR TPPlayerToSprite
+	JSR TPPlayerToSprite
 
 	;also take sprite's speed
 	LDA !OnPlatform
@@ -899,11 +1000,11 @@ HandleState:
 	LDA !CloneSpeedY
 	STA $7D
 
-	;sprite take player's direction
-	LDA $76
-	AND #$01
-	EOR #$01
-	STA !157C,x
+	; ;sprite take player's direction
+	; LDA $76
+	; AND #$01
+	; EOR #$01
+	; STA !157C,x
 
 	;also player take sprite's direction
 	LDA !SpriteDirection
@@ -917,20 +1018,19 @@ HandleState:
 	STA $140D|!addr
 
 
+; 	LDA !PlayerPosXLow                             ; \
+; 	STA !E4,x                                     ;  | fix the sprite's position to
+; 	LDA !PlayerPosXHigh                           ;  | right on the player's previous
+; 	STA !14E0,x                                   ;  |
+; 	LDA !PlayerPosYLow                            ;  |
+; 	CLC : ADC #$10                                ;  |  sprite was too high without this
+; +
+; 	STA !D8,x                                     ;  |
+; 	LDA !PlayerPosYHigh                           ;  |
+; 	ADC #$00	; add the carry incase need to go down a screen
+; 	STA !14D4,x                                   ; /
 
-	LDA !PlayerPosXLow                             ; \
-	STA !E4,x                                     ;  | fix the sprite's position to
-	LDA !PlayerPosXHigh                           ;  | right on the player's previous
-	STA !14E0,x                                   ;  |
-	LDA !PlayerPosYLow                            ;  |
-	CLC : ADC #$10                                ;  |  sprite was too high without this
-+
-	STA !D8,x                                     ;  |
-	LDA !PlayerPosYHigh                           ;  |
-	ADC #$00	; add the carry incase need to go down a screen
-	STA !14D4,x                                   ; /
-
-	;also take player's speed
+; 	;also take player's speed
 	LDA !PlayerSpeedX
 	STA !B6,x
 	LDA !PlayerSpeedY
@@ -940,24 +1040,16 @@ HandleState:
 	STZ $185C|!Base2                        ;  |
 	STZ $13F9|!Base2                        ;  | all kinds of teleportation settings
 	STZ $1419|!Base2                        ;  |
-
 	STZ $9D
-	; PHX
-	; JSR FreezeAllSprites	; Call this to unfreeze all sprites with $9D == 0
-	; PLX
-
-	;Set state back to idle
-	LDA !State       ; Load the value of !State into the accumulator
-	SEC              ; Set the carry flag to indicate subtraction
-	SBC #$03         ; Subtract 4 from the value in the accumulator
-	STA !State       ; Store the result back into !State
-
 
 	LDA #$00
+	STA !State       ; Store the result back into !State
 	STA !Frozen
-
-..return
-        RTS
+	STA !LandingTimer
+	JSR HandleLandingBounce
+	JSR TransferItems
+._return
+	RTS
 
 PlaySound:
 	BRA .blarrg
@@ -1032,37 +1124,26 @@ GivePSpeed:
 	RTS
 
 TPPlayerToSprite:
-	LDA.w !E4,x                             ; \low X
-	STA $D1                                 ;  | fix the player's position to
+; x
+	LDA !CloneXPosLow
+	STA $D1
 	STA $94
-	LDA !14E0,x                             ;  | right on the sprite                high X
-	STA $D2                                 ;  |
+	LDA !CloneXPosHigh
+	STA $D2	
 	STA $95
-	LDA.w !D8,x                             ;  |low Y
-	CMP #$10
-	BCS +
 
-	LDA #$01
-	STA $00
-	BRA ++
-
-+	STZ $00
-++	LDA.w !D8,x                             ;  |low Y
-	SEC : SBC #$10
-
-	STA $D3                                 ;  |
-	STA $96
-	LDA $00
-	BEQ .noSubtract
-
-	LDA !14D4,x                             ;  |high Y
-	SEC : SBC #$01	; sub carry if need to go up/down a screen
-	BRA +
-
-.noSubtract
-	LDA !14D4,x                             ;  |high Y
-+	STA $D4                                 ; /
-	STA $97
+; y
+	LDA !CloneYPosHigh
+	XBA
+	LDA !CloneYPosLow
+	REP #$20
+	SEC : SBC #$0010		; Subtract 16 pixels since the sprite is 16 pixels taller
+	SEP #$20
+	STA $D3		; Store the result in player y position low
+	STA $96		; Store the result in player y position low next frame
+	XBA
+	STA $D4		; Store the result in player y position high
+	STA $97		; Store the result in player y position high next frame
 
 .return
 	; kill x and y speed, next state will set it again
@@ -1095,9 +1176,16 @@ SetupAttributesOfClone:
         LDA $D4;$97
         STA !PlayerPosYHigh
 
+		LDA !E4,x
+		STA !CloneXPosLow
+		LDA !14E0,x
+		STA !CloneXPosHigh
+		LDA !D8,x
+		STA !CloneYPosLow
+		LDA !14D4,x
+		STA !CloneYPosHigh
         LDA $7B
         STA !PlayerSpeedX
-
         LDA $77
         AND #$04
         BNE .removeGravity      ; on ground
@@ -1150,9 +1238,9 @@ SetTeleportingXSpeed:
 		CMP #!PlayerMaxX
 		BCS .return
 
-        LDA !14E0,x                             ; \
+        LDA !CloneXPosHigh                             ; \
         XBA                                     ;  | calculate the distance
-        LDA.w !E4,x                             ;  | between the player and the sprite
+        LDA !CloneXPosLow                             ;  | between the player and the sprite
         REP #$20                                ;  |
         SEC : SBC $D1                           ;  |
         STA $00                                 ; /
@@ -1192,9 +1280,9 @@ SetTeleportingYSpeed:
 		CMP #!PlayerMaxY
 		BCS .haltReturn
 
-        LDA !14D4,x
+        LDA !CloneYPosHigh
         XBA
-        LDA.w !D8,x
+        LDA !CloneYPosLow
         REP #$20
         SEC : SBC $D3
         STA $00
@@ -1244,16 +1332,19 @@ EraseFireballs:
 
         RTS
 
-; extra bit clear: stationary
+SetTile:
+		LDA $9D
+		BEQ .notFrozen
+		JMP Return
 
-Stationary:
+.notFrozen
         JSR CheckIfKilled
         LDA $00
         BEQ .notDead
 
 .dead
         JSR SetFrameDead
-        BRA .return
+        JMP Return
 
 .notDead
 		LDA !14C8,x
@@ -1265,58 +1356,96 @@ Stationary:
 		BNE .jumping
 
 		LDA !164A,x
-		BNE .noSwim
+		BEQ .noSwim
 
 .swim
 		LDA #!SwimmingTile
 		BRA ++
 		
 .noSwim
+		LDA !CloneCarriedItemIndex
+		CMP #$FF
+		BEQ .suspendedInAir
+
+.suspendedWhileHolding
+		LDA #!HoldingTileInAir
+		STA !Frame
+		JMP Return
+
+.suspendedInAir
+		LDA !LandingTimer
+		CMP #$02
+		BCC .inAirNotLanding	; if 0 or 1, not landing
+
+.inAirLanding
+		LDA #!WalkingTile
+		STA !Frame
+		JMP Return
+
+.inAirNotLanding
 		LDA #!JumpingTopLeftTile
 ++		STA !Frame
-		BRA .return
+		JMP Return
 
 .notCarried
         LDA !1588,x
         AND #$04
         BEQ .jumping	; in air
 
-;         LDA !1588,x                             ; \
-;         AND #$03                                ;  | check if against a wall
-;         BEQ .walking		                    ; /
+.checkIfHoldingGrounded
+		LDA !CloneCarriedItemIndex
+		CMP #$FF
+		BEQ .walking
 
-; ..againstWall
-; 		%prepare_extra_bytes()
-;         %load_extra_byte(10)                    ; \
-;         AND #$08                                ;  | if set to jump when against a wall, try jumping
-;         BNE ..tryJumping                        ; /
+.holdingGrounded
+		LDA !LandingTimer
+		CMP #$02
+		BCC .holdingGroundedNotLanding	; if 0 or 1, not landing
 
-; 		BRA .walking
-
-; ..tryJumping
-;         %load_extra_byte(10)                    ; \
-;         AND #$07                                ;  |
-;         TAY                                     ;  | jump with the given height
-;         LDA .jumpSpeeds,y                      ;  |
-;         EOR #$FF : INC                          ;  |
-;         STA !AA,x                               ; /
-;         %load_extra_byte(9)                     ; \
-;         BPL .return                           ;  | play jump sound if set to
-;         db $A9 : db read1($00D65F)              ;  |
-;         db $8D : dw read2($00D661)              ; /
+.holdingLanding
+		JSR SetHoldingLandingTile
+		BRA .groundedCodeDone
+		
+.holdingGroundedNotLanding
+		LDA #!HoldingTile
+		STA !Frame
+		BRA .groundedCodeDone
 
 .walking
+		LDA !LandingTimer
+		CMP #$02
+		BCC .notLanding	; if 0 or 1, not landing
+
+		JSR SetLandingTile
+		BRA .groundedCodeDone
+
+.notLanding
         JSR SetFrameWalking
         LDA $72
         BNE .return
 
+.groundedCodeDone
         LDA #$00
         STA !Spinning           ; not spinning if on ground
         STA !JumpHeld
-
         BRA .return
 
 .jumping
+.checkIfHolding
+		LDA !CloneCarriedItemIndex
+		CMP #$FF
+		BEQ .notHolding
+
+.holding
+		LDA !Spinning
+		BNE .setFrameJumping
+
+		LDA #!HoldingTileInAir ; holding non spin in air
+		STA !Frame
+		BRA .return
+
+.notHolding
+.setFrameJumping
 		JSR SetFrameJumping
 
 .return
@@ -1325,6 +1454,87 @@ Stationary:
 .jumpSpeeds
         db $20,$30,$3C,$46,$4C,$50,$58,$60      ;    the setting for jump height against a wall has only 8 values
                                                 ;    so I picked some reasonable-ish ones
+
+GetIsCloneFastEnoughForPSpeed:
+	LDA !B6,x
+	CMP #$80
+	BCC .goingRight
+
+.goingLeft
+	CMP #$D1
+	BCS .notFastEnough
+.goingRight
+	CMP #$2F
+	BCC .notFastEnough
+
+.fastEnough
+	LDA #$01
+	RTS
+
+.notFastEnough
+	LDA #$00
+	RTS
+
+SetHoldingLandingTile:
+		JSR GetLandingTileIndexInY
+		LDA .holdingLandingTiles,y
+		STA !Frame
+
+		LDA !B6,x
+		BNE .return
+
+		LDA #!StationaryTile
+		STA !Frame
+
+.return
+		RTS
+
+.holdingLandingTiles
+		db !HoldingTileInAir, !HoldingTile
+
+SetLandingTile:
+		JSR GetLandingTileIndexInY
+		JSR GetIsCloneFastEnoughForPSpeed
+		BEQ .notFastEnough
+
+.fastEnough
+		LDA .fastLandingTiles,y	
+		BRA ++
+
+.notFastEnough
+		LDA .landingTiles,y
+++		STA !Frame
+
+		LDA !B6,x
+		BNE .return
+
+		LDA #!StationaryTile
+		STA !Frame
+
+.return
+		RTS
+
+.landingTiles
+		db !WalkingTile, !StationaryTile
+
+.fastLandingTiles
+		db !AltHatTile, !RunningTile
+
+GetLandingTileIndexInY:
+		LDA !LandingFrameCounter
+		CLC : ADC !B6,x
+		STA !LandingFrameCounter
+		BMI .first
+
+.second
+		LDA #$00
+		TAY
+		RTS
+
+.first
+		LDA #$01
+		TAY
+		RTS
 
 Graphics:
 ;         ; set up properties byte
@@ -1339,6 +1549,7 @@ Graphics:
         CMP #$02
         BCS .defaultPalette
 
+		LDA !157C,x
         ROR #3
         STA $03
 
@@ -1352,6 +1563,19 @@ Graphics:
 		BRA +
 
 ..normal
+		; check if clone held
+		LDA !14C8,x
+		CMP #$0B
+		BNE ..notHeld
+
+		; if clone held, set its direction to player's direction and use that for X flip
+		LDA $76         ; Get player direction (0=right, 1=left)
+		EOR #$01        ; Invert for X flip (0=no flip, 1=flip)
+		STA !157C,x     ; Update the sprite's actual direction
+		STA !SpriteDirection ; Keep updating this for teleport logic (seems safe)
+		BRA +
+
+..notHeld	
         LDA !157C,x                             ; \
 +       AND #$01                                ;  |
         EOR #$01                                ;  | set the x flip bit based on direction
@@ -1396,12 +1620,12 @@ Graphics:
         %GetDrawInfo()
 
         LDA $00
-        STA $0300|!Base2,y
+        STA $0300|!addr,y
         LDA $01
         SEC : SBC #$10
-        STA $0301|!Base2,y
+        STA $0301|!addr,y
         JSR GetTopTile
-        STA $0302|!Base2,y										; YXPP CCCT
+        STA $0302|!addr,y										; YXPP CCCT
 		LDA !TeleportReady : BNE + : LDA #$11 : BRA ++ : +		; 0001 0001
 
 														; YXPP CCCT
@@ -1409,16 +1633,16 @@ Graphics:
 														; YXPP CCCT
         LDA #$21                        				; 0010 0001
 ++		ORA $03
-        STA $0303|!Base2,y
+        STA $0303|!addr,y
 
         INY #4
 
         LDA $00
-        STA $0300|!Base2,y
+        STA $0300|!addr,y
         LDA $01
-        STA $0301|!Base2,y
+        STA $0301|!addr,y
         JSR GetBottomTile
-        STA $0302|!Base2,y										; YXPP CCCT
+        STA $0302|!addr,y										; YXPP CCCT
 		LDA !TeleportReady : BNE + : LDA #$11 : BRA ++ : +		; 0001 0001
 
 														; YXPP CCCT
@@ -1426,7 +1650,7 @@ Graphics:
 														; YXPP CCCT
         LDA #$21                        				; 0010 0001
 ++		ORA $03
-        STA $0303|!Base2,y
+        STA $0303|!addr,y
 
         LDY #$02
         LDA #$01
@@ -1491,6 +1715,15 @@ GetTopTile:
 
 .topTileIsOther
 	LDA !Frame	; should already be TL tile
+	CMP #!WalkingTile
+	BEQ .altHat
+	CMP #!HoldingTileInAir
+	BEQ .altHat
+
+	BRA .return
+
+.altHat
+	LDA #!AltHatTile
 	BRA .return
 
 .topTileIsHat
@@ -1507,6 +1740,11 @@ GetBottomTile:
 
 .topTileIsOther
 	LDA !Frame			; should already be TL tile
+	CMP #!WalkingTile	; no need to add 20 to bottom tile
+	BEQ .return
+	CMP #!HoldingTileInAir
+	BEQ .return
+
 	CLC : ADC #$20		; go 2 tiles down in GFX
 	BRA .return
 
@@ -1518,12 +1756,18 @@ GetBottomTile:
 
 SetCarryIfReusingHatTile:
 	LDA !Frame
+	CMP #!WalkingTile
+	BEQ .doNotReuse
+	CMP #!HoldingTileInAir
+	BEQ .doNotReuse
+
 	AND #$0F
 	CMP #$04
 	BCC .reuse
 
 	CMP #$0C
 	BCS .reuse
+
 
 .doNotReuse
 	CLC
@@ -1596,6 +1840,12 @@ SetCarryIfShell:	;requires sprite in y
 	BEQ .isShell
 
 	CMP #!KoopaShellRed
+	BEQ .isShell
+
+	CMP #!KoopaShellBlue
+	BEQ .isShell
+
+	CMP #!KoopaShellYellow
 	BEQ .isShell
 
 .spinyShellCheck
@@ -1852,14 +2102,14 @@ SetFrameRunning2:
 	RTS
 
 SetFrameWalking1:
-        LDA #!WalkingTopLeftTile
+        LDA #!StationaryTile
         STA !Frame
         RTS
 
 
 
 ; SetFrameWalking2:
-;         LDA #!WalkingTopLeftTile+2
+;         LDA #!StationaryTile+2
 ;         STA !Frame
 ;         RTS                                     ; /
 
@@ -1891,6 +2141,7 @@ SetFrameJumping:
         LDA !Spinning
         BEQ .regJump
 
+.spinning
         LDA !SpinDirection
         CMP #$02
         BCC +
@@ -1909,7 +2160,7 @@ SetFrameJumping:
 
 .change
         LDA !Frame
-        CMP #!WalkingTopLeftTile
+        CMP #!StationaryTile
         BNE .notSide    ; CURRENTLY: forward/back
 
         BRA .side       ; CURRENTLY: left/right
@@ -1934,7 +2185,8 @@ SetFrameJumping:
 .left
         LDA #$01
         STA !SpinDirection
-        LDA #!WalkingTopLeftTile
+		STA !157C,x
+        LDA #!StationaryTile
         BRA .changeReturn
 
 .forward
@@ -1944,7 +2196,8 @@ SetFrameJumping:
 .right
         LDA #$00
         STA !SpinDirection
-        LDA #!WalkingTopLeftTile
+		STA !157C,x
+        LDA #!StationaryTile
         BRA .changeReturn
 
 .backward
@@ -1967,17 +2220,17 @@ SetFrameJumping:
 		BRA ++
 
 .noPSpeed
-		LDA !164A,x
-		BNE .noSwim
+		LDA !164A,x ; check if clone is swimming
+		BEQ .noSwim ; if not, don't swim
 
 .swim
-		LDA #!SwimmingTile
-		BRA ++
+		LDA #!SwimmingTile ; set swimming tile
+		BRA ++ ; then return
 
 .noSwim
-        LDA #!JumpingTopLeftTile
+        LDA #!JumpingTopLeftTile ; set normal jump tile
 ++
-        STA !Frame
+        STA !Frame ; set frame
         RTS                                     ; /
 
 
@@ -2279,18 +2532,19 @@ HandleCarryableSpriteStuff:
 .kicked
 		LDA !PreviousState
 		CMP #$0B
-		BNE .notCarried
+		BNE .notCarried ; if not kicked by player, don't set non-interaction timer to 16 frames
 
+		; Set non-interaction timer to 16 frames
 		LDA #$10
 		STA !154C,x
 
 .notCarried
-        LDA !1588,x
-        PHA
+	LDA !1588,x
+	PHA
 	JSL $019138|!BankB	; interact w/ blocks
+	PLA
+	STA !1588,x
 	JSR SpriteAndSpecialBlockInteraction
-        PLA
-        STA !1588,x
 
 	LDA !OnPlatform
 	BEQ +
@@ -2298,18 +2552,27 @@ HandleCarryableSpriteStuff:
 .onPlatform
 	LDA !1588,x
 	ORA #$04
-	STA !1588,x
+	STA !1588,x	; set on ground
+	; JSR HandleLandingBounce
 	BRA .groundCodeDone
 
 .carried
 +
+		LDA !LandingTimer
+		CMP #$02
+		BCS .landing
+
         LDA !1588,x
         AND #$04
         BEQ .notOnGround
 
+.landing
         JSR HandleLandingBounce
+		BRA .groundCodeDone
 
 .notOnGround
+		LDA #$00
+		STA !LandingTimer
 .groundCodeDone
         LDA !1588,x
         AND #$08
@@ -2406,20 +2669,64 @@ HandleBlockHit:
 
 HandleLandingBounce:
 
+	LDA !14C8,x
+	CMP #$0B
+	BEQ .carried
+
+	LDA !OnPlatform
+	BNE .canLand
+
+	LDA !1588,x
+	AND #$04
+	BEQ .notOnGround
+	
+	BRA .canLand
+
+.carried 	; reset landing timer and frame counter
+.notOnGround
+	LDA #$00
+	STA !LandingTimer
+	STA !LandingFrameCounter
+	BRA .return
+
+.canLand
 	LDA $40010B ;($7E010B&$FFFF)|bankA		; Get current level
 	CMP #!RunningLevel	; Don't touch X speed if on this level
 	BEQ .return
 
-.halveXSpeed
 	LDA !B6,x
-	PHP
-	BPL +
-	EOR #$FF : INC
-+   LSR
-	PLP
-	BPL +
-	EOR #$FF : INC
-+   STA !B6,x
+	BNE .checkLandingTimer	; if X speed is not 0, check landing timer
+
+	LDA #$01
+	STA !LandingTimer	; if X speed is 0, set landing timer to 1
+	LDA #$00
+	STA !LandingFrameCounter
+	BRA .return
+
+.checkLandingTimer
+	LDA !LandingTimer
+	BEQ .setLandingTimer	; if landing timer is 0, set it to 12
+
+	LDA !PreviousXSpeed
+	STA !B6,x	; restore X speed
+
+	BRA .decrementXSpeed
+	
+.setLandingTimer
+	LDA #!TimeToSpendLanding
+	STA !LandingTimer
+
+.halveXSpeed
+; 	LDA !B6,x
+; 	PHP
+; 	BPL +
+; 	EOR #$FF : INC
+; +   LSR
+; 	PLP
+; 	BPL +
+; 	EOR #$FF : INC
+; +   STA !B6,x
+;.editYSpeed
 ;         LDA !AA,x
 ;         PHA
 
@@ -2440,10 +2747,35 @@ HandleLandingBounce:
 ;         LDY !1588,x
 ;         BMI .return
 ;         STA !AA,x
+.decrementXSpeed
+	LDA !B6,x
+	CMP #$80
+	BCC ..rightDirection
 
+..leftDirection
+	CLC : ADC #$01
+	BRA ..storeXSpeed
+
+..rightDirection
+	SEC : SBC #$01
+
+..storeXSpeed
+	STA !B6,x
+	BNE .return
+
+.setLanded
+	LDA #$01
+	STA !LandingTimer
 .return
-	STZ !AA,x	; Sprite should never bounce up and down because mario doesn't work like that
-	RTS
+	LDA !B6,x
+	STA !PreviousXSpeed	; Store X speed if landing or on the ground
+
+	LDA !1588,x
+	AND #$04
+	BEQ +	
+
+	STZ !AA,x	; Only set Y speed to 0 when on the ground
++	RTS
 
 .bounceSpeeds
         db $00,$00,$00,$F8,$F8,$F8,$F8,$F8
@@ -2556,7 +2888,11 @@ SafeGetMap16:
 	LDA $0F
 	PHA
 
+	LDA !1588,x
+	PHA
 	JSL $019138|!BankB
+	PLA
+	STA !1588,x
 	LDA $0C
 	STA $98
 	LDA $0D
@@ -2573,6 +2909,72 @@ SafeGetMap16:
 	; Get Map16 Bytes (in A, 16-bit)
 	%GetMap16()
 	RTS
+
+SafeGetMap16_ActAsInsideClone:
+	; Get X, Y position of block from $19138
+	LDA $0F
+	PHA
+	
+	LDA !14D4,x		; high Y
+	XBA
+	LDA !D8,x		; low Y
+	REP #$20
+	CLC : ADC #$0008 ; middle of sprite
+	STA $98
+	SEP #$20
+
+	LDA !14E0,x		; high X
+	XBA
+	LDA !E4,x		; low X
+	REP #$20
+	CLC : ADC #$0008 ; middle of sprite (8 pixels right)
+	STA $9A
+	SEP #$20
+	STZ $1933|!addr
+
+	PLA
+	STA $0F
+
+	; Get Map16 Bytes (in A, 16-bit)
+	%GetMap16()
+
+	; get tile number in A
+	XBA
+	TYA
+	XBA
+	REP #$20
+	STA $06
+	SEP #$20
+
+	; check if tile is in wallTiles
+	PHX
+	LDX #$00
+	REP #$20
+	LDA $06
+	SEP #$20
+.loopWallTiles
+	REP #$20
+	CMP .wallTiles,x
+	SEP #$20
+	BEQ .isWallTile
+
+	INX
+	CPX #$01
+	BNE .loopWallTiles
+
+	; if not, return -1
+	PLX
+	LDA #$FF
+	RTS
+
+.isWallTile
+	; return index in A
+	TXA
+	PLX
+	RTS
+
+.wallTiles
+	dw $4E1D
 
 SafeGetMap16_ActAs_BelowSprite:
 	LDA $0F
@@ -2619,7 +3021,11 @@ SafeGetMap16DifferentXPos:
 	LDA $0F
 	PHA
 
+	LDA !1588,x
+	PHA
 	JSL $019138|!BankB
+	PLA
+	STA !1588,x
 	LDA $0C
 	STA $98
 	LDA $0D
@@ -2813,6 +3219,16 @@ SpriteAndSpecialBlockInteraction:
 	JMP CheckInteractableBlocksList
 
 .sprSprContactFound
+.checkCloneCarriedItem
+	; First, check if it's the sprite that the clone is carrying
+	TYA
+	CMP !CloneCarriedItemIndex
+	BNE .checkShell
+
+	; if it is, don't interact
+	JMP Return
+
+.checkShell
 	JSR SetCarryIfShell
 	BCC .nonShell
 
@@ -2821,8 +3237,28 @@ SpriteAndSpecialBlockInteraction:
 
 .nonShell
 	LDA !154C,y
-	BNE .returnBridge
+	BEQ .isInteractable
 
+.checkCustomPlatform
+	; check type
+	PHX
+		TYX
+		LDA !7FAB10,x
+	PLX
+	AND #$08
+	BEQ .notCustomPlatform
+
+.isCustomPlatform ; EXCEPTION: if is platform, always interact (so that kicking up a key takes the clone with it)
+	; check if is key
+	PHX
+	TYX
+	LDA !7FAB9E,x ;!9E,x
+	PLX
+	CMP #$08
+	BEQ .customKeyCheck
+
+.notCustomPlatform
+.isInteractable
 	LDA !14C8,y
 	CMP #$08
 	BCC .returnBridge
@@ -2859,7 +3295,7 @@ SpriteAndSpecialBlockInteraction:
 
 .bulletBillCheck
 		CMP #$1C
-		BEQ .tryBounce
+		BEQ .tryBounceBridge
 
 .movingCoinCheck
 		CMP #$21
@@ -2867,35 +3303,45 @@ SpriteAndSpecialBlockInteraction:
 
 .thwompCheck
 		CMP #$26
-		BEQ .tryBounce
+		BEQ .tryBounceBridge
 
 .urchinCheck
 		CMP #$3B
-		BEQ .tryBounce
+		BEQ .tryBounceBridge
 
 .powCheck
 		CMP #$3E
-		BEQ .return
+		BEQ .returnBridge
 
 .jumpingPirhanaPlantCheck
 		CMP #$4F
-		BEQ .tryBounce
+		BNE .floatingSkullsCheck
+		JMP MarioSpriteTryBounceOrSpin
 
 .floatingSkullsCheck
 		CMP #$61
-		BEQ .platform
+		BEQ .platformBridge
+
+.greenBeanCheck
+		CMP #$6C
+		BEQ .returnBridge
 
 .growingVineCheck
 		CMP #$79
-		BEQ .return
+		BNE .keyCheck
+		JMP Return
+
+.platformBridge
+		BRA .platformBridge2
 
 .keyCheck
 		CMP #$80
-		BEQ .return
+		BNE .messageBoxCheck
+		JMP Return
 
 .messageBoxCheck
 		CMP #$B9
-		BEQ .return
+		BEQ .returnBridge
 
 .greyPlatformCheck
 		CMP #$C4
@@ -2903,16 +3349,19 @@ SpriteAndSpecialBlockInteraction:
 		BNE .tryBounce
 
 		JSR CheckIfAbove
-		BCC .return
+		BCC .returnBridge
 
 		JSR KickstartGreyPlatformFalling
-		BRA .platform
+		BRA .platformBridge2
 
 .tryBounceBridge
-		BRA .tryBounce
+		BRA .tryBounceBridge2
 
 .returnBridge
-		BRA .return
+		JMP Return
+
+.platformBridge2
+		JMP Platform
 
 .isCustom
 	PHX
@@ -2920,21 +3369,28 @@ SpriteAndSpecialBlockInteraction:
 		LDA !7FAB9E,x ;!9E,x
 	PLX
 
+.customKeyCheck
+	CMP #$08
+	BEQ .customKeyCode
+
 .BowserFireballCheck
 	CMP #$13
 	BEQ .tryBounce
 
 .powBlockCheck
 	CMP #$1C
-	BEQ .return
+	BNE .OnOffGreyPlatformCheck
+	JMP Return
 
 .OnOffGreyPlatformCheck
 	CMP #$16
 	BNE .urchinDisassemblyCheck
 
 	JSR CheckIfAbove
-	BCC .return
+	BCS .._continue
+	JMP Return
 
+.._continue
 	LDA !7FAB10,y
 	AND #$04
 	CMP #$04
@@ -2951,7 +3407,10 @@ SpriteAndSpecialBlockInteraction:
 
 ..continue
 	JSR KickstartGreyPlatformFalling
-	BRA .platform
+	BRA Platform
+
+.tryBounceBridge2
+	BRA .tryBounce
 
 .urchinDisassemblyCheck
 	CMP #$17
@@ -2976,18 +3435,112 @@ SpriteAndSpecialBlockInteraction:
 .tryBounce
 	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
 
-.platform
+.customKeyCode
+	PHX
+	TYX
+	LDA !14C8,x
+	STA $00
+	PLX
+	LDA $00
+	CMP #$0B
+	BEQ Platform	; if key held, don't push clone
+
+	JSR CheckIfAbove ; if clone is above key, don't push clone
+	BCS Platform
+
+	PHY
+	STZ !B6,x						;stop clone from moving
+	JSR GetMarioSpriteRightOfContactSprite		;get which side the clone's at
+	BMI .pushLeft
+
+.pushRight
+	LDY #$00
+	BRA .pushClone
+
+.pushLeft
+	LDY #$01
+.pushClone
+	TYA						;
+	ASL						;
+	TAY						;
+	LDA !14E0,x
+	XBA
+	LDA !E4,x
+	REP #$20					;
+	CLC : ADC PushXValues,y				;push the player to be outside the key
+	SEP #$20					;
+	STA !E4,x						;
+	XBA
+	STA !14E0,x
+	PLY
+	BRA Platform
+
+.return
+	RTS
+
+Platform:
 	LDA !14C8,x
 	CMP #$0A
 	BEQ .return
 
-	LDA !AA,x
+	LDA !AA,x ; if clone is moving up,
 	CMP #$80
-	BCS .return
+	BCC .checkGrounded
+
+	; then only interact if platform is moving up too
+	PHX
+	TYX
+	LDA !AA,x
+	PLX
+	CMP #$80
+	BCC .return
+
+.checkGrounded
+	; if clone is grounded, don't interact
+	LDA !1588,x
+	AND #$04
+	BNE .return
+
+.checkCeiling
+	; if clone is against a ceiling, don't interact
+	PHY
+	JSR CheckIfSpriteBlockedUpwards
+	STA $00
+	PLY
+	LDA $00
+	BNE .cloneCeiling
 
 	JSR OnPlatform
+	BRA .return
 
+.cloneCeiling
+	; if clone is against a ceiling, stop clone from moving up
+	LDA #$10
+	STA !AA,x
+	; stop key from moving up if it is
+	PHX
+	TYX
+	LDA #$10
+	STA !AA,x
+.checkIfPlayerCarriesKeyPlatform
+	LDA !14C8,x
+	STA $00
+	PLX
+	LDA $00
+	CMP #$0B
+	BNE .return
+
+	; if the key is being carried, stop player from movin up too
+	LDA #$10
+	STA $7D
 .return
+	RTS
+
+;used to push the player out when they run into the key
+PushXValues:
+	dw $0001,$FFFF
+
+Return:
 	RTS
 
 CheckIfAbove:
@@ -3038,8 +3591,17 @@ KickstartGreyPlatformFalling:
 	RTS
 
 OnPlatform:
+	; if the platform is what the clone is carrying, don't interact
+	TYA
+	CMP !CloneCarriedItemIndex
+	BEQ .return
+
 	LDA #$01
 	STA !OnPlatform
+
+	LDA !1588,x  		; Get sprite blocked status (ceiling check)
+	AND #$08
+	BNE .dontSetHeight	; if clone is against a ceiling, don't set height
 
 	;set height of this sprite to height of contact sprite
 	LDA !14D4,y
@@ -3053,23 +3615,56 @@ OnPlatform:
 	XBA
 	STA !14D4,x
 
+.dontSetHeight
 	;set y speed to contact sprite speed
 	LDA !AA,y
 	STA !AA,x
 
-	;set x speed to contact sprite speed
-	LDA !B6,y
+	; if contact sprite is held by player
+	LDA !14C8,y
+	CMP #$0B
+	BNE .contactSpriteNotCarried
+
+.contactSpriteCarried
+	; set clone x speed to player x speed
+	LDA $7B
 	STA !B6,x
 
+	BRA .return
+
+.contactSpriteNotCarried
+	; ;set x speed to contact sprite speed
+	; LDA !B6,y
+	; STA !B6,x
+	; add contact sprite x speed to clone x speed
+	JSR HandleLandingBounce
+	LDA !B6,y
+	CLC : ADC !B6,x
+	BVC .noClamping 	; if no overflow, sum is within bounds, skip clamping
+
+	BPL .clampPositive	; if overflow, and not negative, sum was greater than 127, so clamp at 127
+
+	LDA #$80			; clamp to -128 (0x80)
+	BRA .storeXSpeed
+
+.clampPositive
+	LDA #$7F			; clamp to 127 (0x7F)
+
+.noClamping
+.storeXSpeed
+	STA !B6,x
+
+	; set fraction bits of x speed to contact sprite fraction bits
 	LDA !14F8,y
 	STA !14F8,x
 
 .return
+	;JSR HandleLandingBounce
 	RTS
 
 MarioSpriteInteractWithVanillaShell:
-	LDA !154C,x
-	BNE .returnBridge
+	; LDA !154C,x
+	; BNE .returnBridge
 
 .groundCarry
 	; if shell carried,
@@ -3283,11 +3878,17 @@ MarioSpriteTryBounceOrSpin:
 
 	; For leniency on shell jumps, just let the clone bounce/spin if it's airborne already
 	CMP #$0A	; check if kicked
-	BNE .normalHeightCheck
+	BNE .checkIfStunnedKoopa
 
 	LDA !1588,x             					; Check if sprite is blocked downward (on ground)
 	AND #$04
 	BEQ .airborneLenientShellJump              	; If sprite is not on ground (airborne), branch to .airborneLenientShellJump
+
+.checkIfStunnedKoopa
+	LDA !163E,y
+	AND #$80 ; if 80 or higher, it's a stunned koopa
+	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
+	BNE .checkIfMarioSpriteJumpingOnJumpableSprite ; if one of these, no need to check if mario is on top
 
 	; if clone is on ground, normal height check
 .normalHeightCheck
@@ -3363,6 +3964,7 @@ MarioSpriteTryBounceOrSpin:
 	BRA .done
 
 .notSpinning
+.checkIfMarioSpriteJumpingOnJumpableSprite
 	JSR CheckIfMarioSpriteJumpingOnJumpableSprite
 
 .done
@@ -3428,6 +4030,15 @@ SprSprContact:
 	RTS					;end? return.
 
 CheckIfMarioSpriteOnTop:
+	LDA !163E,y
+	AND #$80 ; if 80 or higher, it's a stunned koopa
+	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
+	BCC .notStunnedKoopa
+
+	; if Stunned koopa, don't kill mario
+	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
+
+.notStunnedKoopa
     LDA #!NumPixelsAboveSpriteRequiredToBounce    ;#$14       ;\ the lower this value, the more lenient
     STA $01                 ;|
     LDA $05                 ;|
@@ -3475,6 +4086,18 @@ KillMarioSprite:
 	RTS
 
 CheckIfMarioSpriteJumpingOnJumpableSprite:
+	LDA !163E,y
+	AND #$80 ; if 80 or higher, it's a stunned koopa
+	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
+	BNE .fallDownBridge
+
+	; LDA !1588,x
+	; AND #$04
+	; BEQ .cloneNotOnGround
+
+
+.cloneNotOnGround
+.notStunnedKoopa
 	; x = MarioSprite, y = contact sprite
 	; Check if Sprite is Able to be Bounced On
 	LDA !1656,y
@@ -3485,46 +4108,66 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 
 .canBeJumpedOn
 	LDA !JumpHeld
-	BNE ..highJump
+	BNE .highJump
 
-..lowJump
+.lowJump
 	LDA #!NonSpikyLowBounce
 	STA !BouncingSpeed
-	BRA ..checkIfSpriteNeedsToBeKilled
+	BRA .checkIfSpriteNeedsToBeKilled
 
-..highJump
+.highJump
 	LDA #!NonSpikyHighBounce
 	STA !BouncingSpeed
-..checkIfSpriteNeedsToBeKilled
+.checkIfSpriteNeedsToBeKilled
 	LDA !1656,y
 	AND #$30				; "Dies when jumped on" or "Can be jumped on" (non-spiky)
-	BNE ..checkKoopas
+	BNE .checkKoopas
 
 	LDA !1662,y
 	AND #$80				; "Falls straight down when killed"
-	BNE ..fallDown
+	BNE .fallDownBridge
 
-	BRA ..jumpSoundAndPoints
+	BRA .jumpSoundAndPoints
 
-..checkKoopas
+.checkKoopas
 	LDA !7FAB10,y
 	AND #$08
-	BNE ..isCustom
+	BNE .isCustom
 
-	LDA !7FAB9E,y
+.isVanilla
+	LDA !9E,y ;!7FAB9E,y
 	CMP #$08        ; vanilla koopas are <= 07
-	BCS ..jumpSoundAndPoints
+	BCS .jumpSoundAndPoints
 
 	CMP #$04
-	BCS ..hurtWalkingKoopa
+	BCS .hurtWalkingKoopa
+	BRA .spawnSquishedKoopa
 
-..spawnSquishedKoopa
+.isCustom
+	LDA !7FAB9E,y
+	CMP #!KoopaShellBlue
+	BNE +
+	BRA .isCustomKoopaShell
+
++	CMP #!KoopaShellYellow
+	BNE .jumpSoundAndPoints
+
+.isCustomKoopaShell
+	LDA !14C8,y
+	CMP #$08
+	BEQ .hurtWalkingKoopa
+	BRA .jumpSoundAndPoints
+
+.fallDownBridge
+	BRA .fallDown
+
+.spawnSquishedKoopa
 	%SetSpriteStatus(#$03, y) ; LDA #$03 : STA !14C8,y (squish)
 	PHY
     LDA !9E,y ;#$01
     CLC
     %SpawnSprite()
-    BCS ..spawnFailed
+    BCS .spawnFailed
 
     LDA #$03 ; state, smushed
     STA !14C8,y
@@ -3535,34 +4178,41 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
     STA !AA,y
 	PLY
 
-	BRA ..jumpSoundAndPoints
+	BRA .jumpSoundAndPoints
 
-..hurtWalkingKoopa
+.hurtWalkingKoopa
 	%SetSpriteStatus(#$09, y)
 	JSR SpawnThrownKoopa
-	BRA ..jumpSoundAndPoints
+	BRA .jumpSoundAndPoints
 
-..fallDown
+.fallDown
 	%SetSpriteStatus(#$02, y) ; LDA #$02 : STA !14C8,y (fall off screen)
-	BRA ..jumpSoundAndPoints
+	BRA .jumpSoundAndPoints
 
-..spawnFailed
+.spawnFailed
 	PLY
-..isCustom
-..jumpSoundAndPoints
+; .isCustom
+.jumpSoundAndPoints
+	LDA !163E,y
+	AND #$80 ; if 80 or higher, it's a stunned koopa
+	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
+	BNE .noContactGraphic
+
 	STZ $00 : STZ $01
 	LDA #$08 : STA $02
 	LDA #$02	; contact graphic
 	PHY
 	%SpawnSmoke()
 	PLY
+
+.noContactGraphic
 	LDA !187B,y	;not killable
-	BNE ..unkillable
+	BNE .unkillable
 
 	JSR GivePoints
 	BRA .return
 
-..unkillable
+.unkillable
 	LDA #$02
 	STA $1DF9|!addr
 .return
@@ -3872,29 +4522,211 @@ endif
 
 RTS
 
-; if !PlatformsFix && !FreezeMiscTables
-; pushpc					;/
-; ORG $01B498				;|
-; JSL Fix					;|
-; ORG $01CA56				;|
-; JSL Fix					;|
-; pullpc					;|
-; 						;| Fixes Mario sliding on platforms while frozen if he's stood on one.
-; Fix:					;|
-; LDA !FreeRAMTimer		;|
-; BNE .NoMove				;|
-; LDA $77					;|
-; AND #$03				;|
-; .NoMove					;|
-; RTL						;\
+; Gets index of player carried item
+GetPlayerCarriedItemIndex:
+	LDA $1470|!Base2
+	ORA $148F|!Base2
+	BEQ .playerNotHoldingItem			; If player not carrying anything, return #$FF
 
-; else
-; pushpc					;/
-; ORG $01B498				;|
-; LDA $77					;|
-; AND #$03				;|
-; ORG $01CA56				;| Restore hijacked code if the platform fix is disabled.
-; LDA $77					;|
-; AND #$03				;|
-; pullpc					;\
-; endif
+	LDY #!sprite_slots-1		;loop count (loop though all sprite number slots)
+	.Loop
+	PHX
+	LDA !14C8,y		;load sprite status
+	CMP #$0B		; check if being carried
+	BNE .LoopSprSpr		;if not, keep looping.
+
+	.okay
+	TYA
+	STA !PlayerCarriedItemIndex	; 0 if found carried item
+	PLX			;restore sprite index
+	RTS			;return.
+
+	.LoopSprSpr
+	PLX			;restore sprite index
+	DEY			;decrement loop count by one
+	BPL .Loop		;and loop while not negative.
+
+	.playerNotHoldingItem
+	LDA #$FF
+	STA !PlayerCarriedItemIndex
+
+	.return
+	RTS			;end? return.
+
+; Sets position of clone carried item
+HandleCloneCarriedItemPosition:
+	LDA $9D
+	BNE .return
+
+	LDA !CloneCarriedItemIndex
+	CMP #$FF
+	BEQ .return
+
+	TAY
+	LDX $15E9|!addr
+	LDA !157C,x 		; set item's direction to clone's direction
+	STA !157C,y
+
+	; set item's position to clone's position
+	ASL ; multiply x by 2 because of 16-bit addressing
+	STA $00 ; save offset for later
+
+	; set item's x position to clone's x position + 16 (or -16 if facing left)
+	LDA !14E0,x
+	XBA
+	LDA !E4,x
+	PHX ; save clone index
+	LDX $00 ; load offset
+	REP #$20
+	CLC : ADC XPosOffset,x
+	SEP #$20
+	STA !E4,y
+	XBA
+	STA !14E0,y
+	PLX ; restore clone index
+
+	; x fraction bits
+	LDA $14F8|!BankA,x
+	PHX
+	TYX
+	STA $14F8|!BankA,x
+	PLX
+
+	; set item's y position to clone's y position
+	LDA !14D4,x
+	XBA
+	LDA !D8,x
+	REP #$20
+	SEC : SBC #$0001 ; subtract 1 in 16-bit mode
+	SEP #$20
+	STA !D8,y                                     
+	XBA
+	STA !14D4,y                                   
+
+	; y fraction bits
+	LDA $14EC|!BankA,x
+	PHX
+	TYX
+	STA $14EC|!BankA,x
+	PLX
+
+	.return
+	RTS
+
+; Transfers items depending on what's held
+TransferItems:
+	; Regardless of whether player is carrying an item,
+	; transfer it to the clone, clone gets whatever player has, even if it's nothing
+	JSR TransferItemPlayerToClone		; saves clone's item index into $00
+
+	; Regardless of whether clone is carrying an item,
+	; transfer it to the player, player gets whatever clone had, even if it's nothing
+	JSR TransferItemCloneToPlayer
+
+	.return
+	RTS
+
+; Swaps player carried item to clone
+TransferItemPlayerToClone:
+	PHX
+	LDA !CloneCarriedItemIndex
+	STA $06								; save clone's item index for later
+	LDA !PlayerCarriedItemIndex
+	STA !CloneCarriedItemIndex	
+	CMP #$FF
+	BEQ .return							; if player had no item, don't try to set it to stationary
+
+	TAX
+	LDA #$09
+	STA !14C8,x							; set clone's item status to stationary/carryable
+	JSR HandleCloneCarriedItemPosition	; update clone's item position
+
+	.return
+	PLX
+	RTS
+
+; Swaps clone carried item to player
+TransferItemCloneToPlayer:
+	PHX
+	LDA $06
+	STA !PlayerCarriedItemIndex			; set player's item index to clone's item index
+	CMP #$FF
+	BEQ .return							; if clone had no item, don't try to set it to carried
+
+	TAX
+	LDA #$0B
+	STA !14C8,x							; set player's item status to carried
+
+	.return
+	PLX
+	RTS
+
+MoveCloneToPlayer:
+	; Instantly move clone to player's position
+	LDA !PlayerPosXLow                             ; \
+	STA !E4,x                                     ;  | fix the sprite's position to
+	LDA !PlayerPosXHigh                           ;  | right on the player's previous
+	STA !14E0,x                                   ;  |
+	LDA !PlayerPosYLow                            ;  |
+	CLC : ADC #$10                                ;  |  sprite down a tile
+	STA !D8,x                                     ;  |
+	LDA !PlayerPosYHigh                           ;  |
+	ADC #$00	; add the carry incase need to go down a screen
+	STA !14D4,x                                   ; /
+
+	;also take player's speed
+	LDA !PlayerSpeedX
+	STA !B6,x
+	LDA !PlayerSpeedY
+	STA !AA,x
+
+	;sprite take player's direction
+	LDA $76
+	AND #$01
+	EOR #$01
+	STA !157C,x
+
+	.return
+	RTS
+
+GetPositionAboveSprite:
+	LDA !14D4,x		; high Y
+	XBA
+	LDA !D8,x		; low Y
+	REP #$20
+	SEC : SBC #!NumPixelsAboveSpriteToHitCeiling
+	STA $98
+	SEP #$20
+
+	LDA !14E0,x		; high X
+	XBA
+	LDA !E4,x		; low X
+    REP #$20
+        CLC : ADC #!XOffset
+        STA $9A
+    SEP #$20
+	STZ $1933|!addr
+
+	RTS
+
+CheckIfSpriteBlockedUpwards:
+	LDA !1588,x
+	AND #$08
+	BNE .blocked
+
+	; additional check
+	JSR GetPositionAboveSprite
+	%GetMap16_ActAs()
+	CMP.b #!CeilingTileNumber
+	BNE .notBlocked
+	CPY.b #!CeilingTileNumber>>8
+	BNE .notBlocked
+
+.blocked	
+	LDA #$01
+	RTS
+
+.notBlocked
+.return
+	LDA #$00
+	RTS

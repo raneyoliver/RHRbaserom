@@ -50,8 +50,9 @@ print "INIT ",pc
 RTL
 
 Tilemap:
-	db 	$84, $4A, $4C, $4E, $6A, $6C
 	;		 U    D    UD   H    DD
+	db 	$84, $A0, $A2, $A4, $C0, $C2
+; db 	$84, $4A, $4C, $4E, $6A, $6C
 
 SpriteCode:
 	JSR OffscreenRoutine

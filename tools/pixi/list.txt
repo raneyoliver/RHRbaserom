@@ -4,6 +4,9 @@
 ; - other sprite types have special considerations, see PIXI's readme for more details.
 
 ; Add your sprites here
+06 KoopaShellBlue.json
+07 KoopaShellYellow.json
+08 Key.json
 09 Cursor.cfg
 10 ReverseGravKoopaShellGreen.json
 11 MultiBounceShellGreen.json
