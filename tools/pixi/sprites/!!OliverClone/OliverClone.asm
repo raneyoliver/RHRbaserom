@@ -819,8 +819,20 @@ HandleState:
 
 	PHX
 	JSR BackupAllSpriteProperties
-
 	PLX
+
+	; If player was holding an item, make it go invisible (inside yoshi's mouth?)
+	LDA !PlayerCarriedItemIndex
+	CMP #$FF
+	BEQ ..playerNotHoldingItem
+
+	PHX
+	TAX
+	LDA #$07
+	STA !14C8,x
+	PLX
+
+..playerNotHoldingItem
 	LDA #$FF
 	STA $9D
 	JSR EraseFireballs
@@ -1046,6 +1058,7 @@ HandleState:
 	STA !State       ; Store the result back into !State
 	STA !Frozen
 	STA !LandingTimer
+	JSL $019138|!BankB	; re test if on ground
 	JSR HandleLandingBounce
 	JSR TransferItems
 ._return
@@ -1803,7 +1816,7 @@ SetCarryIfShell:	;requires sprite in y
 	BNE .isCustom
 
 .isVanilla
-	LDA !7FAB9E,x	; !9E,x
+	LDA !9E,x
 .ghostShellCheck
 	CMP #!GhostShell
 	BEQ .isShell
@@ -4033,7 +4046,7 @@ CheckIfMarioSpriteOnTop:
 	LDA !163E,y
 	AND #$80 ; if 80 or higher, it's a stunned koopa
 	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
-	BCC .notStunnedKoopa
+	BEQ .notStunnedKoopa
 
 	; if Stunned koopa, don't kill mario
 	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning

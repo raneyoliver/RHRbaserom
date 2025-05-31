@@ -351,7 +351,7 @@ CheckFrozen:
     BEQ .runCode
 
 .Unfreeze
-    JSR RestoreSpriteSpeedAndState
+    ;JSR RestoreSpriteSpeedAndState
 
     LDA #$00
     STA !WasFrozen
@@ -370,8 +370,8 @@ CheckFrozen:
 
     INC !154C,x ; cancel out decreasing counter for contact disable
 
-    STZ !AA,x
-    STZ !B6,x
+    ; STZ !AA,x
+    ; STZ !B6,x
 .dontRunCode
     CLC
     RTS
@@ -390,8 +390,8 @@ RestoreSpriteSpeedAndState:
     XBA
     STA !B6,x
 
-    LDA !State
-    STA !14C8,x
+    ; LDA !State
+    ; STA !14C8,x
     RTS
 
 SaveSpriteSpeedAndState:
@@ -1398,6 +1398,12 @@ SprMarioInteract:
     BRA .Return
 
 .contact
+    ; First, check if the shell is being held by clone
+    LDA !CloneCarriedItemIndex
+    CMP $15E9|!addr
+    BEQ .Return ; If the shell is being held by clone, shell doesn't interact with mario player
+
+.shellNotHeldByClone
     lda $1490|!addr         ;\ If Mario has a star
     beq NoStar              ;|
     lda !167A,x             ;| and the sprite can be starkilled
