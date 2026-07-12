@@ -817,8 +817,8 @@ HandleStationary:
 
 +
     jsr HandleStunned       ;> Handle stunned timer and stuff.
-    LDA !LuigiHeldItemIndex
-    CMP $15E9|!addr ; if Luigi is carrying this item, don't update position
+    TXA
+    CMP !LuigiHeldItemIndex ; Luigi positions this item — skip own physics
     BEQ +
     jsl $01802A|!bank       ;> Update X/Y positions with gravity and interact with blocks.
 +   lda !1588,x             ;\
@@ -868,12 +868,8 @@ HandleStationary:
 
 +
     JSR SetLuigiContact
-
-    ; LDA !LuigiHeldItemIndex  
-    ; CMP #$FF
-    ; BNE +
     jsr SprMarioInteract    ;> Interact with sprites and Mario.
-+
+
 .DrawGraphics:
     jsr StationaryGFX       ;> Draw GFX.
     lda #$00                ;\ Handle offscreen.
@@ -1391,17 +1387,14 @@ KickedGFX:
 SprMarioInteract:
     jsl $01803A|!bank       ;\ Interact with sprites, and check for contact with Mario.
     bcs .contact             ;/ Return if no contact.
-    
-    ;LDA !LuigiIndex
-    ;BNE .contact
-
     BRA .Return
 
 .contact
-    ; First, check if the shell is being held by Luigi
-    LDA !LuigiHeldItemIndex
-    CMP $15E9|!addr
-    BEQ .Return ; If the shell is being held by Luigi, shell doesn't interact with mario player
+    ; Generic held-item gate via !LuigiHeldItemIndex (any slot Luigi holds).
+    TXA
+    CMP !LuigiHeldItemIndex
+    BNE .shellNotHeldByLuigi
+    JMP HeldByLuigiMarioInteract
 
 .shellNotHeldByLuigi
     lda $1490|!addr         ;\ If Mario has a star
@@ -1410,6 +1403,49 @@ SprMarioInteract:
     and #$02                ;|
     bne NoStar              ;|
     %Star()                 ;/ kill.
+.Return:
+    rts
+
+; Luigi is holding this shell:
+; - If Mario is carrying Luigi ($0B), ignore completely (no grab / kick / points).
+; - Else if Mario stomps from above, bounce him as if he hit a kicked shell,
+;   but keep the shell in Luigi's hands (no state change, no score).
+; - Else ignore (Mario must not grab it out of Luigi's hands).
+HeldByLuigiMarioInteract:
+    PHX
+    LDA !LuigiIndex
+    TAX
+    LDA !14C8,x
+    PLX
+    CMP #$0B
+    BEQ .Return
+
+    LDA $7D                 ;\ Moving upward — no side/grab interaction.
+    BMI .Return             ;/
+
+    ; Same "Mario high enough to stomp" test as the kicked-shell path.
+    lda #$14
+    sta $01
+    lda $05
+    sec
+    sbc $01
+    rol $00
+    cmp $D3
+    php
+    lsr $00
+    lda $0B
+    sbc #$00
+    plp
+    sbc $D4
+    bmi .Return             ; Too low → ignore (blocks grab / kick-through).
+
+    ; Bounce Mario only; do not kick, score, or leave Luigi's hands.
+    lda #$02
+    sta $1DF9|!addr
+    jsl $01AA33|!bank
+    jsl $01AB99|!bank
+    lda #$08
+    sta !154C,x
 .Return:
     rts
 

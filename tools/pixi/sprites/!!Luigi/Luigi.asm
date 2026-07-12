@@ -604,6 +604,9 @@ print "MAIN ",pc
 .noLanding
 	; Sync any Luigi-held sprite to the Luigi's final position.
 	JSR HandleLuigiHeldItemPosition
+	; Mario vs held item must live here (not per-carryable asm):
+	; vanilla shells never run KoopaShell.asm.
+	JSR HandleMarioVsLuigiHeldItem
 	JSR Graphics
 	RTS
 
@@ -4692,37 +4695,48 @@ GetMarioHeldItemIndex:
 ; Sets position of Luigi carried item
 HandleLuigiHeldItemPosition:
 	LDA $9D
-	BNE .return
-
+	BEQ +
+	JMP .return
++
 	LDA !LuigiHeldItemIndex
 	CMP #$FF
-	BEQ .return
-
+	BNE +
+	JMP .return
++
 	TAY
 	LDX $15E9|!addr
 	LDA !157C,x 		; set item's direction to Luigi's direction
 	%store_using_y_index(!157C)
 
 	; set item's position to Luigi's position
-	AND #$01			; facing is only bit 0 (avoid bogus XPosOffset index)
-	ASL ; multiply x by 2 because of 16-bit addressing
-	STA $00 ; save offset for later
+	AND #$01			; facing is only bit 0 (0=right, 1=left)
+	STA $00
 
-	; set item's x position to Luigi's x position + 16 (or -16 if facing left)
+	; set item's x position to Luigi's x position + facing offset
+	; (width-safe: never LDX $00 into a 2-entry table while X may be 16-bit)
 	LDA #$00
-	XBA				; clear B before building 16-bit X
+	XBA
 	LDA !14E0,x
 	XBA
 	LDA !E4,x
-	PHX ; save Luigi index
-	LDX $00 ; load offset
 	REP #$20
-	CLC : ADC XPosOffset,x
+	PHA					; save Luigi X
+	SEP #$20
+	LDA $00				; facing bit (0=right, 1=left); Y still = held item
+	BNE .facingLeft
+	REP #$20
+	PLA
+	CLC : ADC #$000B
+	BRA .storeX
+.facingLeft
+	REP #$20
+	PLA
+	CLC : ADC #$FFF5
+.storeX
 	SEP #$20
 	%store_using_y_index(!E4)
 	XBA
 	%store_using_y_index(!14E0)
-	PLX ; restore Luigi index
 
 	; x fraction bits
 	LDA !14F8,x
@@ -4730,12 +4744,12 @@ HandleLuigiHeldItemPosition:
 
 	; set item's y position to Luigi's y position
 	LDA #$00
-	XBA				; clear B before building 16-bit Y
+	XBA
 	LDA !14D4,x
 	XBA
 	LDA !D8,x
 	REP #$20
-	SEC : SBC #$0001 ; subtract 1 in 16-bit mode
+	SEC : SBC #$0001
 	SEP #$20
 	%store_using_y_index(!D8)
 	XBA
@@ -4751,6 +4765,67 @@ HandleLuigiHeldItemPosition:
 	%store_using_y_index(!AA)
 
 	.return
+	RTS
+
+; Mario contact with !LuigiHeldItemIndex (vanilla or custom).
+; - Luigi carried by Mario ($0B): ignore (154C blocks default interact).
+; - Stomp from above: bounce Mario only; item stays held (no kick/score/grab).
+; - Otherwise: ignore (no grab out of Luigi's hands).
+HandleMarioVsLuigiHeldItem:
+	LDA !LuigiHeldItemIndex
+	CMP #$FF
+	BEQ .return
+
+	TAY
+
+	; Keep default Mario interaction off every frame so slot order cannot
+	; grab/kick the item (vanilla shells never run KoopaShell.asm).
+	LDA #$08
+	%store_using_y_index(!154C)
+
+	LDA !14C8,x
+	CMP #$0B
+	BNE .notCarriedByMario
+
+	RTS
+
+.notCarriedByMario
+	LDA $7D
+	BMI .return				; Mario moving up — no side/grab response
+
+	PHX
+	TYX						; X = held item
+	JSL $03B69F|!BankB		; sprite clipping
+	JSL $03B664|!BankB		; Mario clipping
+	JSL $03B72B|!BankB		; contact?
+	PLX
+	BCC .return
+
+	; Same "Mario high enough to stomp" test as kicked-shell path.
+	LDA #$14
+	STA $01
+	LDA $05
+	SEC
+	SBC $01
+	ROL $00
+	CMP $D3
+	PHP
+	LSR $00
+	LDA $0B
+	SBC #$00
+	PLP
+	SBC $D4
+	BMI .blockGrab			; too low → block grab only
+
+	; Bounce Mario; do not change held item state or give points.
+	LDA #$02
+	STA $1DF9|!addr
+	JSL $01AA33|!bank
+	JSL $01AB99|!bank
+	RTS
+
+.blockGrab
+.return
 	RTS
 
 ; Transfers items depending on what's held

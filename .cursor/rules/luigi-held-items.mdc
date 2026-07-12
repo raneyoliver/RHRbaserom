@@ -6,7 +6,8 @@ alwaysApply: true
 # Luigi held-item architecture
 
 - Implement transfer, positioning, swap, hide/restore, and despawn behavior generically through `!LuigiHeldItemIndex` (`$41B82E`).
-- Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm`.
+- Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm` for positioning/despawn.
+- Mario↔held-item rules are keyed by `!LuigiHeldItemIndex` (TXA compare, not `$15E9|!addr`): no grab; ignore entirely when Mario carries Luigi (`14C8=$0B`); bounceable items (shells) may stomp-bounce Mario without leaving Luigi's hands.
 - `tools/pixi/sprites/!!Luigi/Luigi.asm` owns gameplay transfer, teleport lifecycle, and post-physics item positioning on SA-1.
 - `tools/uberasmtool/library/SyncLuigiHeldItem.asm` owns SNES-side pre-draw projection.
 - `MoveLuigiToFront.asm` owns only slot reordering and held-slot index remapping. Level glue calls the sync library immediately afterward because UberASM Tool does not link library-to-library dependencies.

@@ -7,3 +7,4 @@ tools/mesen2-expanded/mcp-server.log
 tools/test/mesen/.automation/
 tools/test/savestates/*.mst
 smwmemory.json
+tools/pixi/.dependencies
