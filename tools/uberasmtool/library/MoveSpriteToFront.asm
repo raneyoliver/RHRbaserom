@@ -86,6 +86,7 @@
 
 ; This UberASM moves the clone sprite to the NEW sprite slot available.
 ; This is to prevent any sprite from appearing in front of the clone.
+; Also syncs any clone-held sprite's position before sprites draw (no trail).
 
 ; The list of sprite tables are:
 ; !E4, !14E0, !D8, !14D4, !AA, !B6, !C2, !1504, !1510, !151C,
@@ -115,6 +116,13 @@ else
 	!bank = $800000
 	!bankA = $7E0000
 endif
+
+macro store_using_y_index(addr)
+	PHX
+	TYX
+	STA <addr>,x
+	PLX
+endmacro
 
 init:
 	RTL
@@ -159,8 +167,223 @@ main:
 .updateCloneIndex
 	LDA !CloneSpriteSlot
 	STA !CloneIndex
+	JSR HandleCloneCarriedItemPosition
 .return
-    RTL
+	RTL
+
+; Sets position of clone carried item before sprites draw.
+; Free-moving clone: project with !B6/!AA.
+; Mario-carried clone ($0B): attach to clone pos; X uses Mario $94-$D1 delta (no jitter).
+HandleCloneCarriedItemPosition:
+	LDA $9D
+	BEQ +
+	JMP .return
++
+	LDA !CloneCarriedItemIndex
+	CMP #$FF
+	BNE +
+	JMP .return
++
+	TAY
+	LDA !CloneIndex
+	TAX
+	LDA !14C8,x
+	CMP #$0B
+	BNE .projectFreeClone
+	JMP .marioCarryingClone
+
+.projectFreeClone
+	LDA !157C,x 		; set item's direction to clone's direction
+	%store_using_y_index(!157C)
+
+	; Save direction-table offset.
+	ASL ; multiply x by 2 because of 16-bit addressing
+	STA $00 ; save offset for later
+
+	; Project the clone's X fixed-point position through this frame's speed.
+	; Sprite speed is in 1/16-pixel units; fractions are in 1/256 pixels.
+	LDA !B6,x
+	STA $02
+	STZ $03
+	REP #$20
+	LDA $02
+	AND #$00FF
+	CMP #$0080
+	BCC +
+	ORA #$FF00
++	ASL #4
+	STA $02
+	SEP #$20
+	LDA !14F8,x
+	STA $04
+	STZ $05
+	REP #$20
+	LDA $04
+	CLC : ADC $02
+	STA $04
+	SEP #$20
+
+	; Store projected X fraction.
+	LDA $04
+	%store_using_y_index(!14F8)
+
+	; Sign-extend the whole-pixel part of the projected X movement.
+	LDA $05
+	STA $06
+	STZ $07
+	BPL +
+	DEC $07
++
+
+	; Set item's X to projected clone X plus facing offset.
+	LDA !14E0,x
+	XBA
+	LDA !E4,x
+	REP #$20
+	CLC : ADC $06
+	PHX ; save clone index
+	LDX $00 ; load offset
+	CLC : ADC CarriedItemXPosOffset,x
+	SEP #$20
+	%store_using_y_index(!E4)
+	XBA
+	%store_using_y_index(!14E0)
+	PLX ; restore clone index
+
+	; Project the clone's Y fixed-point position through this frame's speed.
+	LDA !AA,x
+	STA $02
+	STZ $03
+	REP #$20
+	LDA $02
+	AND #$00FF
+	CMP #$0080
+	BCC +
+	ORA #$FF00
++	ASL #4
+	STA $02
+	SEP #$20
+	LDA !14EC,x
+	STA $04
+	STZ $05
+	REP #$20
+	LDA $04
+	CLC : ADC $02
+	STA $04
+	SEP #$20
+
+	; Store projected Y fraction.
+	LDA $04
+	%store_using_y_index(!14EC)
+
+	; Sign-extend the whole-pixel part of the projected Y movement.
+	LDA $05
+	STA $06
+	STZ $07
+	BPL +
+	DEC $07
++
+
+	; Set item's Y to projected clone Y minus one pixel.
+	LDA !14D4,x
+	XBA
+	LDA !D8,x
+	REP #$20
+	CLC : ADC $06
+	SEC : SBC #$0001 ; subtract 1 in 16-bit mode
+	SEP #$20
+	%store_using_y_index(!D8)
+	XBA
+	%store_using_y_index(!14D4)
+
+	LDA #$00
+	%store_using_y_index(!B6)
+	%store_using_y_index(!AA)
+	JMP .return
+
+; Luigi is status $0B: moved by Mario's carry code, not !B6/!AA.
+.marioCarryingClone
+	; Face with Mario: $76 0=left/1=right, !157C 0=right/1=left.
+	LDA $76
+	EOR #$01
+	%store_using_y_index(!157C)
+	ASL
+	STA $00				; XPosOffset table index
+
+	; Predict Luigi's next whole-pixel X with Mario's exact position delta.
+	REP #$20
+	LDA $94
+	SEC : SBC $D1
+	STA $02
+	SEP #$20
+
+	; Carried Luigi does not accumulate a sprite fraction; keep both equal.
+	LDA !14F8,x
+	%store_using_y_index(!14F8)
+
+	LDA !14E0,x
+	XBA
+	LDA !E4,x
+	REP #$20
+	CLC : ADC $02
+	PHX
+	LDX $00
+	CLC : ADC CarriedItemXPosOffset,x
+	SEP #$20
+	%store_using_y_index(!E4)
+	XBA
+	%store_using_y_index(!14E0)
+	PLX
+
+	; Project clone Y with Mario's Y speed.
+	LDA $7D
+	STA $02
+	STZ $03
+	REP #$20
+	LDA $02
+	AND #$00FF
+	CMP #$0080
+	BCC +
+	ORA #$FF00
++	ASL #4
+	STA $02
+	SEP #$20
+	LDA !14EC,x
+	STA $04
+	STZ $05
+	REP #$20
+	LDA $04
+	CLC : ADC $02
+	STA $04
+	SEP #$20
+	LDA $04
+	%store_using_y_index(!14EC)
+	LDA $05
+	STA $06
+	STZ $07
+	BPL +
+	DEC $07
++
+	LDA !14D4,x
+	XBA
+	LDA !D8,x
+	REP #$20
+	CLC : ADC $06
+	SEC : SBC #$0001
+	SEP #$20
+	%store_using_y_index(!D8)
+	XBA
+	%store_using_y_index(!14D4)
+
+	LDA #$00
+	%store_using_y_index(!B6)
+	%store_using_y_index(!AA)
+
+	.return
+	RTS
+
+CarriedItemXPosOffset:
+	dw $000B, $FFF5
 
 GetSpriteSlots:
 	LDA #$FF
