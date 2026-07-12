@@ -125,7 +125,7 @@ endif
 !maxtile_pointer_max = $6180
 
 !MultiBounceShell				= $11	; in pixi_list.txt
-!MarioSpriteNumber				= $14	; in pixi_list.txt
+!LuigiSpriteNumber				= $14	; in pixi_list.txt
 !PlayerCursor					= $15	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !GhostShell						= $19	; in pixi_list.txt
@@ -152,14 +152,14 @@ endif
 ; Mario-Luigi Changing
 !IsMario                                        = $41A026
 
-;;;;;;;;; MarioSprite PROPERTIES ;;;;;;;;;
+;;;;;;;;; Luigi PROPERTIES ;;;;;;;;;
 
 !State							= !1504,x
 
 !Spinning						= $41A00C
-!CloneSpeedX					= $41A00E
-!CloneSpeedY					= $41A00F
-!CloneIndex						= $41A01A
+!LuigiSpeedX					= $41A00E
+!LuigiSpeedY					= $41A00F
+!LuigiIndex						= $41A01A
 !TeleportReady					= $41A016
 !JumpHeld						= $41A018
 !TempSpinning					= $41A019
@@ -172,12 +172,12 @@ endif
 !SpriteDirection				= $41A027
 !OnPlatform						= $41A029
 !PreviousState					= $41A02A
-!CloneCarriedItemIndex			= $41B82E
-!PlayerCarriedItemIndex			= $41B82F
-!CloneXPosLow					= $41B830
-!CloneXPosHigh					= $41B831
-!CloneYPosLow					= $41B832
-!CloneYPosHigh					= $41B833
+!LuigiHeldItemIndex			= $41B82E
+!MarioHeldItemIndex			= $41B82F
+!LuigiXPosLow					= $41B830
+!LuigiXPosHigh					= $41B831
+!LuigiYPosLow					= $41B832
+!LuigiYPosHigh					= $41B833
 !LandingTimer					= $41B834
 !PreviousXSpeed					= $41B835
 !LandingFrameCounter			= $41B836
@@ -297,13 +297,13 @@ endmacro
 
 ;;;;;;;;; FUNCTIONS ;;;;;;;;;
 
-InitMarioSpriteProperties:
+InitLuigiProperties:
 	; Set Tweaker Byte "Don't get stuck in walls (carryable sprites)"
 	LDA !190F,x
 	ORA #$80
 	STA !190F,x
 
-	; Set MarioSprite Stationary/Carryable
+	; Set Luigi Stationary/Carryable
 	%SetSpriteStatus(!StationaryCarryable, x)
 	LDA !14C8,x
 	STA !PreviousState
@@ -326,8 +326,8 @@ InitMarioSpriteProperties:
 	STA !NumFramesInsideWall
 
 	LDA #$FF
-	STA !CloneCarriedItemIndex
-	STA !PlayerCarriedItemIndex
+	STA !LuigiHeldItemIndex
+	STA !MarioHeldItemIndex
 
 	; Set Properties True
 	LDA #$01
@@ -487,13 +487,13 @@ print "INIT ",pc
 	;LDA #$00
 	;STA !FreezeBlockFrozenFlag
 
-	; Initialize MarioSprite's Properties
-    JSR InitMarioSpriteProperties
+	; Initialize Luigi's Properties
+    JSR InitLuigiProperties
 	JSR UnsetCustomFTrigger
 
 	RTL
 
-UpdateMarioSpriteSpeed:
+UpdateLuigiSpeed:
 	LDA !BouncingSpeed
 	BEQ .return	; if $00 do nothing
 
@@ -501,7 +501,7 @@ UpdateMarioSpriteSpeed:
 	BCC	.decrement	; else if <= delay, decrement
 
 	;else if > delay, store speed then set to delay
-	STA !AA,x	; bounce MarioSprite
+	STA !AA,x	; bounce Luigi
 	LDA #!BounceDelay
 	STA !BouncingSpeed
 	BRA .return
@@ -520,24 +520,24 @@ print "MAIN ",pc
     JSR RememberPoints
 	JSR UnsetCustomFTrigger
 
-	; If !StareTimer % 4 == 3, MarioSprite uses stare graphics
-	JSR UpdateMarioSpriteStareTimer
+	; If !StareTimer % 4 == 3, Luigi uses stare graphics
+	JSR UpdateLuigiStareTimer
 
-	; If bouncing previous frame, update MarioSprite speed this frame (one frame delayed)
+	; If bouncing previous frame, update Luigi speed this frame (one frame delayed)
 	; This is to mimick the way mario bounces- using $94 and $96
-	JSR UpdateMarioSpriteSpeed
+	JSR UpdateLuigiSpeed
 
 	JSR PerLevelSettings
 
 	LDA !State
-	BNE .dontResetPlayerCarriedItemIndex	; don't reset player carried item index if teleporting
-	JSR GetPlayerCarriedItemIndex	; leaves at #$FF if player has no item
+	BNE .dontResetMarioHeldItemIndex	; don't reset player carried item index if teleporting
+	JSR GetMarioHeldItemIndex	; leaves at #$FF if player has no item
 
-.dontResetPlayerCarriedItemIndex
+.dontResetMarioHeldItemIndex
 
-	; give index of clone to other sprites every frame
+	; give index of Luigi to other sprites every frame
 	LDA $15E9|!addr
-	STA !CloneIndex
+	STA !LuigiIndex
 
 	; check every frame if on platform
 	LDA #$00
@@ -602,8 +602,8 @@ print "MAIN ",pc
 	LDA !B6,x
 	STA !PreviousXSpeed
 .noLanding
-	; Sync any clone-held sprite to the clone's final position.
-	JSR HandleCloneCarriedItemPosition
+	; Sync any Luigi-held sprite to the Luigi's final position.
+	JSR HandleLuigiHeldItemPosition
 	JSR Graphics
 	RTS
 
@@ -679,7 +679,7 @@ CheckIfKilled:
 		CMP #$0B
 		BEQ .dontKillPlayer
 
-		; JSR SafeGetMap16_ActAsInsideClone
+		; JSR SafeGetMap16_ActAsInsideLuigi
 		; XBA
 		; TYA
 		; XBA
@@ -723,27 +723,27 @@ CheckIfKilled:
         STA $00
         RTS
 
-UpdateMarioSpriteStareTimer:
+UpdateLuigiStareTimer:
 	LDA !Frame
 	CMP #$04        ;was on ground if less	(!StationaryTile)
-	BCC .marioSpriteOnGround
+	BCC .luigiOnGround
 
 	CMP #$0C        ;was on ground if more (!StareForwardTopLeftTile or !StareBackwardTopLeftTile)
-	BCS .marioSpriteOnGround
+	BCS .luigiOnGround
 
-	LDA !1588,x     ;just now landing (MarioSprite blocked down)
+	LDA !1588,x     ;just now landing (Luigi blocked down)
 	AND #$04
-	BNE .marioSpriteJustNowLanding
+	BNE .luigiJustNowLanding
 
-.marioSpriteInAir
+.luigiInAir
 	RTS
 
-.marioSpriteJustNowLanding
+.luigiJustNowLanding
 	LDA #$00
 	STA !StareTimer
 	RTS
 
-.marioSpriteOnGround
+.luigiOnGround
 	LDA $14	; if 0-FF counter hits 0, increment StareTimer
 	BNE .re
 
@@ -784,7 +784,7 @@ HandleState:
 	RTS
 
 ..beginTeleporting
-..checkCarryClone
+..checkCarryLuigi
 	LDA !14C8,x
 	CMP #$0B
 	BEQ ..dontTeleportBridge
@@ -828,19 +828,21 @@ HandleState:
 	STA !Frozen
 	LDA #$00
 	STA !StareTimer
-	JSR SetupAttributesOfClone
+	JSR SetupAttributesOfLuigi
 	JSR TransferItems
+	JSR MoveLuigiToMario
+	; SetTile after move so we use midair position/speeds (and Frozen
+	; guards against clearing Spinning if !1588 is still stale).
 	JSR SetTile
-	JSR MoveCloneToPlayer
 
 	PHX
 	JSR BackupAllSpriteProperties
 	PLX
 
 	; If Player was holding an item, make it go invisible (inside yoshi's mouth?)
-	LDA !PlayerCarriedItemIndex
+	LDA !MarioHeldItemIndex
 	JSR PutItemInYoshisMouth
-	LDA !CloneCarriedItemIndex
+	LDA !LuigiHeldItemIndex
 	JSR PutItemInYoshisMouth
 
 ..PlayerNotHoldingItem
@@ -871,7 +873,7 @@ HandleState:
 	STA !15D0,y
 
 ..noYoshi
-	; freeze clone and player, speed is already stored
+	; freeze Luigi and player, speed is already stored
 	STZ !B6,x
 	STZ !AA,x
 	STZ $7B
@@ -896,7 +898,7 @@ HandleState:
 	LDA #$FF
 	STA $9D
 
-	; freeze clone and player, speed is already stored
+	; freeze Luigi and player, speed is already stored
 	STZ !B6,x
 	STZ !AA,x
 	STZ $7B
@@ -941,9 +943,9 @@ HandleState:
 	BNE .movePlayerToSprite
 
 
-	LDA !CloneXPosHigh                             ; \
+	LDA !LuigiXPosHigh                             ; \
 	XBA                                     ;  | calculate the distance
-	LDA !CloneXPosLow                             ;  | between the screen and the sprite
+	LDA !LuigiXPosLow                             ;  | between the screen and the sprite
 	REP #$20                                ;  |
 	SEC : SBC $1462|!addr                           ;  |
 	BPL +
@@ -958,15 +960,15 @@ HandleState:
 	BCS .movePlayerToSprite
 
 	; check if screen too high to teleport
-	LDA !CloneYPosHigh
+	LDA !LuigiYPosHigh
 	XBA
-	LDA !CloneYPosLow
+	LDA !LuigiYPosLow
 	REP #$20
 	SEC : SBC $1464|!addr 	; subtract screen y
 	BPL +
 	EOR #$FFFF : INC
-	CLC : ADC #$0100	; if clone was higher than screen, make distance positive and add a screen height to the distance
-+	CMP #!YDistToInstantlyTP ; if clone was lower than screen, only teleport if it's less than $E0 = 224 pixels away
+	CLC : ADC #$0100	; if Luigi was higher than screen, make distance positive and add a screen height to the distance
++	CMP #!YDistToInstantlyTP ; if Luigi was lower than screen, only teleport if it's less than $E0 = 224 pixels away
 	SEP #$20
 	BCS .movePlayerToSprite	; if larger than y distance to instantly tp, don't teleport
 
@@ -1015,14 +1017,14 @@ HandleState:
 	BRA .ySpeed
 
 .xSpeed
-	LDA !CloneSpeedX
+	LDA !LuigiSpeedX
 	STA $7B
 
 ;---------------------
 	;JSR GivePSpeed
 ;--------------------
 .ySpeed
-	LDA !CloneSpeedY
+	LDA !LuigiSpeedY
 	STA $7D
 
 	; ;sprite take player's direction
@@ -1075,9 +1077,9 @@ HandleState:
 	JSR HandleLandingBounce
 ;	JSR TransferItems
 
-	LDA !CloneCarriedItemIndex
+	LDA !LuigiHeldItemIndex
 	JSR RestoreItemFromYoshisMouth
-	LDA !PlayerCarriedItemIndex
+	LDA !MarioHeldItemIndex
 	JSR RestoreItemFromYoshisMouth
 ._return
 	RTS
@@ -1139,7 +1141,7 @@ PlaySound:
 	RTS
 
 SetPlayerTile:
-	LDA !CloneCarriedItemIndex
+	LDA !LuigiHeldItemIndex
 	CMP #$FF
 	BEQ .setPlayerTileNotCarrying
 
@@ -1175,7 +1177,7 @@ GivePSpeed:
 ;slow		   		|jump
 
 ;also give p-speed if the sprite was fast enough
-	LDA !CloneSpeedX
+	LDA !LuigiSpeedX
 	BPL + : EOR #$FF : INC : +
 	CMP #$30
 	BCC .slow
@@ -1213,17 +1215,17 @@ GivePSpeed:
 
 TPPlayerToSprite:
 ; x
-	LDA !CloneXPosLow
+	LDA !LuigiXPosLow
 	STA $D1
 	STA $94
-	LDA !CloneXPosHigh
+	LDA !LuigiXPosHigh
 	STA $D2	
 	STA $95
 
 ; y
-	LDA !CloneYPosHigh
+	LDA !LuigiYPosHigh
 	XBA
-	LDA !CloneYPosLow
+	LDA !LuigiYPosLow
 	REP #$20
 	SEC : SBC #$0010		; Subtract 16 pixels since the sprite is 16 pixels taller
 	SEP #$20
@@ -1248,7 +1250,7 @@ FlipMarioLuigi:
         STA !IsMario
         RTS
 
-SetupAttributesOfClone:
+SetupAttributesOfLuigi:
 
 ;direction
 		LDA !157C,x
@@ -1265,13 +1267,13 @@ SetupAttributesOfClone:
         STA !PlayerPosYHigh
 
 		LDA !E4,x
-		STA !CloneXPosLow
+		STA !LuigiXPosLow
 		LDA !14E0,x
-		STA !CloneXPosHigh
+		STA !LuigiXPosHigh
 		LDA !D8,x
-		STA !CloneYPosLow
+		STA !LuigiYPosLow
 		LDA !14D4,x
-		STA !CloneYPosHigh
+		STA !LuigiYPosHigh
         LDA $7B
         STA !PlayerSpeedX
         LDA $77
@@ -1288,14 +1290,14 @@ SetupAttributesOfClone:
         STA !PlayerSpeedY
 .continue
         LDA !B6,x
-        STA !CloneSpeedX
+        STA !LuigiSpeedX
         LDA !AA,x
-        STA !CloneSpeedY
+        STA !LuigiSpeedY
 
         LDA !Spinning
-        STA !TempSpinning         ; store copy of clone's spinning flag for later
+        STA !TempSpinning         ; store copy of Luigi's spinning flag for later
 
-        LDA $140D|!addr       ; overwrite clone spinning with mario spinning
+        LDA $140D|!addr       ; overwrite Luigi spinning with mario spinning
         STA !Spinning
 
         LDA #$00
@@ -1326,9 +1328,9 @@ SetTeleportingXSpeed:
 		CMP #!PlayerMaxX
 		BCS .return
 
-        LDA !CloneXPosHigh                             ; \
+        LDA !LuigiXPosHigh                             ; \
         XBA                                     ;  | calculate the distance
-        LDA !CloneXPosLow                             ;  | between the player and the sprite
+        LDA !LuigiXPosLow                             ;  | between the player and the sprite
         REP #$20                                ;  |
         SEC : SBC $D1                           ;  |
         STA $00                                 ; /
@@ -1368,9 +1370,9 @@ SetTeleportingYSpeed:
 		CMP #!PlayerMaxY
 		BCS .haltReturn
 
-        LDA !CloneYPosHigh
+        LDA !LuigiYPosHigh
         XBA
-        LDA !CloneYPosLow
+        LDA !LuigiYPosLow
         REP #$20
         SEC : SBC $D3
         STA $00
@@ -1451,7 +1453,7 @@ SetTile:
 		BRA ++
 		
 .noSwim
-		LDA !CloneCarriedItemIndex
+		LDA !LuigiHeldItemIndex
 		CMP #$FF
 		BEQ .suspendedInAir
 
@@ -1481,7 +1483,7 @@ SetTile:
         BEQ .jumping	; in air
 
 .checkIfHoldingGrounded
-		LDA !CloneCarriedItemIndex
+		LDA !LuigiHeldItemIndex
 		CMP #$FF
 		BEQ .walking
 
@@ -1513,6 +1515,11 @@ SetTile:
         BNE .return
 
 .groundedCodeDone
+		; During teleport setup, Spinning/JumpHeld were just copied from
+		; the player — don't wipe them while Luigi is still on his old ground
+		; tile before MoveLuigiToMario places him midair.
+		LDA !Frozen
+		BNE .return
         LDA #$00
         STA !Spinning           ; not spinning if on ground
         STA !JumpHeld
@@ -1520,7 +1527,7 @@ SetTile:
 
 .jumping
 .checkIfHolding
-		LDA !CloneCarriedItemIndex
+		LDA !LuigiHeldItemIndex
 		CMP #$FF
 		BEQ .notHolding
 
@@ -1543,7 +1550,7 @@ SetTile:
         db $20,$30,$3C,$46,$4C,$50,$58,$60      ;    the setting for jump height against a wall has only 8 values
                                                 ;    so I picked some reasonable-ish ones
 
-GetIsCloneFastEnoughForPSpeed:
+GetIsLuigiFastEnoughForPSpeed:
 	LDA !B6,x
 	CMP #$80
 	BCC .goingRight
@@ -1582,7 +1589,7 @@ SetHoldingLandingTile:
 
 SetLandingTile:
 		JSR GetLandingTileIndexInY
-		JSR GetIsCloneFastEnoughForPSpeed
+		JSR GetIsLuigiFastEnoughForPSpeed
 		BEQ .notFastEnough
 
 .fastEnough
@@ -1651,12 +1658,12 @@ Graphics:
 		BRA +
 
 ..normal
-		; check if clone held
+		; check if Luigi held
 		LDA !14C8,x
 		CMP #$0B
 		BNE ..notHeld
 
-		; if clone held, set its direction to player's direction and use that for X flip
+		; if Luigi held, set its direction to player's direction and use that for X flip
 		LDA $76         ; Get player direction (0=right, 1=left)
 		EOR #$01        ; Invert for X flip (0=no flip, 1=flip)
 		STA !157C,x     ; Update the sprite's actual direction
@@ -1989,7 +1996,7 @@ SpawnThrownKoopa:
     ;%SubHorzPos()           ;\
 	PHX
 	LDX $15E9|!addr
-	JSR GetMarioSpriteRightOfContactSprite
+	JSR GetLuigiRightOfContactSprite
 	STA $00
 	PLX
 	LDA $00
@@ -2308,7 +2315,7 @@ SetFrameJumping:
 		BRA ++
 
 .noPSpeed
-		LDA !164A,x ; check if clone is swimming
+		LDA !164A,x ; check if Luigi is swimming
 		BEQ .noSwim ; if not, don't swim
 
 .swim
@@ -2998,7 +3005,7 @@ SafeGetMap16:
 	%GetMap16()
 	RTS
 
-SafeGetMap16_ActAsInsideClone:
+SafeGetMap16_ActAsInsideLuigi:
 	; Get X, Y position of block from $19138
 	LDA $0F
 	PHA
@@ -3152,7 +3159,7 @@ CheckInteractableBlocksList:
 ; 	LDA $14AF|!addr
 ; 	BNE ReturnHelper
 
-; 	JSR KillMarioSprite
+; 	JSR KillLuigi
 ; 	BRA ReturnHelper
 
 ; .switchOFFDeathBlock
@@ -3164,7 +3171,7 @@ CheckInteractableBlocksList:
 ; 	LDA $14AF|!addr
 ; 	BEQ ReturnHelper
 
-; 	JSR KillMarioSprite
+; 	JSR KillLuigi
 ; 	BRA ReturnHelper
 
 .lavaBlock
@@ -3213,7 +3220,7 @@ CheckInteractableBlocksList:
 
 
 .lavaTile
-	JSR KillMarioSprite
+	JSR KillLuigi
 	BRA .return
 
 .koopaBlock
@@ -3298,7 +3305,7 @@ SpriteAndSpecialBlockInteraction:
 ; Spin Interaction
 ; Get Sprite-Sprite Contact
 .sprsprContact
-	JSR SprSprContact       ; clone = x, sprite in contact = y
+	JSR SprSprContact       ; Luigi = x, sprite in contact = y
 
 ; If Contact Not Found, Try Blocks
 	LDA $00
@@ -3307,21 +3314,21 @@ SpriteAndSpecialBlockInteraction:
 	JMP CheckInteractableBlocksList
 
 .sprSprContactFound
-.checkCloneCarriedItem
-	; First, check if it's the sprite that the clone is carrying
+.checkLuigiHeldItem
+	; Held item is skipped in SprSprContact; if we somehow still got it,
+	; ignore and keep looking via blocks (do not abort all interaction —
+	; that made Luigi fall through spinies while carrying).
 	TYA
-	CMP !CloneCarriedItemIndex
+	CMP !LuigiHeldItemIndex
 	BNE .checkShell
-
-	; if it is, don't interact
-	JMP Return
+	JMP CheckInteractableBlocksList
 
 .checkShell
 	JSR SetCarryIfShell
 	BCC .nonShell
 
 .spriteIsVanillaShell
-	JMP MarioSpriteInteractWithVanillaShell
+	JMP LuigiInteractWithVanillaShell
 
 .nonShell
 	LDA !154C,y
@@ -3336,7 +3343,7 @@ SpriteAndSpecialBlockInteraction:
 	AND #$08
 	BEQ .notCustomPlatform
 
-.isCustomPlatform ; EXCEPTION: if is platform, always interact (so that kicking up a key takes the clone with it)
+.isCustomPlatform ; EXCEPTION: if is platform, always interact (so that kicking up a key takes the Luigi with it)
 	; check if is key
 	PHX
 	TYX
@@ -3404,7 +3411,7 @@ SpriteAndSpecialBlockInteraction:
 .jumpingPirhanaPlantCheck
 		CMP #$4F
 		BNE .floatingSkullsCheck
-		JMP MarioSpriteTryBounceOrSpin
+		JMP LuigiTryBounceOrSpin
 
 .floatingSkullsCheck
 		CMP #$61
@@ -3521,7 +3528,7 @@ SpriteAndSpecialBlockInteraction:
 	LDA #$08
 	STA !154C,y
 	STA !154C,x
-	JMP MarioSpriteTryBounceOrSpin_spinning
+	JMP LuigiTryBounceOrSpin_spinning
 
 .stationaryFlyingKoopa
 	CMP #$18
@@ -3540,7 +3547,7 @@ SpriteAndSpecialBlockInteraction:
 	BNE .return
 
 .tryBounce
-	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
+	JMP LuigiTryBounceOrSpin	; not shell, maybe koopa/spiny?
 
 .customKeyCode
 	PHX
@@ -3550,23 +3557,23 @@ SpriteAndSpecialBlockInteraction:
 	PLX
 	LDA $00
 	CMP #$0B
-	BEQ Platform	; if key held, don't push clone
+	BEQ Platform	; if key held, don't push Luigi
 
-	JSR CheckIfAbove ; if clone is above key, don't push clone
+	JSR CheckIfAbove ; if Luigi is above key, don't push Luigi
 	BCS Platform
 
 	PHY
-	STZ !B6,x						;stop clone from moving
-	JSR GetMarioSpriteRightOfContactSprite		;get which side the clone's at
+	STZ !B6,x						;stop Luigi from moving
+	JSR GetLuigiRightOfContactSprite		;get which side the Luigi's at
 	BMI .pushLeft
 
 .pushRight
 	LDY #$00
-	BRA .pushClone
+	BRA .pushLuigi
 
 .pushLeft
 	LDY #$01
-.pushClone
+.pushLuigi
 	TYA						;
 	ASL						;
 	TAY						;
@@ -3590,7 +3597,7 @@ Platform:
 	CMP #$0A
 	BEQ .return
 
-	LDA !AA,x ; if clone is moving up,
+	LDA !AA,x ; if Luigi is moving up,
 	CMP #$80
 	BCC .checkGrounded
 
@@ -3603,25 +3610,25 @@ Platform:
 	BCC .return
 
 .checkGrounded
-	; if clone is grounded, don't interact
+	; if Luigi is grounded, don't interact
 	LDA !1588,x
 	AND #$04
 	BNE .return
 
 .checkCeiling
-	; if clone is against a ceiling, don't interact
+	; if Luigi is against a ceiling, don't interact
 	PHY
 	JSR CheckIfSpriteBlockedUpwards
 	STA $00
 	PLY
 	LDA $00
-	BNE .cloneCeiling
+	BNE .luigiCeiling
 
 	JSR OnPlatform
 	BRA .return
 
-.cloneCeiling
-	; if clone is against a ceiling, stop clone from moving up
+.luigiCeiling
+	; if Luigi is against a ceiling, stop Luigi from moving up
 	LDA #$10
 	STA !AA,x
 	; stop key from moving up if it is
@@ -3651,7 +3658,7 @@ Return:
 	RTS
 
 CheckIfAbove:
-	; Checks if MarioSprite is above sprite in y
+	; Checks if Luigi is above sprite in y
 	LDA !14D4,y
     XBA
     LDA !D8,y
@@ -3680,11 +3687,11 @@ KickstartGreyPlatformFalling:
 	; This code kickstarts the platform falling routine
 	LDA !14C8,x
 	CMP #$0A
-	BEQ .return	; clone not kicked
+	BEQ .return	; Luigi not kicked
 
 	LDA !AA,x
 	CMP #$80
-	BCS .return	; clone not moving up
+	BCS .return	; Luigi not moving up
 
 	; platform itself
 	LDA !AA,y               ;\    
@@ -3698,9 +3705,9 @@ KickstartGreyPlatformFalling:
 	RTS
 
 OnPlatform:
-	; if the platform is what the clone is carrying, don't interact
+	; if the platform is what the Luigi is carrying, don't interact
 	TYA
-	CMP !CloneCarriedItemIndex
+	CMP !LuigiHeldItemIndex
 	BEQ .return
 
 	LDA #$01
@@ -3708,7 +3715,7 @@ OnPlatform:
 
 	LDA !1588,x  		; Get sprite blocked status (ceiling check)
 	AND #$08
-	BNE .dontSetHeight	; if clone is against a ceiling, don't set height
+	BNE .dontSetHeight	; if Luigi is against a ceiling, don't set height
 
 	;set height of this sprite to height of contact sprite
 	LDA !14D4,y
@@ -3733,7 +3740,7 @@ OnPlatform:
 	BNE .contactSpriteNotCarried
 
 .contactSpriteCarried
-	; set clone x speed to player x speed
+	; set Luigi x speed to player x speed
 	LDA $7B
 	STA !B6,x
 
@@ -3743,7 +3750,7 @@ OnPlatform:
 	; ;set x speed to contact sprite speed
 	; LDA !B6,y
 	; STA !B6,x
-	; add contact sprite x speed to clone x speed
+	; add contact sprite x speed to Luigi x speed
 	JSR HandleLandingBounce
 	LDA !B6,y
 	CLC : ADC !B6,x
@@ -3769,7 +3776,7 @@ OnPlatform:
 	;JSR HandleLandingBounce
 	RTS
 
-MarioSpriteInteractWithVanillaShell:
+LuigiInteractWithVanillaShell:
 	; LDA !154C,x
 	; BNE .returnBridge
 
@@ -3779,16 +3786,16 @@ MarioSpriteInteractWithVanillaShell:
 	CMP #$0B
 	BNE .checkStationary
 
-	; and MarioSprite is grounded, don't interact
+	; and Luigi is grounded, don't interact
 	LDA !1588,x
 	AND #$04
 	BNE .returnBridge
 
-	; and MarioSprite in air, only bounce
+	; and Luigi in air, only bounce
 	JSR OnlyBounceOnSpinyShellIfSpinning
 	BCC .returnBridge
 
-	JMP MarioSpriteTryBounceOrSpin
+	JMP LuigiTryBounceOrSpin
 
 .checkStationary
 	; if shell just sitting there, interact
@@ -3801,7 +3808,7 @@ MarioSpriteInteractWithVanillaShell:
 	BNE .returnBridge
 
 	PHY
-		JSR MarioSpriteTryBounceOrSpin
+		JSR LuigiTryBounceOrSpin
 	PLY
 
 	PHX
@@ -3852,10 +3859,10 @@ MarioSpriteInteractWithVanillaShell:
 	BEQ ..nonDisco
 
 ..disco
-	;| Boost MarioSprite's X speed based on his relative position.
+	;| Boost Luigi's X speed based on his relative position.
     ;%SubHorzPos()           ;\
 	PHY
-	JSR GetMarioSpriteRightOfContactSprite
+	JSR GetLuigiRightOfContactSprite
 	BMI +
 
 	LDY #$00
@@ -3888,7 +3895,7 @@ MarioSpriteInteractWithVanillaShell:
 	; BEQ ..checkUpThrown
 
 ..spinning
-	JMP MarioSpriteTryBounceOrSpin_spinning
+	JMP LuigiTryBounceOrSpin_spinning
 
 ; ..checkUpThrown
 ; 	; if shell is stationary,
@@ -3912,7 +3919,7 @@ MarioSpriteInteractWithVanillaShell:
 	; set shell to kicked and don't bounce
 	%SetSpriteStatus(#$0A, y)
 	; give shell its speed
-	JSR GetMarioSpriteRightOfContactSprite
+	JSR GetLuigiRightOfContactSprite
 	BMI ..kickRight
 
 ..kickLeft
@@ -3961,7 +3968,7 @@ OnlyBounceOnSpinyShellIfSpinning:
 .return
 	RTS
 
-GetMarioSpriteRightOfContactSprite:
+GetLuigiRightOfContactSprite:
     LDA !14E0,y
     XBA
     LDA !E4,y
@@ -3978,12 +3985,12 @@ GetMarioSpriteRightOfContactSprite:
 
     RTS
 
-MarioSpriteTryBounceOrSpin:
+LuigiTryBounceOrSpin:
 	LDA !14C8,y	; if carried, just allow bouncing/spinning regardless if on top
 	CMP #$0B
 	BEQ .checkIfSpinning
 
-	; For leniency on shell jumps, just let the clone bounce/spin if it's airborne already
+	; For leniency on shell jumps, just let the Luigi bounce/spin if it's airborne already
 	CMP #$0A	; check if kicked
 	BNE .checkIfStunnedKoopa
 
@@ -3995,19 +4002,19 @@ MarioSpriteTryBounceOrSpin:
 	LDA !163E,y
 	AND #$80 ; if 80 or higher, it's a stunned koopa
 	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
-	BNE .checkIfMarioSpriteJumpingOnJumpableSprite ; if one of these, no need to check if mario is on top
+	BNE .checkIfLuigiJumpingOnJumpableSprite ; if one of these, no need to check if mario is on top
 
-	; if clone is on ground, normal height check
+	; if Luigi is on ground, normal height check
 .normalHeightCheck
 	; Will either skip to death, skip to normal jumping, or
 	; return here to try to spin jump.
-	; (depending if MarioSprite is above the sprite, and
+	; (depending if Luigi is above the sprite, and
 	; sprite is non-spiky, etc.)
-	JMP CheckIfMarioSpriteOnTop
+	JMP CheckIfLuigiOnTop
 
 .airborneLenientShellJump
 .checkIfSpinning
-; Check if Clone is Spinning
+; Check if Luigi is Spinning
 	LDA !Spinning
 	BEQ .notSpinning
 
@@ -4071,8 +4078,8 @@ MarioSpriteTryBounceOrSpin:
 	BRA .done
 
 .notSpinning
-.checkIfMarioSpriteJumpingOnJumpableSprite
-	JSR CheckIfMarioSpriteJumpingOnJumpableSprite
+.checkIfLuigiJumpingOnJumpableSprite
+	JSR CheckIfLuigiJumpingOnJumpableSprite
 
 .done
 	RTS
@@ -4092,6 +4099,11 @@ SprSprContact:
 	TYA					;transfer Y to A
 	CMP $08				;compare with sprite index
 	BEQ .LoopSprSpr		;if equal, keep looping.
+
+	; Skip Luigi's held item — it overlaps him every frame and would
+	; otherwise be the only contact returned (blocking spiny bounce etc.).
+	CMP !LuigiHeldItemIndex
+	BEQ .LoopSprSpr
 
 	TYX					;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
@@ -4136,14 +4148,14 @@ SprSprContact:
 	STA $00             ;set flag to show did not find contact
 	RTS					;end? return.
 
-CheckIfMarioSpriteOnTop:
+CheckIfLuigiOnTop:
 	LDA !163E,y
 	AND #$80 ; if 80 or higher, it's a stunned koopa
 	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
 	BEQ .notStunnedKoopa
 
 	; if Stunned koopa, don't kill mario
-	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
+	JMP LuigiTryBounceOrSpin_checkIfSpinning
 
 .notStunnedKoopa
     LDA #!NumPixelsAboveSpriteRequiredToBounce    ;#$14       ;\ the lower this value, the more lenient
@@ -4166,25 +4178,25 @@ CheckIfMarioSpriteOnTop:
 	;REP #$20
 	;SEC : SBC $D3
 	;STA $00
-    BMI KillMarioSprite         ;|     and Mario hasn't bounced on any other enemies.
+    BMI KillLuigi         ;|     and Mario hasn't bounced on any other enemies.
     LDA !AA,x ;$7D ;player y speed ;|  - Both Mario and the sprite are on the ground.
     BPL +                   ;|
     LDA !190F,y ;,x         ;|
     AND #$10                ;| if can't be jumped with upspeed
-    BEQ KillMarioSprite		;  kill mariosprite
+    BEQ KillLuigi		;  kill Luigi
 +   LDA !1588,y              ;if touched sprite in air skip
     AND #$04
     BEQ ++
     LDA !1588,x ;$72
-	AND #$04                ; else, if both MarioSprite and
-    BNE KillMarioSprite     ; touched sprite on ground, kill
+	AND #$04                ; else, if both Luigi and
+    BNE KillLuigi     ; touched sprite on ground, kill
 ;++  LDA !1656,y ;x
 ;    AND #$10                ;| If the sprite can be bounced on, jump.
-;    BNE CheckIfMarioSpriteJumpingOnJumpableSprite        ;/
+;    BNE CheckIfLuigiJumpingOnJumpableSprite        ;/
 	; Otherwise, return to SpriteAndSpecialBlockInteraction to try spin.
-++	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
+++	JMP LuigiTryBounceOrSpin_checkIfSpinning
 
-KillMarioSprite:
+KillLuigi:
 	LDA #!DeadTopLeftTile
 	STA !Frame
 	JSR Graphics	;rerun graphics before mario dies
@@ -4192,7 +4204,7 @@ KillMarioSprite:
 	JSL $00F606|!bank     ;kill mario
 	RTS
 
-CheckIfMarioSpriteJumpingOnJumpableSprite:
+CheckIfLuigiJumpingOnJumpableSprite:
 	LDA !163E,y
 	AND #$80 ; if 80 or higher, it's a stunned koopa
 	ORA !1528,y ; if 1528,y is 1, it's a sliding koopa
@@ -4200,12 +4212,12 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 
 	; LDA !1588,x
 	; AND #$04
-	; BEQ .cloneNotOnGround
+	; BEQ .luigiNotOnGround
 
 
-.cloneNotOnGround
+.luigiNotOnGround
 .notStunnedKoopa
-	; x = MarioSprite, y = contact sprite
+	; x = Luigi, y = contact sprite
 	; Check if Sprite is Able to be Bounced On
 	LDA !1656,y
 	AND #$10	; J bit (can be jumped on)
@@ -4326,7 +4338,7 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	RTS
 
 CannotBeJumpedOn:	; SpikySprite+normaljump=die
-	JSR KillMarioSprite
+	JSR KillLuigi
 
 .return
 	RTS
@@ -4352,9 +4364,9 @@ BNE +
 JMP Next
 
 .isCustom
-.checkMarioSprite
+.checkLuigi
 LDA !7FAB9E,x
-CMP #!MarioSpriteNumber					;| Don't freeze the MarioSprite.
+CMP #!LuigiSpriteNumber					;| Don't freeze the Luigi.
 BNE +									;|
 JMP Next
 +
@@ -4537,9 +4549,9 @@ BEQ .next
 BRA .checkStatus
 
 .isCustom
-.checkMarioSprite
+.checkLuigi
 LDA !7FAB9E,x
-CMP #!MarioSpriteNumber
+CMP #!LuigiSpriteNumber
 BEQ .next
 
 .checkStatus
@@ -4630,7 +4642,7 @@ endif
 RTS
 
 ; Gets index of player carried item
-GetPlayerCarriedItemIndex:
+GetMarioHeldItemIndex:
 	LDA $1470|!Base2
 	ORA $148F|!Base2
 	BEQ .playerNotHoldingItem			; If player not carrying anything, return #$FF
@@ -4644,7 +4656,7 @@ GetPlayerCarriedItemIndex:
 
 	.okay
 	TYA
-	STA !PlayerCarriedItemIndex	; 0 if found carried item
+	STA !MarioHeldItemIndex	; 0 if found carried item
 	PLX			;restore sprite index
 	RTS			;return.
 
@@ -4655,34 +4667,34 @@ GetPlayerCarriedItemIndex:
 
 	.playerNotHoldingItem
 	LDA #$FF
-	STA !PlayerCarriedItemIndex
+	STA !MarioHeldItemIndex
 
 	.return
 	RTS			;end? return.
 
-; Sets position of clone carried item
-HandleCloneCarriedItemPosition:
+; Sets position of Luigi carried item
+HandleLuigiHeldItemPosition:
 	LDA $9D
 	BNE .return
 
-	LDA !CloneCarriedItemIndex
+	LDA !LuigiHeldItemIndex
 	CMP #$FF
 	BEQ .return
 
 	TAY
 	LDX $15E9|!addr
-	LDA !157C,x 		; set item's direction to clone's direction
+	LDA !157C,x 		; set item's direction to Luigi's direction
 	%store_using_y_index(!157C)
 
-	; set item's position to clone's position
+	; set item's position to Luigi's position
 	ASL ; multiply x by 2 because of 16-bit addressing
 	STA $00 ; save offset for later
 
-	; set item's x position to clone's x position + 16 (or -16 if facing left)
+	; set item's x position to Luigi's x position + 16 (or -16 if facing left)
 	LDA !14E0,x
 	XBA
 	LDA !E4,x
-	PHX ; save clone index
+	PHX ; save Luigi index
 	LDX $00 ; load offset
 	REP #$20
 	CLC : ADC XPosOffset,x
@@ -4690,13 +4702,13 @@ HandleCloneCarriedItemPosition:
 	%store_using_y_index(!E4)
 	XBA
 	%store_using_y_index(!14E0)
-	PLX ; restore clone index
+	PLX ; restore Luigi index
 
 	; x fraction bits
 	LDA !14F8,x
 	%store_using_y_index(!14F8)
 
-	; set item's y position to clone's y position
+	; set item's y position to Luigi's y position
 	LDA !14D4,x
 	XBA
 	LDA !D8,x
@@ -4717,42 +4729,42 @@ HandleCloneCarriedItemPosition:
 ; Transfers items depending on what's held
 TransferItems:
 	; Regardless of whether player is carrying an item,
-	; transfer it to the clone, clone gets whatever player has, even if it's nothing
-	JSR TransferItemPlayerToClone		; saves clone's item index into $00
+	; transfer it to the Luigi, Luigi gets whatever player has, even if it's nothing
+	JSR TransferItemMarioToLuigi		; saves Luigi's item index into $00
 
-	; Regardless of whether clone is carrying an item,
-	; transfer it to the player, player gets whatever clone had, even if it's nothing
-	JSR TransferItemCloneToPlayer
+	; Regardless of whether Luigi is carrying an item,
+	; transfer it to the player, player gets whatever Luigi had, even if it's nothing
+	JSR TransferItemLuigiToMario
 
 	.return
 	RTS
 
-; Swaps player carried item to clone
-TransferItemPlayerToClone:
+; Swaps player carried item to Luigi
+TransferItemMarioToLuigi:
 	PHX
-	LDA !CloneCarriedItemIndex
-	STA $06								; save clone's item index for later
-	LDA !PlayerCarriedItemIndex
-	STA !CloneCarriedItemIndex	
+	LDA !LuigiHeldItemIndex
+	STA $06								; save Luigi's item index for later
+	LDA !MarioHeldItemIndex
+	STA !LuigiHeldItemIndex	
 	CMP #$FF
 	BEQ .return							; if player had no item, don't try to set it to stationary
 
 	TAX
 	LDA #$09
-	STA !14C8,x							; set clone's item status to stationary/carryable
-	JSR HandleCloneCarriedItemPosition	; update clone's item position
+	STA !14C8,x							; set Luigi's item status to stationary/carryable
+	JSR HandleLuigiHeldItemPosition	; update Luigi's item position
 
 	.return
 	PLX
 	RTS
 
-; Swaps clone carried item to player
-TransferItemCloneToPlayer:
+; Swaps Luigi carried item to player
+TransferItemLuigiToMario:
 	PHX
 	LDA $06
-	STA !PlayerCarriedItemIndex			; set player's item index to clone's item index
+	STA !MarioHeldItemIndex			; set player's item index to Luigi's item index
 	CMP #$FF
-	BEQ .return							; if clone had no item, don't try to set it to carried
+	BEQ .return							; if Luigi had no item, don't try to set it to carried
 
 	TAX
 	LDA #$0B
@@ -4762,8 +4774,8 @@ TransferItemCloneToPlayer:
 	PLX
 	RTS
 
-MoveCloneToPlayer:
-	; Instantly move clone to player's position
+MoveLuigiToMario:
+	; Instantly move Luigi to player's position
 	LDA !PlayerPosXLow                             ; \
 	STA !E4,x                                     ;  | fix the sprite's position to
 	LDA !PlayerPosXHigh                           ;  | right on the player's previous

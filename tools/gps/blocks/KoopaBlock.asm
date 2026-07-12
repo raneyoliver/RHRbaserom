@@ -29,15 +29,15 @@ endif
 !LowVerticalBounce = $C8 ; default value was $CC
 !NumPixelsAboveSpriteRequiredToBounce =     $02
 !KoopaNumber = $01
-!CloneSpriteNumber = $14
+!LuigiSpriteNumber = $14
 
-!CloneLowBounce =           $E6
-!CloneHighBounce =          $AA
-!CloneHighSpin =            $F8 ;$FC
-!CloneLowSpin =             $FE
-!CloneJumpHeld =        $41A018
-!CloneSpinning =        $41A00C
-!CloneContact =         $41A01C
+!LuigiLowBounce =           $E6
+!LuigiHighBounce =          $AA
+!LuigiHighSpin =            $F8 ;$FC
+!LuigiLowSpin =             $FE
+!LuigiJumpHeld =        $41A018
+!LuigiSpinning =        $41A00C
+!LuigiContact =         $41A01C
 
 !PlayerOnlyStomped         		= $41A024
 
@@ -50,8 +50,8 @@ JMP SpriteV : JMP SpriteH : JMP MarioCape : JMP MarioFireball
 JMP TopCorner : JMP BodyInside : JMP HeadInside
 
 Bounce:
-    LDA !CloneContact             ;#$01 if clone bounce (SpriteV)
-    BNE .cloneBounce
+    LDA !LuigiContact             ;#$01 if Luigi bounce (SpriteV)
+    BNE .luigiBounce
 
 .marioBounce
     ;JSR GivePoints
@@ -70,7 +70,7 @@ Bounce:
     STA $7D
     BRA .finish
 
-.cloneBounce
+.luigiBounce
     %sprite_block_position()    ;| Update the position
 	                            ;| of the block
 	                            ;| so it doesn't react to
@@ -81,19 +81,19 @@ Bounce:
     ;JSR RememberPoints
     %erase_block()		; Erase block.
 
-    LDA !CloneSpinning		    ; Check if Clone is spin jumping.
+    LDA !LuigiSpinning		    ; Check if Luigi is spin jumping.
     BNE Crush			; If he is, go to crush.
 
-    LDA !CloneJumpHeld
+    LDA !LuigiJumpHeld
     BEQ .low				            ; Skip ahead if the player is not holding A or B.
 
 .high
-    LDA #!CloneHighBounce			; Give high vertical up speed to player.
+    LDA #!LuigiHighBounce			; Give high vertical up speed to player.
     STA !AA,x
     BRA .no_spawn
 
 .low
-    LDA #!CloneLowBounce			; Give low vertical up speed to clone.
+    LDA #!LuigiLowBounce			; Give low vertical up speed to Luigi.
     STA !AA,x
     BRA .no_spawn
 
@@ -115,7 +115,7 @@ Bounce:
     ; need add %create_smoke() after disappear
 
 .no_spawn
-    LDA !CloneContact
+    LDA !LuigiContact
     BNE .no_graphic
 
     JML $01AB99|!bank	; Write the contact graphics for the spin jump.
@@ -123,12 +123,12 @@ Bounce:
 
 .no_graphic
     LDA #$00
-    STA !CloneContact
+    STA !LuigiContact
     RTL
 
 Crush:
-    LDA !CloneContact
-    BNE .cloneCrush
+    LDA !LuigiContact
+    BNE .luigiCrush
 
 .marioCrush
     LDA $187A|!addr		; Check again if Mario is riding Yoshi.
@@ -141,22 +141,22 @@ Crush:
 +	STA $7D
     BRA .CrushEnd
 
-.cloneCrush
+.luigiCrush
     %create_smoke()     ; added by SJC
-    LDA !CloneJumpHeld
+    LDA !LuigiJumpHeld
     BEQ .low
 
 .high
-    LDA #!CloneHighSpin
+    LDA #!LuigiHighSpin
     STA !AA,x
     BRA .finish
 .low
-    LDA #!CloneLowSpin
+    LDA #!LuigiLowSpin
     STA !AA,x
 
 .finish
     LDA #$00
-    STA !CloneContact
+    STA !LuigiContact
     BRA .CrushEnd
 
 .NoYoshi
@@ -210,17 +210,17 @@ MarioAbove:
     BNE Star			; If he does, destroy block.
 
     LDA #$00
-    STA !CloneContact
+    STA !LuigiContact
 
     JMP Bounce			; If not, go to bounce.
 
 SpriteV:
     LDA !7FAB9E,x
-    CMP #!CloneSpriteNumber            ; Check for Clone
+    CMP #!LuigiSpriteNumber            ; Check for Luigi
     BNE Return
 
     LDA #$01
-    STA !CloneContact
+    STA !LuigiContact
 
 ;    JSR CheckIfMarioSpriteOnTop
 ;    BMI .dontBounce
@@ -232,11 +232,11 @@ SpriteV:
 
 SpriteH:
     LDA !7FAB9E,x
-    CMP #!CloneSpriteNumber            ; Check for Clone
+    CMP #!LuigiSpriteNumber            ; Check for Luigi
     BNE .normal
 
     LDA #$01
-    STA !CloneContact
+    STA !LuigiContact
 
 ;    JSR CheckIfMarioSpriteOnTop
 ;    BMI .dontBounce

@@ -1,5 +1,5 @@
 ;===============================================================
-; Mario/Luigi Clone Sprite
+; Mario/Luigi Luigi Sprite
 ;===============================================================
 ; A sprite that mimics player physics and behaviors, with the 
 ; ability to teleport/swap places with the real player.

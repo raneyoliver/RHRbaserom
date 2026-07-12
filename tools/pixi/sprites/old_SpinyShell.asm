@@ -34,10 +34,10 @@ endif
 
 !SpeedXY =          !1504,x
 !State =            !1534,x
-!CloneSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
-!CloneIndex =       !1FD6,x
+!LuigiSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
+!LuigiSpriteNumber =       !1FD6,x
 
-!CloneSpriteNumber =    $14
+!LuigiSpriteNumber =    $14
 
 ; X speed when kicked sideways by Mario.
 !KickXSpeed         = $2E
@@ -147,19 +147,19 @@ BNE +
 ;CMP #$0A
 ;BNE +
 
-; if not kicked or carryable/stationary, don't run clone contact code
+; if not kicked or carryable/stationary, don't run Luigi contact code
  LDA !14C8,x
  CMP #$0A
- BEQ .clone
+ BEQ .Luigi
 
  LDA !14C8,x
  CMP #$09
- BEQ .clone
+ BEQ .Luigi
 
 BRA .player
 
-.clone
-JSR SetCloneContact
+.Luigi
+JSR SetLuigiContact
 
 .player
 LDA !14C8,x
@@ -193,7 +193,7 @@ STZ !AA,x
 STZ !B6,x
 RTS
 
-GetCloneAboveShell:
+GetLuigiAboveShell:
     LDA !14D4,y
     XBA
     LDA !D8,y
@@ -367,7 +367,7 @@ STA !1FE2,x			;
 .NoBlockHit
 RTS				;
 
-SetCloneContact:
+SetLuigiContact:
 	LDY #!SprSize-1		;loop count (loop though all sprite number slots)
 .Loop
 	PHX
@@ -382,15 +382,15 @@ SetCloneContact:
 	CMP $08			;compare with sprite index
 	BEQ .loopSprSprBridge		;if equal, keep looping.
 
-    STA !CloneIndex
+    STA !LuigiSpriteNumber
 
 	TYX			;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
 	CMP $07			;compare with cursor's number from scratch RAM
 	BEQ .loopSprSprBridge		;if equal, keep looping.
 
-	CMP #!CloneSpriteNumber            ;compare with clone index
-	BNE .LoopSprSpr 	;if not clone, keep looping.
+	CMP #!LuigiSpriteNumber            ;compare with Luigi index
+	BNE .LoopSprSpr 	;if not Luigi, keep looping.
 
 	PLX     			;restore sprite index.
 	JSL $03B6E5|!BankB	;get sprite A clipping (this sprite)
@@ -402,7 +402,7 @@ SetCloneContact:
 
 	PLX			;restore sprite index
 
-    LDA !CloneIndex
+    LDA !LuigiSpriteNumber
     TAY
 
     BRA .actions
@@ -422,16 +422,16 @@ SetCloneContact:
     BEQ .kick   ;stationary -> kick
 
 .kicked
-    JSR GetCloneAboveShell
+    JSR GetLuigiAboveShell
     BMI ..kill
 
     CMP #$04
     BCC ..kill
 
-    LDA !CloneSpinning
+    LDA !LuigiSpinning
     BEQ ..kill
 
-    BRA .done   ; if spinning and above shell, let clone bounce
+    BRA .done   ; if spinning and above shell, let Luigi bounce
 
 ..kill
     LDA #$02
@@ -463,9 +463,9 @@ KickShell:
     lda #!KickNoInteractTime;\ Briefly disable interaction with Mario.
     sta !154C,x             ;/
 
-    ; if KickShell is being called, it's guaranteed to be a clone interaction
-.cloneKick
-    JSR GetCloneRightOfShell
+    ; if KickShell is being called, it's guaranteed to be a Luigi interaction
+.luigiKick
+    JSR GetLuigiRightOfShell
     BPL ..right
 ..left
     LDY #$00
@@ -502,8 +502,8 @@ GivePoints:
 KickXSpeeds:
     db -!KickXSpeed,!KickXSpeed,$CC,$34
 
-GetCloneRightOfShell:
-    LDA !CloneIndex
+GetLuigiRightOfShell:
+    LDA !LuigiSpriteNumber
     TAY
 
     LDA !14E0,y

@@ -2,16 +2,16 @@
 # Create states in Mesen (File -> Save State), then copy .mst files here.
 # Register each file below so launch/load scripts can reference them by name.
 
-[clone_item_carry]
-file = "tools/test/savestates/clone_item_carry.mst"
-description = "Clone carrying an item; tests clone_item.asm Y-position hook"
-patch = "resources/patches/clone_item.asm"
+[luigi_item_hold]
+file = "tools/test/savestates/luigi_item_hold.mst"
+description = "Luigi holding an item; tests luigi_item.asm Y-position hook"
+patch = "resources/patches/luigi_item.asm"
 level = "TBD"
-notes = "Save right before or during item carry so low_y hook can be stepped"
+notes = "Save right before or during item hold so low_y hook can be stepped"
 
-[clone_item_no_carry]
-file = "tools/test/savestates/clone_item_no_carry.mst"
-description = "Clone active but not carrying; control case for clone_item.asm"
-patch = "resources/patches/clone_item.asm"
+[luigi_item_no_hold]
+file = "tools/test/savestates/luigi_item_no_hold.mst"
+description = "Luigi active but not holding; control case for luigi_item.asm"
+patch = "resources/patches/luigi_item.asm"
 level = "TBD"
-notes = "CloneCarriedItemIndex should be $FF"
+notes = "LuigiHeldItemIndex should be $FF"

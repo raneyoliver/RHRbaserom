@@ -1,6 +1,6 @@
-!CloneCarriedItemIndex = $41B82E
-!CloneSpriteNum = $14
-!CloneIndex = $41A01A
+!LuigiHeldItemIndex = $41B82E
+!LuigiSpriteNumber = $14
+!LuigiIndex = $41A01A
 
 if read1($00FFD5) == $23
 	!sprite_slots					= $16
@@ -134,12 +134,12 @@ JMP .GFXStuff					;do graphics only (technically)
 ;JSR HandleStun					;useless, handles stun that causes glitches
 
 
-LDA !CloneCarriedItemIndex
+LDA !LuigiHeldItemIndex
 CMP #$FF
 BEQ .updateSpritePosition
 TXA
-CMP !CloneCarriedItemIndex
-BEQ .dontUpdateSpritePosition   ; this sprite is held by clone — clone sets pos
+CMP !LuigiHeldItemIndex
+BEQ .dontUpdateSpritePosition   ; this sprite is held by Luigi — Luigi sets pos
 
 .updateSpritePosition
 JSL $01802A|!bank				;update sprite's position (X+Y with gravity)
@@ -637,7 +637,7 @@ BNE .Re						;
 JSL $01803A|!bank				;interact with sprites and player
 BCC .Re						;
 
-LDA !CloneCarriedItemIndex	; if key carried by clone, cannot carry
+LDA !LuigiHeldItemIndex	; if key carried by Luigi, cannot carry
 CMP #$FF
 BNE .NoCarry
 
@@ -704,22 +704,22 @@ RTS						;
 
 .SolidSides
 PHX
-LDA !CloneCarriedItemIndex ; if key not carried by clone, normal key interaction
+LDA !LuigiHeldItemIndex ; if key not carried by Luigi, normal key interaction
 CMP #$FF
 BEQ .normal
 
-JSR GetCloneSpriteIndex
+JSR GetLuigiSpriteIndex
 LDA $00
 CMP #$FF
-BEQ .normal   ; if no clone, normal key interaction
+BEQ .normal   ; if no Luigi, normal key interaction
 
-; clone found
+; Luigi found
 TAX
 LDA !14C8,x
 CMP #$0B
-BNE .normal   ; if clone not carried, normal key interaction
+BNE .normal   ; if Luigi not carried, normal key interaction
 
-; clone carried,
+; Luigi carried,
 PLX
 BRA .return ; key should not affect player in this case
 
@@ -753,9 +753,9 @@ RTS						;
 
 KeyGFX:
 PHX
-LDA !CloneIndex
+LDA !LuigiIndex
 TAX
-LDA !1504,x ; get clone's state to see if teleporting
+LDA !1504,x ; get Luigi's state to see if teleporting
 STA $00
 PLX
 LDA $00
@@ -790,7 +790,7 @@ JSL $01B7B3|!BankB
 .return
 RTS						;
 
-GetCloneSpriteIndex:
+GetLuigiSpriteIndex:
 	PHX
     PHY
 	LDY #!sprite_slots-1		;loop count (loop though all sprite number slots)
@@ -798,11 +798,11 @@ GetCloneSpriteIndex:
 .Loop
 	TYX					;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
-	CMP #!CloneSpriteNum 			;compare with clone index
-	BNE .LoopSprSpr 	;if clone, next
+	CMP #!LuigiSpriteNumber 			;compare with Luigi index
+	BNE .LoopSprSpr 	;if Luigi, next
 
 .okay
-	STX $00	; if found clone
+	STX $00	; if found Luigi
     BRA .return
 
 .LoopSprSpr
@@ -810,7 +810,7 @@ GetCloneSpriteIndex:
 	BPL .Loop		;and loop while not negative.
 
 .notFound
-	LDA #$FF		; if no clone found, return FF
+	LDA #$FF		; if no Luigi found, return FF
 	STA $00
 
 .return

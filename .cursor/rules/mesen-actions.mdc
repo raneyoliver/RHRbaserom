@@ -7,13 +7,13 @@ alwaysApply: true
 
 When the user names a high-level action, translate it to controller + frames without asking for bit masks unless ambiguous.
 
-## Throw (carryable / OliverClone)
+## Throw (carryable / Luigi)
 
-- **Meaning**: release grab while optionally holding a direction so Mario/Luigi throws the carried sprite.
+- **Meaning**: release grab while optionally holding a direction so Mario throws Luigi (or Luigi throws a held item).
 - **Input**: clear grab buttons **Y and X** (`$15` y-bit / `$17` x-bit). Hold **Right** or **Left** if they want directional throw momentum.
 - **Do not** hold Y/X across the resume — that keeps carrying.
-- **Default script**: `tools/test/mesen/run-throw-clone.ps1` (Right + release grab, ~30 frames).
-- **Watch**: clone `14C8` `$0B`→`$09`/`$0A`, sprite X speed `B6`, Y speed `AA` (SA-1 `!AA` = `$9E`), freeram `PreviousXSpeed` `$41B835`, `BouncingSpeed` `$41A023`, `LandingTimer` `$41B834`.
+- **Default script**: `tools/test/mesen/run-throw-luigi.ps1` (Right + release grab, ~30 frames).
+- **Watch**: Luigi `14C8` `$0B`→`$09`/`$0A`, sprite X speed `B6`, Y speed `AA` (SA-1 `!AA` = `$9E`), freeram `PreviousXSpeed` `$41B835`, `BouncingSpeed` `$41A023`, `LandingTimer` `$41B834`.
 
 ## Other common actions
 

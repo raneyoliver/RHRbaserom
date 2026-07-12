@@ -11,8 +11,8 @@
 ; Allocate RAM addresses sequentially
 !State              = !BaseRAM+$00   ; Teleport state
 !Spinning           = !BaseRAM+$01   ; Spinning state
-!CloneSpeedX        = !BaseRAM+$02   ; X speed backup
-!CloneSpeedY        = !BaseRAM+$03   ; Y speed backup
+!LuigiSpeedX        = !BaseRAM+$02   ; X speed backup
+!LuigiSpeedY        = !BaseRAM+$03   ; Y speed backup
 !TeleportReady      = !BaseRAM+$04   ; Can teleport flag
 !JumpHeld           = !BaseRAM+$05   ; Jump button status
 !TempSpinning       = !BaseRAM+$06   ; Temporary spin flag

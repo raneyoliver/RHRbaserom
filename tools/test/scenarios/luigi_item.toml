@@ -1,0 +1,32 @@
+# ASM test scenario: luigi_item.asm
+# Hook at org $00ABFC (low_y) — sets held item Y when Luigi is holding.
+
+[patch]
+file = "resources/patches/luigi_item.asm"
+hook_pc = "00ABFC"  # re-check against built ROM if hook moves
+
+[ram]
+# SA-1 RAM (!addr = $6000); addresses from luigi_item.asm
+luigi_index = "41A01A"
+luigi_held_item_index = "41B82E"
+sprite_low_y_table = "322C"
+
+[checks.holding_item]
+description = "When Luigi holds item, item sprite low Y matches Luigi low Y"
+precondition = "LuigiHeldItemIndex != $FF"
+steps = [
+  "Load savestate luigi_item_hold",
+  "Set breakpoint on low_y hook if not already hit",
+  "Step frames and verify get_cpu_state X matches LuigiIndex",
+  "Read LuigiHeldItemIndex; expect != $FF",
+  "After hook runs, read sprite low Y for held item slot; expect match"
+]
+
+[checks.not_holding]
+description = "When not holding, hook returns without modifying item Y"
+precondition = "LuigiHeldItemIndex == $FF"
+steps = [
+  "Load savestate luigi_item_no_hold",
+  "Breakpoint on low_y; verify early BNE .return path",
+  "LuigiHeldItemIndex should read $FF"
+]

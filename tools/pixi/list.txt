@@ -12,7 +12,7 @@
 11 MultiBounceShellGreen.json
 12 KoopaShellTeleports.json
 13 statue_fireball.cfg
-14 !!OliverClone\OliverClone.json
+14 !!Luigi\Luigi.json
 15 PlayerCursor.cfg
 16 GreyPlatformOnOffToggledFix.cfg
 17 urchin_3A+3B.json

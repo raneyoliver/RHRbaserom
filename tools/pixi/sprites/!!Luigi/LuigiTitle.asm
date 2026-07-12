@@ -15,7 +15,7 @@
 							; However, it uses a lot more freeRAM than if disabled (see below). It also isn't guaranteed to behave nicely with custom sprites.
 
 !sprite_slots					= $0C							
-!MarioSpriteNumber				= $14	; in pixi_list.txt
+!LuigiSpriteNumber				= $14	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !SpinyShell						= $5B	; in pixi_list.txt
 
@@ -34,13 +34,13 @@
 ; Mario-Luigi Changing
 !IsMario                                        = $7FA026
 
-;;;;;;;;; MarioSprite PROPERTIES ;;;;;;;;;
+;;;;;;;;; Luigi PROPERTIES ;;;;;;;;;
 
 !State							= !1504,x
 
 !Spinning						= $7FA00C
-!CloneSpeedX					= $7FA00E
-!CloneSpeedY					= $7FA00F
+!LuigiSpeedX					= $7FA00E
+!LuigiSpeedY					= $7FA00F
 !TeleportReady					= $7FA016
 !JumpHeld						= $7FA018
 !TempSpinning					= $7FA019
@@ -121,9 +121,9 @@ endmacro
 
 ;;;;;;;;; FUNCTIONS ;;;;;;;;;
 
-InitMarioSpriteProperties:
+InitLuigiProperties:
 
-	; Set MarioSprite Stationary/Carryable
+	; Set Luigi Stationary/Carryable
 	%SetSpriteStatus(!StationaryCarryable, x)
 
 	; Set Properties False
@@ -222,13 +222,13 @@ print "INIT ",pc
 	LDA #$00
 	STA !FreezeBlockFrozenFlag
 
-	; Initialize MarioSprite's Properties
-    JSR InitMarioSpriteProperties
+	; Initialize Luigi's Properties
+    JSR InitLuigiProperties
 	JSR UnsetCustomFTrigger
 
 	RTL
 
-UpdateMarioSpriteSpeed:
+UpdateLuigiSpeed:
 	LDA !BouncingSpeed
 	BEQ .return	; if $00 do nothing
 
@@ -236,7 +236,7 @@ UpdateMarioSpriteSpeed:
 	BCC	.decrement	; else if <= delay, decrement
 
 	;else if > delay, store speed then set to delay
-	STA !AA,x	; bounce MarioSprite
+	STA !AA,x	; bounce Luigi
 	LDA #!BounceDelay
 	STA !BouncingSpeed
 	BRA .return
@@ -255,12 +255,12 @@ print "MAIN ",pc
     JSR RememberPoints
 	JSR UnsetCustomFTrigger
 
-	; If !StareTimer % 4 == 3, MarioSprite uses stare graphics
-	JSR UpdateMarioSpriteStareTimer
+	; If !StareTimer % 4 == 3, Luigi uses stare graphics
+	JSR UpdateLuigiStareTimer
 
-	; If bouncing previous frame, update MarioSprite speed this frame (one frame delayed)
+	; If bouncing previous frame, update Luigi speed this frame (one frame delayed)
 	; This is to mimick the way mario bounces- using $94 and $96
-	JSR UpdateMarioSpriteSpeed
+	JSR UpdateLuigiSpeed
 
 	JSR PerLevelSettings
 
@@ -393,27 +393,27 @@ CheckIfKilled:
         STA $00
         RTS
 
-UpdateMarioSpriteStareTimer:
+UpdateLuigiStareTimer:
 	LDA !Frame
 	CMP #$04        ;was on ground if less	(!WalkingTopLeftTile)
-	BCC .marioSpriteOnGround
+	BCC .luigiOnGround
 
 	CMP #$0C        ;was on ground if more (!StareForwardTopLeftTile or !StareBackwardTopLeftTile)
-	BCS .marioSpriteOnGround
+	BCS .luigiOnGround
 
-	LDA !1588,x     ;just now landing (MarioSprite blocked down)
+	LDA !1588,x     ;just now landing (Luigi blocked down)
 	AND #$04
-	BNE .marioSpriteJustNowLanding
+	BNE .luigiJustNowLanding
 
-.marioSpriteInAir
+.luigiInAir
 	RTS
 
-.marioSpriteJustNowLanding
+.luigiJustNowLanding
 	LDA #$00
 	STA !StareTimer
 	RTS
 
-.marioSpriteOnGround
+.luigiOnGround
 	LDA $14	; if 0-FF counter hits 0, increment StareTimer
 	BNE .re
 
@@ -506,7 +506,7 @@ HandleState:
 	LDA #$00
 	STA !StareTimer
 
-	JSR SetupAttributesOfClone
+	JSR SetupAttributesOfLuigi
 
 	; Backup sprite properties to use in freezing
 	PHX
@@ -536,7 +536,7 @@ HandleState:
 	STA !15D0,y
 
 ..noYoshi
-	; freeze clone and player, speed is already stored
+	; freeze Luigi and player, speed is already stored
 	STZ !B6,x
 	STZ !AA,x
 	STZ $7B
@@ -561,7 +561,7 @@ HandleState:
 	LDA #$FF
 	STA $9D
 
-	; freeze clone and player, speed is already stored
+	; freeze Luigi and player, speed is already stored
 	STZ !B6,x
 	STZ !AA,x
 	STZ $7B
@@ -647,7 +647,7 @@ HandleState:
 	STA $97                                 ; /
 
 	;also take sprite's speed
-	LDA !CloneSpeedX
+	LDA !LuigiSpeedX
 	STA $7B
 
 ;---------------------
@@ -656,7 +656,7 @@ HandleState:
 ;slow		   		|jump
 
 ;also give p-speed if the sprite was fast enough
-	LDA !CloneSpeedX
+	LDA !LuigiSpeedX
 	BPL + : EOR #$FF : INC : +
 	CMP #$30
 	BCC ..slow
@@ -691,7 +691,7 @@ HandleState:
 
 ;--------------------
 ..ySpeed
-	LDA !CloneSpeedY
+	LDA !LuigiSpeedY
 	STA $7D
 
 
@@ -744,7 +744,7 @@ FlipMarioLuigi:
         STA !IsMario
         RTS
 
-SetupAttributesOfClone:
+SetupAttributesOfLuigi:
         LDA $D1;$94
         STA !PlayerPosXLow
         LDA $D2;$95
@@ -771,14 +771,14 @@ SetupAttributesOfClone:
         STA !PlayerSpeedY
 .continue
         LDA !B6,x
-        STA !CloneSpeedX
+        STA !LuigiSpeedX
         LDA !AA,x
-        STA !CloneSpeedY
+        STA !LuigiSpeedY
 
         LDA !Spinning
-        STA !TempSpinning         ; store copy of clone's spinning flag for later
+        STA !TempSpinning         ; store copy of Luigi's spinning flag for later
 
-        LDA $140D       ; overwrite clone spinning with mario spinning
+        LDA $140D       ; overwrite Luigi spinning with mario spinning
         STA !Spinning
 
         LDA #$00
@@ -2034,7 +2034,7 @@ SpriteAndSpecialBlockInteraction:
 	BNE .done
 ; Spin Interaction
 ; Get Sprite-Sprite Contact
-	JSR SprSprContact       ; clone = x, sprite in contact = y
+	JSR SprSprContact       ; Luigi = x, sprite in contact = y
 
 ; If Contact Not Found, Try Blocks
 	LDA $00
@@ -2047,7 +2047,7 @@ SpriteAndSpecialBlockInteraction:
 	BCC .koopaCheck
 
 .spriteIsVanillaShell
-	JMP MarioSpriteInteractWithVanillaShell
+	JMP LuigiInteractWithVanillaShell
 
 .koopaCheck
         CMP #$0D        ; vanilla koopas are <= 0C
@@ -2059,17 +2059,17 @@ SpriteAndSpecialBlockInteraction:
         BNE .done
 
 .tryBounce
-	JMP MarioSpriteTryBounceOrSpin	; not shell, maybe koopa/spiny?
+	JMP LuigiTryBounceOrSpin	; not shell, maybe koopa/spiny?
 
 .done
 	RTS
 
-MarioSpriteInteractWithVanillaShell:
+LuigiInteractWithVanillaShell:
 	; if IFrames on shell, don't interact
 	LDA !154C,y
 	BNE .return
 
-	; if shell carried AND MarioSprite is grounded, don't interact
+	; if shell carried AND Luigi is grounded, don't interact
 	LDA !14C8,y
 	CMP #$0B
 	BNE .checkStationary
@@ -2078,8 +2078,8 @@ MarioSpriteInteractWithVanillaShell:
 	AND #$04
 	BNE .return
 
-	; if shell carried and MarioSprite in air, only bounce
-	JMP MarioSpriteTryBounceOrSpin
+	; if shell carried and Luigi in air, only bounce
+	JMP LuigiTryBounceOrSpin
 
 .checkStationary
 	; if shell just sitting there, interact
@@ -2088,7 +2088,7 @@ MarioSpriteInteractWithVanillaShell:
 
 .tryBounceOffKickedShell
 	PHY
-		JSR MarioSpriteTryBounceOrSpin
+		JSR LuigiTryBounceOrSpin
 	PLY
 
 	PHX
@@ -2118,13 +2118,13 @@ MarioSpriteInteractWithVanillaShell:
 	LDA !Spinning
 	BEQ ..okToKick
 
-	JMP MarioSpriteTryBounceOrSpin_spinning
+	JMP LuigiTryBounceOrSpin_spinning
 
 ..okToKick
 	; set shell to kicked and don't bounce
 	%SetSpriteStatus(#$0A, y)
 	; give shell its speed
-	JSR GetMarioSpriteRightOfContactSprite
+	JSR GetLuigiRightOfContactSprite
 	BMI ..kickRight
 
 ..kickLeft
@@ -2153,7 +2153,7 @@ MarioSpriteInteractWithVanillaShell:
 .return
 	RTS
 
-GetMarioSpriteRightOfContactSprite:
+GetLuigiRightOfContactSprite:
     LDA !14E0,y
     XBA
     LDA !E4,y
@@ -2170,12 +2170,12 @@ GetMarioSpriteRightOfContactSprite:
 
     RTS
 
-MarioSpriteTryBounceOrSpin:
+LuigiTryBounceOrSpin:
 	LDA !14C8,y	; if carried, just allow bouncing/spinning regardless if on top
 	CMP #$0B
 	BEQ .checkIfSpinning
 
-	; For leniency on shell jumps, just let the clone bounce/spin if it's airborne already
+	; For leniency on shell jumps, just let the Luigi bounce/spin if it's airborne already
 	CMP #$0A	; check if kicked
 	BNE .normalHeightCheck
 
@@ -2183,17 +2183,17 @@ MarioSpriteTryBounceOrSpin:
 	AND #$04                
 	BEQ .airborneLenientShellJump              	; If sprite is not on ground (airborne), branch to .airborneLenientShellJump
 
-	; if clone is on ground, normal height check
+	; if Luigi is on ground, normal height check
 .normalHeightCheck
 	; Will either skip to death, skip to normal jumping, or
 	; return here to try to spin jump.
-	; (depending if MarioSprite is above the sprite, and
+	; (depending if Luigi is above the sprite, and
 	; sprite is non-spiky, etc.)
-	JMP CheckIfMarioSpriteOnTop
+	JMP CheckIfLuigiOnTop
 	
 .airborneLenientShellJump
 .checkIfSpinning
-; Check if Clone is Spinning
+; Check if Luigi is Spinning
 	LDA !Spinning
 	BEQ .notSpinning
 
@@ -2257,7 +2257,7 @@ MarioSpriteTryBounceOrSpin:
 	BRA .done
 
 .notSpinning
-	JSR CheckIfMarioSpriteJumpingOnJumpableSprite
+	JSR CheckIfLuigiJumpingOnJumpableSprite
 
 .done
 	RTS
@@ -2288,7 +2288,7 @@ SprSprContact:
 	CMP #$03
 	BEQ .LoopSprSpr
 
-	; If button, skip (bug where clone can spin on button sprites)
+	; If button, skip (bug where Luigi can spin on button sprites)
 	LDA !7FAB9E,x
 	CMP #$18
 	BEQ .LoopSprSpr
@@ -2335,7 +2335,7 @@ SprSprContact:
 	STA $00             ;set flag to show did not find contact
 	RTS					;end? return.
 
-CheckIfMarioSpriteOnTop:
+CheckIfLuigiOnTop:
     LDA #!NumPixelsAboveSpriteRequiredToBounce    ;#$14       ;\ the lower this value, the more lenient 
     STA $01                 ;|
     LDA $05                 ;|
@@ -2356,26 +2356,26 @@ CheckIfMarioSpriteOnTop:
 	;REP #$20
 	;SEC : SBC $D3
 	;STA $00
-    BMI KillMarioSprite         ;|     and Mario hasn't bounced on any other enemies.
+    BMI KillLuigi         ;|     and Mario hasn't bounced on any other enemies.
     LDA !AA,x ;$7D ;player y speed ;|  - Both Mario and the sprite are on the ground.
     BPL +                   ;|
     LDA !190F,y ;,x         ;|
     AND #$10                ;| if can't be jumped with upspeed
-    BEQ KillMarioSprite		;  kill mariosprite
+    BEQ KillLuigi		;  kill Luigi
 +   LDA !1588,y              ;if touched sprite in air skip
     AND #$04                 
     BEQ ++                   
     LDA !1588,x ;$72         
-	AND #$04                ; else, if both MarioSprite and
-    BNE KillMarioSprite     ; touched sprite on ground, kill
+	AND #$04                ; else, if both Luigi and
+    BNE KillLuigi     ; touched sprite on ground, kill
 ++  LDA !1656,y ;x          
     AND #$10                ;| If the sprite can be bounced on, jump.
-    BNE CheckIfMarioSpriteJumpingOnJumpableSprite        ;/
+    BNE CheckIfLuigiJumpingOnJumpableSprite        ;/
 	; Otherwise, return to SpriteAndSpecialBlockInteraction to try spin.
-	JMP MarioSpriteTryBounceOrSpin_checkIfSpinning
+	JMP LuigiTryBounceOrSpin_checkIfSpinning
 
-CheckIfMarioSpriteJumpingOnJumpableSprite:
-	; x = MarioSprite, y = contact sprite
+CheckIfLuigiJumpingOnJumpableSprite:
+	; x = Luigi, y = contact sprite
 	; Check if Sprite is Able to be Bounced On
 	LDA !1656,y
 	AND #$10	; J bit (can be jumped on)
@@ -2414,12 +2414,12 @@ CheckIfMarioSpriteJumpingOnJumpableSprite:
 	BRA .return
 
 .cannotBeJumpedOn	; SpikySprite+normaljump=die
-	JSR KillMarioSprite
+	JSR KillLuigi
 	
 .return
 	RTS
 
-KillMarioSprite:
+KillLuigi:
 	LDA #!DeadTopLeftTile
 	STA !Frame
 	JSR Graphics	;rerun graphics before mario dies
@@ -2436,12 +2436,12 @@ LDX #!sprite_slots-1
 LDA !9E,x								;/
 .checkGoalTape
 CMP #$7B								;| Don't freeze the goal tape.
-BNE .checkMarioSprite					;| 
+BNE .checkLuigi					;| 
 JMP .next
 
-.checkMarioSprite
+.checkLuigi
 LDA !7FAB9E,x
-CMP #!MarioSpriteNumber					;| Don't freeze the MarioSprite.
+CMP #!LuigiSpriteNumber					;| Don't freeze the Luigi.
 BNE +									;| 
 JMP .next
 +
@@ -2597,9 +2597,9 @@ LDX #!sprite_slots-1
 LDA !9E,x
 CMP #$7B
 BEQ .next
-.checkMarioSprite
+.checkLuigi
 LDA !7FAB9E,x
-CMP #!MarioSpriteNumber
+CMP #!LuigiSpriteNumber
 BEQ .next
 LDA !14C8,x
 BEQ .next

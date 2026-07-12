@@ -51,8 +51,8 @@ init:
 main:
 	WDM #$01
 	JSL PressurePlates_main
-	; Slot swap + clone-held item sync (library early-outs if no clone / no held item)
-	JSL MoveSpriteToFront_main
+	; Slot swap + Luigi-held item sync (library early-outs if no Luigi / no held item)
+	JSL MoveLuigiToFront_main
 
 
     ;if !ChangeToLuigi = 1

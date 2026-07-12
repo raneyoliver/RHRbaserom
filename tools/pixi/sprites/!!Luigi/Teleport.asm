@@ -1,7 +1,7 @@
 ;===============================================================
 ; Teleport Mechanics
 ;===============================================================
-; Handles the teleport/swap functionality of the Oliver Clone sprite
+; Handles the teleport/swap functionality of the Luigi sprite
 ; States:
 ; 0 = Idle/Not teleporting
 ; 1 = Entering teleport
@@ -51,7 +51,7 @@ HandleTeleportState:
     LDA $1426|!Base2
     BNE .return
 
-    ; Must have touched clone first
+    ; Must have touched Luigi first
     LDA !TeleportReady
     BEQ .return
 
@@ -80,7 +80,7 @@ HandleTeleportState:
     RTS
 
 ;===============================================================
-; State 2: Move player and clone
+; State 2: Move player and Luigi
 ;===============================================================
 .teleporting
     ; Set teleport flags
@@ -149,7 +149,7 @@ SetupTeleport:
     LDA #$00  
     STA !StareTimer
     
-    JSR SetupAttributesOfClone
+    JSR SetupAttributesOfLuigi
     
     ; Backup sprite states
     PHX
@@ -275,9 +275,9 @@ FlipMarioLuigi:
     RTS
 
 ;---------------------------------------------------------------
-; Backs up clone and player attributes before teleport
+; Backs up Luigi and player attributes before teleport
 ;---------------------------------------------------------------
-SetupAttributesOfClone:
+SetupAttributesOfLuigi:
     ; Backup direction
     LDA !157C,x
     STA !SpriteDirection
@@ -309,11 +309,11 @@ SetupAttributesOfClone:
     STA !PlayerSpeedY
 
 .continue
-    ; Backup clone speeds
+    ; Backup Luigi speeds
     LDA !B6,x
-    STA !CloneSpeedX
+    STA !LuigiSpeedX
     LDA !AA,x  
-    STA !CloneSpeedY
+    STA !LuigiSpeedY
 
     ; Backup spin states
     LDA !Spinning

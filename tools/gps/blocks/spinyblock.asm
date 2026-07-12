@@ -18,13 +18,13 @@ endif
 ; Spiny block by TheBourgyman. Don't forget to make it act as 25 in Lunar Magic's 16x16 Tile Map Editor.
 
 print "A block that acts like a mid-air suspended Spiny. If Yoshi's going to eat it, this will need sprite GFX02 in SP4."
-!CloneLowBounce =           $E6
-!CloneHighBounce =          $AA
-!CloneJumpHeld =        $41A018
-!CloneSpinning =        $41A00C
-!CloneContact =         $41A01C
+!LuigiLowBounce =           $E6
+!LuigiHighBounce =          $AA
+!LuigiJumpHeld =        $41A018
+!LuigiSpinning =        $41A00C
+!LuigiContact =         $41A01C
 
-!CloneSpriteNumber = 		$14
+!LuigiSpriteNumber = 		$14
 
 db $42
 
@@ -40,8 +40,8 @@ Bounce:
 	RTL
 
 +
-	LDA !CloneContact             ;#$01 if clone bounce (SpriteV)
-    BNE .cloneBounce
+	LDA !LuigiContact             ;#$01 if Luigi bounce (SpriteV)
+    BNE .luigiBounce
 
 .marioBounce
 	LDA $140D|!addr		; Check if Mario is spin jumping.
@@ -65,8 +65,8 @@ Bounce:
 	JML $01AB99|!bank	; Write the contact graphics for the spin jump.
 	RTL
 
-.cloneBounce
-	LDA !CloneSpinning		    ; Check if Clone is spin jumping.
+.luigiBounce
+	LDA !LuigiSpinning		    ; Check if Luigi is spin jumping.
     BNE +						; If he is, continue.
 
 	LDA #$08			; Play sound "Enemy defeated by a spin jump".
@@ -79,23 +79,23 @@ Bounce:
 	LDA #$08			; Make Mario not interact with the spiny again for 8 frames.
 	STA $14A8|!addr
 
-	LDA !CloneJumpHeld
+	LDA !LuigiJumpHeld
     BEQ .low				            ; Skip ahead if the player is not holding A or B.
 
 .high
-    LDA #!CloneHighBounce			; Give high vertical up speed to player.
+    LDA #!LuigiHighBounce			; Give high vertical up speed to player.
     STA !AA,x
     BRA .finish
 
 .low
-    LDA #!CloneLowBounce			; Give low vertical up speed to clone.
+    LDA #!LuigiLowBounce			; Give low vertical up speed to Luigi.
     STA !AA,x
 .finish
 	LDA #$02
 	STA $1DF9|!addr
 
 	LDA #$00
-    STA !CloneContact
+    STA !LuigiContact
 	RTL
 
 MarioSide:				; Make the block's hitbox one pixel narrower (like Munchers).
@@ -124,21 +124,21 @@ MarioAbove:
 	BNE Star			; If he does, destroy block.
 
 	LDA #$00
-    STA !CloneContact
+    STA !LuigiContact
 
 	JMP Bounce			; If not, go to bounce.
 
 SpriteV:
 	LDA !7FAB9E,x
-    CMP #!CloneSpriteNumber            ; Check for Clone
+    CMP #!LuigiSpriteNumber            ; Check for Luigi
     BNE Return
 
 	LDA !14C8,x
 	CMP #$0B
-	BEQ Return			; if clone carried, don't kill the clone, just annoying
+	BEQ Return			; if Luigi carried, don't kill the Luigi, just annoying
 
     LDA #$01
-    STA !CloneContact
+    STA !LuigiContact
 
     JMP Bounce
 

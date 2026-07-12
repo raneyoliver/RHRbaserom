@@ -1,5 +1,5 @@
-# SA-1 sprite table bus addresses (from OliverClone.asm %define_sprite_table).
-# Custom sprite number OliverClone = $14 (tools/pixi/list.txt).
+# SA-1 sprite table bus addresses (from Luigi.asm %define_sprite_table).
+# Custom sprite number Luigi = $14 (tools/pixi/list.txt).
 
 $script:SmwSprite = @{
     NumVanilla   = 0x3200   # !9E
@@ -16,15 +16,16 @@ $script:SmwSprite = @{
     CustomBits   = 0x6040   # !7FAB10
 }
 
-# OliverClone freeram (Config.asm / OliverClone.asm)
-$script:CloneRam = @{
-    BouncingSpeed  = 0x41A023
-    LandingTimer   = 0x41B834
-    PreviousXSpeed = 0x41B835
-    JumpHeld       = 0x41A005
-    OnPlatform     = 0x41A00E
-    PreviousState  = 0x41A00F
-    CloneIndex     = 0x41A01A   # from clone_item.toml / asm
+# Luigi freeram (Config.asm / Luigi.asm)
+$script:LuigiRam = @{
+    BouncingSpeed      = 0x41A023
+    LandingTimer       = 0x41B834
+    PreviousXSpeed     = 0x41B835
+    JumpHeld           = 0x41A005
+    OnPlatform         = 0x41A00E
+    PreviousState      = 0x41A00F
+    LuigiIndex         = 0x41A01A
+    LuigiHeldItemIndex = 0x41B82E
 }
 
-$script:OliverCloneExtra = 0x14  # pixi list slot extra bit number
+$script:LuigiSpriteNumber = 0x14  # pixi list slot

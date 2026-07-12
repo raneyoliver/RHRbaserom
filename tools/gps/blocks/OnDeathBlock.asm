@@ -15,7 +15,7 @@ else
 	!bankA = $7E0000
 endif
 
-!CloneIndex = $14
+!LuigiSpriteNumber = $14
 !DeadTopLeftTile        		= $0A
 
 ; By SJandCharlieTheCat
@@ -48,7 +48,7 @@ SpriteH:
 	STA $1693|!addr
 
 	LDA !7FAB9E,x
-	CMP #!CloneIndex
+	CMP #!LuigiSpriteNumber
 	BNE Return
 
 	LDA !14C8,x

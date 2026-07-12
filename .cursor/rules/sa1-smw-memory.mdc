@@ -30,7 +30,7 @@ On this SA-1 hack, sprite RAM is **per-slot indexed** via PIXI/`%define_sprite_t
 
 - Read/write as `table_base + slot` (e.g. status `!14C8,x` → `$3242+x`, custom num `!7FAB9E,x` → `$6083+x`).
 - Live X/Y speeds via MCP are the DP mirrors `$30B6+x` / `$309E+x` (absolute `$00B6+x` / `$009E+x` can be stale).
-- Source of remap list: `OliverClone.asm` `%define_sprite_table` / PIXI `sa1def`. Helper: `tools/test/mesen/smw-sprites.ps1`.
+- Source of remap list: `Luigi.asm` `%define_sprite_table` / PIXI `sa1def`. Helper: `tools/test/mesen/smw-sprites.ps1`.
 
 Test helpers: `tools/test/mesen/smw-addrs.ps1`, `smw-sprites.ps1`.
 

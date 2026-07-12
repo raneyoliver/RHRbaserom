@@ -1,13 +1,13 @@
-# Throw Luigi (OliverClone) while holding Right - mid-air throw scenario.
+# Throw Luigi while holding Right - mid-air throw scenario.
 #
 # Savestate: Mario airborne, carrying Luigi. Script clears grab (Y/X) and holds
-# Right so Mario throws, then waits N game frames while logging clone speeds.
+# Right so Mario throws, then waits N game frames while logging Luigi speeds.
 #
 # Prereqs: Mesen + MCP running (start-mcp.ps1, Tools -> MCP Server -> Start)
 #
 # Usage:
-#   .\run-throw-clone.ps1 -Slot 1 -Frames 30
-#   .\run-throw-clone.ps1 -Slot 1 -Frames 30 -SampleEvery 1
+#   .\run-throw-luigi.ps1 -Slot 1 -Frames 30
+#   .\run-throw-luigi.ps1 -Slot 1 -Frames 30 -SampleEvery 1
 
 param(
     [int]$Slot = 1,
@@ -40,15 +40,15 @@ function Read-U8([int]$Address) {
     return [Convert]::ToInt32((Read-McpHex $Address 1).Split(' ')[0], 16)
 }
 
-function Find-OliverCloneSlot {
+function Find-LuigiSlot {
     # Prefer freeram index if valid
-    $idx = Read-U8 $CloneRam.CloneIndex
+    $idx = Read-U8 $LuigiRam.LuigiIndex
     if ($idx -lt 22) {
         $st = Read-U8 ($SmwSprite.Status + $idx)
         $bits = Read-U8 ($SmwSprite.CustomBits + $idx)
         if ($st -ne 0 -and (($bits -band 0x08) -ne 0)) {
             $num = Read-U8 ($SmwSprite.CustomNum + $idx)
-            if ($num -eq $OliverCloneExtra) { return $idx }
+            if ($num -eq $LuigiSpriteNumber) { return $idx }
         }
     }
     for ($i = 0; $i -lt 22; $i++) {
@@ -57,12 +57,12 @@ function Find-OliverCloneSlot {
         $bits = Read-U8 ($SmwSprite.CustomBits + $i)
         if (($bits -band 0x08) -eq 0) { continue }
         $num = Read-U8 ($SmwSprite.CustomNum + $i)
-        if ($num -eq $OliverCloneExtra) { return $i }
+        if ($num -eq $LuigiSpriteNumber) { return $i }
     }
     return -1
 }
 
-function Get-CloneSnapshot([int]$SlotIndex, [string]$Label) {
+function Get-LuigiSnapshot([int]$SlotIndex, [string]$Label) {
     $st  = Read-U8 ($SmwSprite.Status + $SlotIndex)
     $xLo = Read-U8 ($SmwSprite.XLo + $SlotIndex)
     $xHi = Read-U8 ($SmwSprite.XHi + $SlotIndex)
@@ -82,10 +82,10 @@ function Get-CloneSnapshot([int]$SlotIndex, [string]$Label) {
         B6 = $b6
         AA = $aa
         Blocked = $blk
-        Bounce = Read-U8 $CloneRam.BouncingSpeed
-        LandT  = Read-U8 $CloneRam.LandingTimer
-        PrevB6 = Read-U8 $CloneRam.PreviousXSpeed
-        OnPlat = Read-U8 $CloneRam.OnPlatform
+        Bounce = Read-U8 $LuigiRam.BouncingSpeed
+        LandT  = Read-U8 $LuigiRam.LandingTimer
+        PrevB6 = Read-U8 $LuigiRam.PreviousXSpeed
+        OnPlat = Read-U8 $LuigiRam.OnPlatform
         Frame  = Read-U8 $SmwAddr.FrameCounter
         Ctrl15 = Read-U8 $SmwAddr.ControllerHeld
         Ctrl17 = Read-U8 $SmwAddr.ControllerHeld2
@@ -108,11 +108,11 @@ Start-Sleep -Milliseconds 200
 Invoke-MesenMcp "pause" @{} | Out-Null
 Start-Sleep -Milliseconds 100
 
-$cloneSlot = Find-OliverCloneSlot
-if ($cloneSlot -lt 0) { throw "OliverClone (extra `$14) not found in sprite slots" }
-Write-Host ("Found OliverClone in slot `${0:X2}" -f $cloneSlot)
+$luigiSlot = Find-LuigiSlot
+if ($luigiSlot -lt 0) { throw "Luigi (extra `$14) not found in sprite slots" }
+Write-Host ("Found Luigi in slot `${0:X2}" -f $luigiSlot)
 
-$before = Get-CloneSnapshot $cloneSlot "Baseline (held)"
+$before = Get-LuigiSnapshot $luigiSlot "Baseline (held)"
 
 Write-Host "Input: Right held, grab (Y/X) released - throw Luigi"
 Invoke-MesenMcp "set_controller_input" @{
@@ -142,7 +142,7 @@ while ($remaining -gt 0) {
         throw "run_frames stalled: $($run | ConvertTo-Json -Compress)"
     }
     $remaining -= $chunk
-    $samples.Add((Get-CloneSnapshot $cloneSlot ("f+{0}" -f ($Frames - $remaining)))) | Out-Null
+    $samples.Add((Get-LuigiSnapshot $luigiSlot ("f+{0}" -f ($Frames - $remaining)))) | Out-Null
 }
 
 Invoke-MesenMcp "set_controller_input" @{ port = 0 } | Out-Null

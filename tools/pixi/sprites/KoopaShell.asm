@@ -15,8 +15,8 @@ else
 	!bankA = $7E0000
 endif
 
-!CloneIndex = $41A01A
-!CloneNum   = $14
+!LuigiIndex = $41A01A
+!LuigiNum   = $14
 
 !Frozen =           $41A021 ;from npc2.asm
 !WasFrozen =        !1534,x
@@ -24,13 +24,13 @@ endif
 !SpeedXY =          !1FD6,x
 !State =            !1594,x
 
-!CloneLowBounce =           $E6
-!CloneHighBounce =          $AA
-!CloneHighSpin =            $FC
-!CloneLowSpin =             $FE
-!CloneJumpHeld =        $41A018 ;jumpHeld in npc2.asm TODO: change to sprite table
-!CloneSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
-!CloneCarriedItemIndex = $41B82E
+!LuigiLowBounce =           $E6
+!LuigiHighBounce =          $AA
+!LuigiHighSpin =            $FC
+!LuigiLowSpin =             $FE
+!LuigiJumpHeld =        $41A018 ;jumpHeld in npc2.asm TODO: change to sprite table
+!LuigiSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
+!LuigiHeldItemIndex = $41B82E
 
 ;=======================================================================================;
 ; Koopa / Shell disassembly + additional features (sprites 4-7, DA-DF)                  ;
@@ -145,7 +145,7 @@ endif
 !KickedSFXAddr      = $1DF9|!addr
 
 ; Time to disable contact with Mario after kicking the shell.
-;!CloneKickNoInteractTime = $06  ; it's jarring to have the clone kick to you and not be able to interact with the shell instantly as mario
+;!LuigiKickNoInteractTime = $06  ; it's jarring to have the Luigi kick to you and not be able to interact with the shell instantly as mario
 !KickNoInteractTime = $10
 
 ; X speed when kicked sideways by Mario.
@@ -406,7 +406,7 @@ SaveSpriteSpeedAndState:
     STA !State
     RTS
 
-GetCloneAboveShell:
+GetLuigiAboveShell:
     LDA !14D4,y
     XBA
     LDA !D8,y
@@ -423,8 +423,8 @@ GetCloneAboveShell:
 
     RTS
 
-GetCloneRightOfShell:
-    LDA !CloneIndex
+GetLuigiRightOfShell:
+    LDA !LuigiIndex
     TAY
 
     LDA !14E0,y
@@ -443,14 +443,14 @@ GetCloneRightOfShell:
 
     RTS
 
-GetCloneContact:
+GetLuigiContact:
     REP #$20
     LDA !State
     SEP #$20
     XBA
     RTS
 
-SetCloneContact: ;unused
+SetLuigiContact: ;unused
     RTS
 
 	LDY #!SprSize-1		;loop count (loop though all sprite number slots)
@@ -467,14 +467,14 @@ SetCloneContact: ;unused
 	CMP $08			;compare with sprite index
 	BEQ .loopSprSprBridge		;if equal, keep looping.
 
-    STA !CloneIndex
+    STA !LuigiIndex
 
 	TYX			;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
 	CMP $07			;compare with cursor's number from scratch RAM
 	BEQ .loopSprSprBridge		;if equal, keep looping.
 
-	CMP #!CloneNum            ;compare with clone
+	CMP #!LuigiNum            ;compare with Luigi
 
 	PLX     			;restore sprite index.
 	JSL $03B6E5|!BankB	;get sprite A clipping (this sprite)
@@ -489,17 +489,17 @@ SetCloneContact: ;unused
     XBA
     LDA !State
     REP #$20
-    STA !State  ; put clone contact flag in back of !State
+    STA !State  ; put Luigi contact flag in back of !State
     SEP #$20
 
-    LDA !CloneIndex
+    LDA !LuigiIndex
     TAY
 
-    LDA !CloneSpinning
+    LDA !LuigiSpinning
     BEQ .normalJump
 
 .spinJump
-    JSR GetCloneAboveShell
+    JSR GetLuigiAboveShell
     BMI .normalJump
 
     CMP #$08
@@ -507,11 +507,11 @@ SetCloneContact: ;unused
 
     JSR SpinJumpKill_0
 
-    LDA !CloneJumpHeld
+    LDA !LuigiJumpHeld
     BNE .highSpin
 
 .lowSpin
-    LDA #!CloneLowSpin
+    LDA #!LuigiLowSpin
     BRA .store
 
 .loopBridge
@@ -521,7 +521,7 @@ SetCloneContact: ;unused
     BRA .LoopSprSpr
 
 .highSpin
-    LDA #!CloneHighSpin
+    LDA #!LuigiHighSpin
     BRA .store
 
 .normalJump
@@ -533,7 +533,7 @@ SetCloneContact: ;unused
     lda !154C,x             ;\ If contact is disabled, return.
     BNE .done
 
-    JSR GetCloneAboveShell
+    JSR GetLuigiAboveShell
     BMI ..kill
 
     CMP #$08
@@ -542,10 +542,10 @@ SetCloneContact: ;unused
 ..bounce
     JSR NormalJump
 
-    LDA !CloneIndex
+    LDA !LuigiIndex
     TAY
 
-    LDA !CloneJumpHeld
+    LDA !LuigiJumpHeld
     BEQ .jumpNotHeld
     BRA .jumpHeld
 
@@ -564,18 +564,18 @@ SetCloneContact: ;unused
     BRA .done
 
 .jumpHeld
-    LDA #!CloneHighBounce
+    LDA #!LuigiHighBounce
     BRA .store
 
 .jumpNotHeld
-    LDA #!CloneLowBounce
+    LDA #!LuigiLowBounce
 .store
     PHA
-    LDA !CloneIndex
+    LDA !LuigiIndex
     TAY
     PLA
 
-    STA !AA,y   ;clone Y speed
+    STA !AA,y   ;Luigi Y speed
 	RTS
 
 .LoopSprSpr
@@ -588,7 +588,7 @@ SetCloneContact: ;unused
     XBA
     LDA !State
     REP #$20
-    STA !State  ; put clone contact flag in back of !State
+    STA !State  ; put Luigi contact flag in back of !State
     SEP #$20
 	RTS			;end? return.
 
@@ -803,7 +803,7 @@ KoopaSpeed:
     db !KoopaBaseSpeed,-!KoopaBaseSpeed,!KoopaBaseSpeedFast,-!KoopaBaseSpeedFast
 
 
-CloneInteract:
+LuigiInteract:
 
 
 ;===================================;
@@ -817,8 +817,8 @@ HandleStationary:
 
 +
     jsr HandleStunned       ;> Handle stunned timer and stuff.
-    LDA !CloneCarriedItemIndex
-    CMP $15E9|!addr ; if clone is carrying this item, don't update position
+    LDA !LuigiHeldItemIndex
+    CMP $15E9|!addr ; if Luigi is carrying this item, don't update position
     BEQ +
     jsl $01802A|!bank       ;> Update X/Y positions with gravity and interact with blocks.
 +   lda !1588,x             ;\
@@ -867,9 +867,9 @@ HandleStationary:
     ror !B6,x               ;/
 
 +
-    JSR SetCloneContact
+    JSR SetLuigiContact
 
-    ; LDA !CloneCarriedItemIndex  
+    ; LDA !LuigiHeldItemIndex  
     ; CMP #$FF
     ; BNE +
     jsr SprMarioInteract    ;> Interact with sprites and Mario.
@@ -1240,7 +1240,7 @@ KickedShell:
     beq FinishHandleKicked  ;|
     jsr SideBlockInteract   ;/
 FinishHandleKicked:
-    JSR SetCloneContact
+    JSR SetLuigiContact
 
     jsr SprMarioInteract
 .0: lda #$00
@@ -1392,18 +1392,18 @@ SprMarioInteract:
     jsl $01803A|!bank       ;\ Interact with sprites, and check for contact with Mario.
     bcs .contact             ;/ Return if no contact.
     
-    ;LDA !CloneIndex
+    ;LDA !LuigiIndex
     ;BNE .contact
 
     BRA .Return
 
 .contact
-    ; First, check if the shell is being held by clone
-    LDA !CloneCarriedItemIndex
+    ; First, check if the shell is being held by Luigi
+    LDA !LuigiHeldItemIndex
     CMP $15E9|!addr
-    BEQ .Return ; If the shell is being held by clone, shell doesn't interact with mario player
+    BEQ .Return ; If the shell is being held by Luigi, shell doesn't interact with mario player
 
-.shellNotHeldByClone
+.shellNotHeldByLuigi
     lda $1490|!addr         ;\ If Mario has a star
     beq NoStar              ;|
     lda !167A,x             ;| and the sprite can be starkilled
@@ -1461,7 +1461,7 @@ Boost:                      ; Otherwise, spinjump on the enemy.
     lda #$02                ;\ Play SFX.
     sta $1DF9|!addr         ;/
 
-    JSR GetCloneContact
+    JSR GetLuigiContact
     BNE +
 
     jsl $01AA33|!bank       ;> Boost Mario's speed.
@@ -1643,11 +1643,11 @@ KickShell:
     lda #!KickNoInteractTime ;\ Briefly disable interaction with Mario.
     sta !154C,x             ;/
 
-    JSR GetCloneContact
+    JSR GetLuigiContact
     BEQ .playerKick
 
-.cloneKick
-    JSR GetCloneRightOfShell
+.luigiKick
+    JSR GetLuigiRightOfShell
     BPL ..right
 ..left
     LDY #$00

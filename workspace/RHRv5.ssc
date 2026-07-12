@@ -118,7 +118,7 @@ E0 0112 1,16,1D6 3,32,1D6 0,48,1C4 16,48,1C5 0,64,1D4 16,64,1D5 12,-10,1D6 24,-2
 12 0022 0,-14,10 0,2,20
 12 0030 A Shell that teleports to the opposite brother's hands when bounced on.
 12 0032 0,1,30
-14 0020 Controllable Mario Sprite - made by Oliver
+14 0020 Luigi (controllable partner sprite)
 14 0022 0,0,401 0,-16,400
 17 0120 An urchin that moves back and forth a fixed distance of 6 tiles vertically or horizontally depending on its X position. The distance can be shorter if it encounters a solid oject first. It does not require water. It's currently set to go horizontally.
 

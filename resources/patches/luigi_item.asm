@@ -4,8 +4,8 @@ macro define_sprite_table(name, addr_sa1)
     !<name> = <addr_sa1>
 endmacro
 
-!CloneIndex				= $41A01A
-!CloneCarriedItemIndex  = $41B82E
+!LuigiIndex				= $41A01A
+!LuigiHeldItemIndex  = $41B82E
 !addr = $6000
 
 %define_sprite_table("E4", $322C) ; sprite low x
@@ -18,18 +18,18 @@ org $00ABFC
 JSL low_y
 
 low_y:
-    CPX !CloneIndex ; if setting position for clone, try to attach its carried item
+    CPX !LuigiIndex ; if setting position for Luigi, try to attach its carried item
     BNE .return
 
 .check_if_carrying_item
     PHA ; save low y
-    LDA !CloneCarriedItemIndex
+    LDA !LuigiHeldItemIndex
     CMP #$FF
     BEQ .pull_and_return
 
-.set_item_position ; clone is carrying an item
+.set_item_position ; Luigi is carrying an item
     PHX
-    LDX !CloneIndex
+    LDX !LuigiIndex
     PLA ; restore low y
     STA !D8,x ; set sprite low y
 

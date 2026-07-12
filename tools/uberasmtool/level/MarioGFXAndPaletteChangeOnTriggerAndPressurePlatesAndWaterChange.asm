@@ -23,7 +23,7 @@ endif
 ; Just change that other trigger to match this one.
 
 !MarioSpriteNumber = $14
-!CloneIsMario = $41A026
+!LuigiIsMario = $41A026
 !Trigger = $41A026 ; Set whatever FreeRAM trigger you want, to be used with block, etc.
 !CustomExGFXNumber = $0B32 ; actual GFX file itself
 !Palette = C ; See options at bottom.
@@ -52,12 +52,12 @@ init:
 
 main:
 	STA $85 ; set swim level
-	JSR PutAllSpritesInWater ; put all sprites except clone in water
+	JSR PutAllSpritesInWater ; put all sprites except Luigi in water
 	JSR GetMarioSpriteIndex	; A = mario sprite index
 	STA $00 ; save mario sprite index
 
-	LDA !CloneIsMario ; check if clone is mario
-	BEQ .noSwim ; if clone is mario, swim luigi
+	LDA !LuigiIsMario ; check if Luigi is mario
+	BEQ .noSwim ; if Luigi is mario, swim luigi
 
 .swimmingLuigi
 	; if you're luigi, he swims in this level.
@@ -66,7 +66,7 @@ main:
 	;STA $85 ; set swim level
 	PHX ; save index
 	LDX $00 ; load mario sprite index
-	STZ !164A,x ; reset clone swimming
+	STZ !164A,x ; reset Luigi swimming
 	PLX ; restore index
 	BRA .pressurePlates ; then go to pressure plates
 
@@ -76,7 +76,7 @@ main:
 	PHX ; save index
 	LDX $00 ; load mario sprite index	
 	LDA #$01
-	STA !164A,x ; make clone swim
+	STA !164A,x ; make Luigi swim
 	PLX ; restore index
 .pressurePlates
 	JSL PressurePlates_main ; check for pressure plates

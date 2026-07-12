@@ -84,9 +84,9 @@
 %define_sprite_table("1FD6", $1FD6, $766E)
 %define_sprite_table("1FE2", $1FE2, $7FD6)
 
-; This UberASM moves the clone sprite to the NEW sprite slot available.
-; This is to prevent any sprite from appearing in front of the clone.
-; Also syncs any clone-held sprite's position before sprites draw (no trail).
+; This UberASM moves the Luigi sprite to the NEW sprite slot available.
+; This is to prevent any sprite from appearing in front of the Luigi.
+; Also syncs any Luigi-held sprite's position before sprites draw (no trail).
 
 ; The list of sprite tables are:
 ; !E4, !14E0, !D8, !14D4, !AA, !B6, !C2, !1504, !1510, !151C,
@@ -95,11 +95,11 @@
 
 !SprSize = $16
 !SpriteTablesRAM = $41BB00 ; arbitrary address to store the sprite tables
-!CloneSpriteSlot = $00
+!LuigiSpriteSlot = $00
 !NewSpriteSlot = $01
-!CloneSpriteNumber = $14 ; from pixi_list.txt
-!CloneIndex = $41A01A
-!CloneCarriedItemIndex = $41B82E
+!LuigiSpriteNumber = $14 ; from pixi_list.txt
+!LuigiIndex = $41A01A
+!LuigiHeldItemIndex = $41B82E
 
 if read1($00FFD5) == $23		; check if the rom is sa-1
 	sa1rom
@@ -129,12 +129,12 @@ init:
 
 main:
 	JSR GetSpriteSlots
-	LDA !CloneSpriteSlot
+	LDA !LuigiSpriteSlot
 	CMP #$FF
 	BEQ .return		; if no sprite slot was saved, return
 
 	CMP !NewSpriteSlot
-	BEQ .updateCloneIndex	; if the clone sprite slot is the NEW sprite slot, no swap needed
+	BEQ .updateLuigiIndex	; if the Luigi sprite slot is the NEW sprite slot, no swap needed
 
 	; Put the NEW sprite tables into RAM:
 	PHX
@@ -142,65 +142,65 @@ main:
 	JSR MoveAllSpriteTablesToRAM
 	PLX
 
-	; Put the clone sprite into the NEW sprite slot:
+	; Put the Luigi sprite into the NEW sprite slot:
 	PHX
 	JSR MoveSpriteTablesToAnotherSpriteSlot
 	PLX
 
-	; Put the NEW sprite tables from RAM into the original clone sprite slot:
+	; Put the NEW sprite tables from RAM into the original Luigi sprite slot:
 	PHX
-	LDX !CloneSpriteSlot
+	LDX !LuigiSpriteSlot
 	JSR GetAllSpriteTablesFromRAM
 	PLX
 
-	; If the front-slot sprite was held by the clone, it moved into the
-	; clone's old slot during the swap.
-	LDA !CloneCarriedItemIndex
+	; If the front-slot sprite was held by the Luigi, it moved into the
+	; Luigi's old slot during the swap.
+	LDA !LuigiHeldItemIndex
 	CMP !NewSpriteSlot
 	BNE +
-	LDA !CloneSpriteSlot
-	STA !CloneCarriedItemIndex
+	LDA !LuigiSpriteSlot
+	STA !LuigiHeldItemIndex
 +
 	LDA !NewSpriteSlot
-	STA !CloneSpriteSlot
+	STA !LuigiSpriteSlot
 
-.updateCloneIndex
-	LDA !CloneSpriteSlot
-	STA !CloneIndex
-	JSR HandleCloneCarriedItemPosition
+.updateLuigiIndex
+	LDA !LuigiSpriteSlot
+	STA !LuigiIndex
+	JSR HandleLuigiHeldItemPosition
 .return
 	RTL
 
-; Sets position of clone carried item before sprites draw.
-; Free-moving clone: project with !B6/!AA.
-; Mario-carried clone ($0B): attach to clone pos; X uses Mario $94-$D1 delta (no jitter).
-HandleCloneCarriedItemPosition:
+; Sets position of Luigi carried item before sprites draw.
+; Free-moving Luigi: project with !B6/!AA.
+; Mario-carried Luigi ($0B): attach to Luigi pos; X uses Mario $94-$D1 delta (no jitter).
+HandleLuigiHeldItemPosition:
 	LDA $9D
 	BEQ +
 	JMP .return
 +
-	LDA !CloneCarriedItemIndex
+	LDA !LuigiHeldItemIndex
 	CMP #$FF
 	BNE +
 	JMP .return
 +
 	TAY
-	LDA !CloneIndex
+	LDA !LuigiIndex
 	TAX
 	LDA !14C8,x
 	CMP #$0B
-	BNE .projectFreeClone
-	JMP .marioCarryingClone
+	BNE .projectFreeLuigi
+	JMP .marioCarryingLuigi
 
-.projectFreeClone
-	LDA !157C,x 		; set item's direction to clone's direction
+.projectFreeLuigi
+	LDA !157C,x 		; set item's direction to Luigi's direction
 	%store_using_y_index(!157C)
 
 	; Save direction-table offset.
 	ASL ; multiply x by 2 because of 16-bit addressing
 	STA $00 ; save offset for later
 
-	; Project the clone's X fixed-point position through this frame's speed.
+	; Project the Luigi's X fixed-point position through this frame's speed.
 	; Sprite speed is in 1/16-pixel units; fractions are in 1/256 pixels.
 	LDA !B6,x
 	STA $02
@@ -235,22 +235,22 @@ HandleCloneCarriedItemPosition:
 	DEC $07
 +
 
-	; Set item's X to projected clone X plus facing offset.
+	; Set item's X to projected Luigi X plus facing offset.
 	LDA !14E0,x
 	XBA
 	LDA !E4,x
 	REP #$20
 	CLC : ADC $06
-	PHX ; save clone index
+	PHX ; save Luigi index
 	LDX $00 ; load offset
 	CLC : ADC CarriedItemXPosOffset,x
 	SEP #$20
 	%store_using_y_index(!E4)
 	XBA
 	%store_using_y_index(!14E0)
-	PLX ; restore clone index
+	PLX ; restore Luigi index
 
-	; Project the clone's Y fixed-point position through this frame's speed.
+	; Project the Luigi's Y fixed-point position through this frame's speed.
 	LDA !AA,x
 	STA $02
 	STZ $03
@@ -284,7 +284,7 @@ HandleCloneCarriedItemPosition:
 	DEC $07
 +
 
-	; Set item's Y to projected clone Y minus one pixel.
+	; Set item's Y to projected Luigi Y minus one pixel.
 	LDA !14D4,x
 	XBA
 	LDA !D8,x
@@ -302,7 +302,7 @@ HandleCloneCarriedItemPosition:
 	JMP .return
 
 ; Luigi is status $0B: moved by Mario's carry code, not !B6/!AA.
-.marioCarryingClone
+.marioCarryingLuigi
 	; Face with Mario: $76 0=left/1=right, !157C 0=right/1=left.
 	LDA $76
 	EOR #$01
@@ -335,7 +335,7 @@ HandleCloneCarriedItemPosition:
 	%store_using_y_index(!14E0)
 	PLX
 
-	; Project clone Y with Mario's Y speed.
+	; Project Luigi Y with Mario's Y speed.
 	LDA $7D
 	STA $02
 	STZ $03
@@ -387,7 +387,7 @@ CarriedItemXPosOffset:
 
 GetSpriteSlots:
 	LDA #$FF
-	STA !CloneSpriteSlot
+	STA !LuigiSpriteSlot
 	STA !NewSpriteSlot
 	PHX
 	LDX #$00		; loop count (loop though all sprite number slots)
@@ -404,11 +404,11 @@ GetSpriteSlots:
 
 .newSpriteSlotIsSet
 	LDA !7FAB9E,x		; load sprite number
-	CMP #!CloneSpriteNumber	; if sprite number is not the clone sprite number,
+	CMP #!LuigiSpriteNumber	; if sprite number is not the Luigi sprite number,
 	BNE .next				; then skip
 
-.cloneSpriteSlotFound
-	STX !CloneSpriteSlot
+.luigiSpriteSlotFound
+	STX !LuigiSpriteSlot
 	BRA .done
 
 .next
@@ -434,7 +434,7 @@ STA <addr>,x
 endmacro
 
 macro SprToSpr(addr)
-LDX !CloneSpriteSlot
+LDX !LuigiSpriteSlot
 LDA <addr>,x
 LDX !NewSpriteSlot
 STA <addr>,x

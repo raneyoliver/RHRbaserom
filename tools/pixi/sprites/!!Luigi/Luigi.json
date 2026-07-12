@@ -7,7 +7,7 @@
     "Disappears in cloud of smoke": false
   },
   "$1662": {
-    "Sprite Clipping": 12,
+    "Sprite Clipping": 0,
     "Use shell as death frame": false,
     "Fall straight down when killed": false
   },
@@ -16,7 +16,7 @@
     "Palette": 7,
     "Disable fireball killing": true,
     "Disable cape killing": true,
-    "Disable water splash": false,
+    "Disable water splash": true,
     "Don't interact with Layer 2": false
   },
   "$167A": {
@@ -46,10 +46,10 @@
     "Takes 5 fireballs to kill": false,
     "Can be jumped on with upwards Y speed": false,
     "Death frame two tiles high": false,
-    "Don't turn into a coin with silver POW": false,
-    "Don't get stuck in walls (carryable sprites)": false
+    "Don't turn into a coin with silver POW": true,
+    "Don't get stuck in walls (carryable sprites)": true
   },
-  "AsmFile": "OliverCloneTitle.asm",
+  "AsmFile": "Luigi.asm",
   "ActLike": 54,
   "Type": 1,
   "Extra Property Byte 1": 0,
@@ -59,7 +59,9 @@
   "Map16": "AhkSGQMZExkiGTIZIxkzGSAZMBkhGTEZ",
   "Displays": [
     {
-      "Description": "Controllable Mario Sprite - made by Oliver",
+      "X": 0,
+      "Y": 0,
+      "Description": "Luigi (controllable partner sprite)",
       "ExtraBit": false,
       "Tiles": [
         {
@@ -73,15 +75,14 @@
           "map16 tile": 768
         }
       ],
-      "X": 0,
-      "Y": 0,
+      "GFXInfo": {},
       "DisplayText": "",
       "UseText": false
     }
   ],
   "Collection": [
     {
-      "Name": "Oliver Clone",
+      "Name": "Luigi",
       "ExtraBit": false,
       "Extra Property Byte 1": 0,
       "Extra Property Byte 2": 0,
@@ -96,5 +97,6 @@
       "Extra Property Byte 11": 0,
       "Extra Property Byte 12": 0
     }
-  ]
+  ],
+  "DisplayType": "XY"
 }

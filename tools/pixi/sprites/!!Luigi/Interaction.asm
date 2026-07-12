@@ -139,7 +139,7 @@ CheckSpriteType:
 
 HandleBounceSprite:
     JSR CheckIfAboveSprite
-    BCC .killClone
+    BCC .killLuigi
     
     LDA !Spinning
     BNE .spinKill
@@ -175,8 +175,8 @@ HandleBounceSprite:
     %SetSpriteStatus(#$04, y)    ; Kill with spinjump
     RTS
 
-.killClone
-    JSR KillMarioSprite
+.killLuigi
+    JSR KillLuigi
     RTS
 
 HandlePlatformSprite:
@@ -237,7 +237,7 @@ HandleShellSprite:
     %SetSpriteStatus(#$0A, y)
     
     ; Set shell speed based on direction
-    JSR GetMarioSpriteRightOfContactSprite
+    JSR GetLuigiRightOfContactSprite
     BMI .kickRight
     
 .kickLeft
@@ -293,7 +293,7 @@ FindContactedSprite:
     RTS
 
 CheckIfAboveSprite:
-    ; Returns carry set if clone is above sprite
+    ; Returns carry set if Luigi is above sprite
     LDA !D8,y
     SEC : SBC !D8,x
     CMP #!NumPixelsAboveSpriteRequiredToBounce

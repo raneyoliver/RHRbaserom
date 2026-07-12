@@ -122,7 +122,7 @@
 36f	0	Part of pipe that is passable.
 3f4	0	This block is designed so that if you upthrow a sprite like a shell or throwblock at two of these blocks together, the sprite won't get caught between the two and lose its angular momentum, falling straight down. Do NOT place this block such that sprites can be thrown at it horizontally, or else they'll simply pass through it.
 400	0	Kills Mario instantly, even if on Yoshi.
-402	0	A block where it will only let the player pass if he is carrying a clone or puzzle clone.
+402	0	A block where it will only let the player pass if he is carrying a Luigi or puzzle Luigi.
 403	0	A block that acts like a stationary Swooper.
 404	0	This is one half of a pair of custom on/off switches. Unlike normal switches, after you hit this one, it'll become a brick block and you'll be unable to flip it again, UNTIL the OTHER switch is flipped (and vice versa). Is also set to be activated by Mario fireballs, too, but you can change this.
 405	0	This is one half of a pair of custom on/off switches. Unlike normal switches, after you hit this one, it'll become a brick block and you'll be unable to flip it again, UNTIL the OTHER switch is flipped (and vice versa). Is also set to be activated by Mario fireballs, too, but you can change this.

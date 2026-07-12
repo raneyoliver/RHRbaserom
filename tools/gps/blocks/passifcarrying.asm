@@ -19,10 +19,10 @@ endif
 ; Act like block 25.
 ; Created by E-Man, requested by mapsking.
 
-;clone sprite index from pixi_list
-	!CloneIndex =		$14
+;Luigi sprite index from pixi_list
+	!LuigiSpriteNumber =		$14
 
-print "A block where it will only let the player pass if he is carrying a clone or puzzle clone."
+print "A block where it will only let the player pass if he is carrying a Luigi or puzzle Luigi."
 
 db $37
 JMP Mario : JMP Mario : JMP Mario
@@ -36,10 +36,10 @@ Mario:
 	ORA $148F|!addr
 	BEQ Cement	; carrying nothing -> auto cement
 
-	JSR CheckIfClone	; loads 0 if clone carried
+	JSR CheckIfLuigi	; loads 0 if Luigi carried
 
 	LDA $00
-	BNE Cement	; if 0, clone carried. keep gate open
+	BNE Cement	; if 0, Luigi carried. keep gate open
 
 .passThrough
 	LDA #$25				; Set to act like block 130, cement block.
@@ -58,11 +58,11 @@ Sprite:
 
 .isCustom
 	LDA !7FAB9E,x
-	CMP #!CloneIndex
+	CMP #!LuigiSpriteNumber
 	BNE Mario_passThrough
 
 Cement:
-	; if clone not carried, set to cement block
+	; if Luigi not carried, set to cement block
 	LDA #$30				; Set to act like block 130, cement block.
 	STA $1693|!addr
 	LDY #$01
@@ -76,7 +76,7 @@ Cement:
 
 
 
-CheckIfClone:
+CheckIfLuigi:
 	LDY #!sprite_slots-1		;loop count (loop though all sprite number slots)
 
 .Loop
@@ -93,8 +93,8 @@ CheckIfClone:
 
 	TYX					;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
-	CMP #!CloneIndex 	;compare with clone index
-	BNE .LoopSprSpr 	;if clone, next
+	CMP #!LuigiSpriteNumber 	;compare with Luigi index
+	BNE .LoopSprSpr 	;if Luigi, next
 
 .okay
 

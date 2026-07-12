@@ -25,8 +25,8 @@ endif
 	!CursorTile = $84	;tile used for the cursor.
 	!BlockedTile = $86
 
-;clone sprite index from pixi_list
-	!CloneIndex = $14
+;Luigi sprite index from pixi_list
+	!LuigiSpriteNumber = $14
 	!CloneIsMario = $41A026
 
 
@@ -99,7 +99,7 @@ SpriteCode:
 	RTS
 
 OffscreenRoutine:
-	JSR GetCloneIndex
+	JSR GetLuigiSpriteNumber
 
 	LDA !15A0,y	;horiz
 	BNE .horizontal
@@ -108,7 +108,7 @@ OffscreenRoutine:
 	BEQ .onScreenReturnBridge
 
 .vertical
-	; If vert: set Y to min/max depending on side, set X to clone X (should always be in bounds already)
+	; If vert: set Y to min/max depending on side, set X to Luigi X (should always be in bounds already)
 	PHX
 	PHY
 	TYX
@@ -158,7 +158,7 @@ OffscreenRoutine:
 	RTS
 
 .horizontal
-	; If horiz: set X to min/max depending on side, set Y to clone Y (within bounds)
+	; If horiz: set X to min/max depending on side, set Y to Luigi Y (within bounds)
 	PHX
 	TYX
 	PHY
@@ -201,8 +201,8 @@ OffscreenRoutine:
 	XBA
 	LDA !D8,y
 	REP #$20
-	SEC : SBC #$0008	; aribtrary, kinda points to middle Y of 2-tile tall clone
-	STA $01	; contains y pos of clone
+	SEC : SBC #$0008	; aribtrary, kinda points to middle Y of 2-tile tall Luigi
+	STA $01	; contains y pos of Luigi
 	CMP $1464|!addr
 	SEP #$20
 	BCC ..minY
@@ -213,14 +213,14 @@ OffscreenRoutine:
 	STA $03
 	CMP $01
 	SEP #$20
-	BCC ..maxY		; clone still lower than lowest screen pixel
+	BCC ..maxY		; Luigi still lower than lowest screen pixel
 
 ..notDiagonal
 	LDA #$04
 	STA !TileIndex
 
 	REP #$20
-	LDA $01			;clone y
+	LDA $01			;Luigi y
 	SEP #$20
 	BRA ..storeValue
 
@@ -257,7 +257,7 @@ OffscreenRoutine:
 	SEC
 	RTS
 
-GetCloneIndex:
+GetLuigiSpriteNumber:
 	PHX
 	LDY #!SprSize-1
 .loop
@@ -266,7 +266,7 @@ GetCloneIndex:
 	BEQ .next
 
 	LDA !7FAB9E,x
-	CMP #!CloneIndex
+	CMP #!LuigiSpriteNumber
 	BEQ .return
 
 .next
@@ -391,8 +391,8 @@ DrawGraphicsIfNotTeleporting:
 	CMP $07			;compare with cursor's number from scratch RAM
 	BEQ .LoopSprSpr		;if equal, keep looping.
 
-	CMP #!CloneIndex ;compare with clone index
-	BNE .LoopSprSpr 	;if not clone, keep looping.
+	CMP #!LuigiSpriteNumber ;compare with Luigi index
+	BNE .LoopSprSpr 	;if not Luigi, keep looping.
 
 	LDA !14C8,x
 	CMP #$05
