@@ -637,10 +637,6 @@ BNE .Re						;
 JSL $01803A|!bank				;interact with sprites and player
 BCC .Re						;
 
-LDA !LuigiHeldItemIndex	; if key carried by Luigi, cannot carry
-CMP #$FF
-BNE .NoCarry
-
 ;code from $01AA58
 LDA $15						;
 AND #$40					;hold X/Y button to carry the sprite
@@ -703,28 +699,6 @@ STA $97						;
 RTS						;
 
 .SolidSides
-PHX
-LDA !LuigiHeldItemIndex ; if key not carried by Luigi, normal key interaction
-CMP #$FF
-BEQ .normal
-
-JSR GetLuigiSpriteIndex
-LDA $00
-CMP #$FF
-BEQ .normal   ; if no Luigi, normal key interaction
-
-; Luigi found
-TAX
-LDA !14C8,x
-CMP #$0B
-BNE .normal   ; if Luigi not carried, normal key interaction
-
-; Luigi carried,
-PLX
-BRA .return ; key should not affect player in this case
-
-.normal
-PLX
 STZ $7B						;stop player from moving
 
 %SubHorzPos()					;get which side the player's at
@@ -737,7 +711,6 @@ CLC : ADC PushXValues,y				;push the player to be outside the key
 STA $94						;
 SEP #$20					;
 
-.return
 RTS						;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -97,7 +97,7 @@ Gaps in this page (verify before use): `$41A00D`, `$41A010`–`$41A015`, `$41A01
 | `$41B836` | 1 | `!LandingFrameCounter` | `Luigi.asm` |
 | `$41B837` | 1 | `!LandingFrameIndex` | `Luigi.asm` |
 | `$41B838` | 1 | `!NumFramesInsideWall` | `Luigi.asm` |
-| `$41B839` | 1 | `!HeldInteractionDebug` | held-shell path: `$10` item, `$20` contact, `$30` shell, `$40` spinkill, `$41` bounce |
+| `$41B839` | 1 | `!HeldInteractionDebug` | held-shell path: `$10` item, `$11` Luigi free, `$12` falling, `$13` not shell, `$30` shell, `$20` hitbox contact, `$40` spinkill, `$41` bounce |
 
 **Do not use `$41B830`–`$41B833` for debug** — that caused Mario to teleport offscreen on swap.
 

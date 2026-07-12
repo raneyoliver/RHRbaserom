@@ -6,6 +6,9 @@ if read1($00FFD5) == $23		; check if the rom is sa-1
 	!addr = $6000
 	!bank = $000000
 	!bankA = $400000
+	!PlayerXPosMirror = $30D1
+	!PlayerYPosMirror = $30D3
+	!PlayerYSpeedMirror = $307D
 else
 	lorom
 	!SA1 = 0
@@ -13,6 +16,9 @@ else
 	!addr = $0000
 	!bank = $800000
 	!bankA = $7E0000
+	!PlayerXPosMirror = $00D1
+	!PlayerYPosMirror = $00D3
+	!PlayerYSpeedMirror = $007D
 endif
 
 ; macro define_sprite_table(name, addr, addr_sa1)
@@ -1977,6 +1983,70 @@ SetCarryIfShell:	;requires sprite in y
 	PLX
 	RTS
 
+; Classifies the sprite owned by !LuigiHeldItemIndex without depending on
+; caller Y or carry surviving a shared contact helper. Returns A=$01 shell,
+; A=$00 non-shell. Index width must already be 8-bit.
+IsLuigiHeldItemShell:
+	PHX
+	LDA !LuigiHeldItemIndex
+	TAX
+	JSR ClassifyShellInX
+	PHA
+	PLX
+	PLA
+	RTS
+
+ClassifyShellInX:
+	LDA !14C8,x
+	CMP #$08
+	BCC .notShell
+
+	LDA !7FAB10,x
+	AND #$08
+	BNE .custom
+
+.vanilla
+	LDA !9E,x
+	CMP #$04
+	BCC .vanillaHighShells
+	CMP #$0D
+	BCC .shell
+.vanillaHighShells
+	CMP #$DA
+	BCC .notShell
+	CMP #$E0
+	BCC .shell
+	BRA .notShell
+
+.custom
+	LDA !7FAB9E,x
+	CMP #!MultiBounceShell
+	BEQ .shell
+	CMP #!KoopaShellTeleports
+	BEQ .shell
+	CMP #!ReverseGravKoopaShell
+	BEQ .shell
+	CMP #!GhostShell
+	BEQ .shell
+	CMP #!KoopaShellGreen
+	BEQ .shell
+	CMP #!KoopaShellRed
+	BEQ .shell
+	CMP #!KoopaShellBlue
+	BEQ .shell
+	CMP #!KoopaShellYellow
+	BEQ .shell
+	CMP #!SpinyShell
+	BEQ .shell
+
+.notShell
+	LDA #$00
+	RTS
+
+.shell
+	LDA #$01
+	RTS
+
 ;========================================================;
 ; spawn a shell-less Koopa from it ;
 ;========================================================;
@@ -3337,8 +3407,7 @@ SpriteAndSpecialBlockInteraction:
 	TYA
 	CMP !LuigiHeldItemIndex
 	BEQ .heldItem
-	CMP !MarioHeldItemIndex
-	BNE .checkShell
+	BRA .checkShell
 .heldItem
 	JMP CheckInteractableBlocksList
 
@@ -3702,6 +3771,26 @@ CheckIfAbove:
 .return
 	RTS
 
+; Luigi may bounce on a shell carried by Mario, but ownership and shell state
+; must not change. X=Luigi, Y=Mario-held shell.
+BounceOnMarioHeldShell:
+	JSR CheckIfAbove
+	BCC .return
+	LDA !AA,x
+	BMI .return				; Luigi is moving upward
+	LDA !JumpHeld
+	BNE .high
+	LDA #!NonSpikyLowBounce
+	BRA .store
+.high
+	LDA #!NonSpikyHighBounce
+.store
+	STA !BouncingSpeed
+	LDA #$02
+	STA $1DF9|!Base2
+.return
+	RTS
+
 KickstartGreyPlatformFalling:
 	; This code kickstarts the platform falling routine
 	LDA !14C8,x
@@ -3796,6 +3885,11 @@ OnPlatform:
 	RTS
 
 LuigiInteractWithVanillaShell:
+	TYA
+	CMP !MarioHeldItemIndex
+	BNE .notMarioHeld
+	JMP BounceOnMarioHeldShell
+.notMarioHeld
 	; LDA !154C,x
 	; BNE .returnBridge
 
@@ -4122,10 +4216,6 @@ SprSprContact:
 	; Skip Luigi's held item — it overlaps him every frame and would
 	; otherwise be the only contact returned (blocking spiny bounce etc.).
 	CMP !LuigiHeldItemIndex
-	BEQ .LoopSprSpr
-	; Mario owns this slot while its status is $0B. Luigi must not bounce
-	; on or kick it out of Mario's hands (which can also spawn a Koopa).
-	CMP !MarioHeldItemIndex
 	BEQ .LoopSprSpr
 
 	TYX					;transfer Y to X
@@ -4794,6 +4884,9 @@ HandleLuigiHeldItemPosition:
 ; - Otherwise: ignore (no grab out of Luigi's hands).
 ; Non-shells: 154C only (no grab / no bounce / no kill).
 HandleMarioVsLuigiHeldItem:
+	PHP
+	SEP #$30				; held index must be an 8-bit sprite slot
+	PHY						; Graphics expects caller Y preserved
 	LDA #$00
 	STA !HeldInteractionDebug
 	LDA !LuigiHeldItemIndex
@@ -4813,52 +4906,49 @@ HandleMarioVsLuigiHeldItem:
 	LDA !14C8,x
 	CMP #$0B
 	BNE .notCarriedByMario
-	RTS
+	JMP .return
 
 .notCarriedByMario
-	LDA $7D
-	BPL +
+	LDA #$11
+	STA !HeldInteractionDebug	; Luigi is not carried by Mario
+	LDA.l !PlayerYSpeedMirror
+	BNE +
+	JMP .return				; walking/standing contact is ignored
++	BPL +
 	JMP .return				; Mario moving up — no side/grab response
 +
-	JSR SetCarryIfShell
-	BCS +
-	JMP .return				; non-shell held item: block only
+	LDA #$12
+	STA !HeldInteractionDebug	; Mario is falling
+	JSR IsLuigiHeldItemShell
+	BNE +
+	LDA #$13
+	STA !HeldInteractionDebug	; held item was not classified as a shell
+	JMP .return
 +
 	LDA #$30
 	STA !HeldInteractionDebug	; held item recognized as any shell
 
-	; Walking/turning through a held shell is ignored. Only an airborne,
-	; downward-moving player can stomp/spinkill it.
-	LDA $72
-	BNE +
-	JMP .return
-+
-	; Standard sprite clipping was too narrow for the displayed held-shell
-	; offset. Use an ownership hitbox: Mario within $20 px horizontally...
-	LDA !14E0,y
+	; Build the held shell's normal clipping box, then widen it horizontally
+	; for the displayed +/-$0B carrying offset. Let SMW build Mario's box.
+	PHX
+	TYX
+	JSL $03B69F|!BankB		; held sprite clipping -> $04-$07/$0A-$0B
+	PLX
+	LDA $0A
 	XBA
-	LDA !E4,y
+	LDA $04
 	REP #$20
 	SEC
-	SBC $D1
-	BPL +
-	EOR #$FFFF
-	INC
-+	CMP #$0021
+	SBC #$0010
 	SEP #$20
-	BCC +
-	JMP .return
-+
-	; ...and Mario's top is 0-$20 px above the shell.
-	LDA !14D4,y
+	STA $04
 	XBA
-	LDA !D8,y
-	REP #$20
-	SEC
-	SBC $D3
-	CMP #$0021
-	SEP #$20
-	BCC +
+	STA $0A
+	LDA #$2C
+	STA $06
+	JSL $03B664|!BankB		; Mario clipping
+	JSL $03B72B|!BankB		; overlap
+	BCS +
 	JMP .return
 +
 	LDA #$20
@@ -4882,7 +4972,7 @@ HandleMarioVsLuigiHeldItem:
 	PLX
 	PLY
 	JSL $00F5B7|!bank
-	RTS
+	JMP .return
 
 ..notSpiny
 	PLX
@@ -4895,7 +4985,7 @@ HandleMarioVsLuigiHeldItem:
 	STA $1DF9|!addr
 	JSL $01AA33|!bank
 	JSL $01AB99|!bank
-	RTS
+	JMP .return
 
 .spinKillShell
 	LDA #$40
@@ -4920,10 +5010,12 @@ HandleMarioVsLuigiHeldItem:
 	LDA #$FF
 	STA !MarioHeldItemIndex		; clear stale alias of the killed slot
 	STA !LuigiHeldItemIndex
-	RTS
+	BRA .return
 +	LDA #$FF
 	STA !LuigiHeldItemIndex
 .return
+	PLY
+	PLP
 	RTS
 
 ; Transfers items depending on what's held
@@ -4955,6 +5047,26 @@ TransferItemMarioToLuigi:
 	STA $06
 	STA !LuigiHeldItemIndex
 .oldLuigiItemValid
+	; If grab and swap happen on the same frame, do not let a newly grabbed
+	; carryable replace Luigi's existing item. This is sprite-agnostic:
+	; $1498=$08 is the pickup frame and !MarioHeldItemIndex identifies it.
+	LDA $1498|!addr
+	CMP #$08
+	BNE .marioItemReady
+	LDA !MarioHeldItemIndex
+	CMP #$FF
+	BEQ .marioItemReady
+	TAX
+	LDA #$09
+	STA !14C8,x
+	LDA #$10
+	STA !154C,x
+	STZ !B6,x
+	STZ !AA,x
+	LDA #$FF
+	STA !MarioHeldItemIndex
+	STZ $1470|!addr
+.marioItemReady
 	LDA !MarioHeldItemIndex
 	STA !LuigiHeldItemIndex	
 	CMP #$FF

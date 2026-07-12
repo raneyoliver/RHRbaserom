@@ -31,7 +31,6 @@ endif
 !LuigiJumpHeld =        $41A018 ;jumpHeld in npc2.asm TODO: change to sprite table
 !LuigiSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
 !LuigiHeldItemIndex = $41B82E
-!MarioHeldItemIndex = $41B82F
 
 ;=======================================================================================;
 ; Koopa / Shell disassembly + additional features (sprites 4-7, DA-DF)                  ;
@@ -1395,7 +1394,7 @@ SprMarioInteract:
     TXA
     CMP !LuigiHeldItemIndex
     BNE .shellNotHeldByLuigi
-    JMP HeldByLuigiMarioInteract
+    RTS                         ; Luigi.asm exclusively owns held interaction
 
 .shellNotHeldByLuigi
     lda $1490|!addr         ;\ If Mario has a star
@@ -1405,69 +1404,6 @@ SprMarioInteract:
     bne NoStar              ;|
     %Star()                 ;/ kill.
 .Return:
-    rts
-
-; Luigi is holding this shell (custom KoopaShell.asm path — backup if 154C clear):
-; - If Mario is carrying Luigi ($0B), ignore completely.
-; - Spin / Yoshi: spinkill (same as free shell).
-; - Else if Mario stomps from above, bounce him; shell stays held.
-; - Else ignore (no grab).
-HeldByLuigiMarioInteract:
-    PHX
-    LDA !LuigiIndex
-    TAX
-    LDA !14C8,x
-    PLX
-    CMP #$0B
-    BEQ .Return
-
-    LDA $7D                 ;\ Moving upward — no side/grab interaction.
-    BMI .Return             ;/
-
-    ; Spin / Yoshi kills on any downward overlap. Check before stomp height:
-    ; held shells sit beside Luigi and can be entered lower than free shells.
-    lda $140D|!addr
-    ora $187A|!addr
-    bne .SpinKillHeld
-
-    ; Held-shell stomp threshold is deliberately more lenient than #$14.
-    lda #$08
-    sta $01
-    lda $05
-    sec
-    sbc $01
-    rol $00
-    cmp $D3
-    php
-    lsr $00
-    lda $0B
-    sbc #$00
-    plp
-    sbc $D4
-    bmi .Return             ; Too low → ignore (blocks grab / kick-through).
-
-    ; Bounce Mario only; do not kick, score, or leave Luigi's hands.
-    lda #$02
-    sta $1DF9|!addr
-    jsl $01AA33|!bank
-    jsl $01AB99|!bank
-    lda #$08
-    sta !154C,x
-.Return:
-    rts
-
-.SpinKillHeld:
-    jsr SpinJumpKill
-    txa
-    cmp !MarioHeldItemIndex
-    bne .clearLuigiHeld
-    lda #$FF
-    sta !MarioHeldItemIndex
-    sta !LuigiHeldItemIndex
-    rts
-.clearLuigiHeld
-    lda #$FF
-    sta !LuigiHeldItemIndex
     rts
 
 NoStar:
