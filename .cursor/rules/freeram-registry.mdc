@@ -1,0 +1,28 @@
+---
+description: Check and update the hack-wide FreeRAM registry before allocating addresses
+alwaysApply: true
+---
+
+# FreeRAM allocation
+
+Before using any FreeRAM (including temporary debug bytes):
+
+1. Read [`docs/freeram-registry.md`](docs/freeram-registry.md).
+2. Grep for the candidate address (`$41….`, `$7F….`, `$40….`) across `tools/`, `resources/`, `shared/`.
+3. Prefer `!rhr_debug_freeram` (`$41B839` on SA-1) or another range marked free in the registry — never invent an address next to Luigi teleport RAM.
+4. In the same change that adds freeram: update `docs/freeram-registry.md` and, for shared names, `shared/freeram.asm`.
+
+## Hard no
+
+- Do **not** write debug/scratch to `$41B830`–`$41B833` (`!LuigiXPos*` / teleport destination). That teleports Mario offscreen on L/R swap.
+- Do **not** place long-lived data inside `$41B900`–`$41BB93` (Luigi freeze backup) or reuse `$41BB00` without checking `MoveLuigiToFront`.
+
+## Example
+
+```asm
+; BAD — overlaps !LuigiXPosLow
+STA $41B830
+
+; GOOD — registered debug scratch
+STA !rhr_debug_freeram   ; $41B839 on SA-1 (incsrc shared/freeram.asm)
+```
