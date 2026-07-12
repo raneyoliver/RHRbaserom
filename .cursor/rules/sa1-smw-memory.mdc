@@ -1,0 +1,40 @@
+---
+description: SA-1 SMW memory map — use smwmemory.json and hex-only RAM values
+alwaysApply: true
+---
+
+# SA-1 SMW memory conventions
+
+This repo is an **SA-1** SMW hack (`!sa1 = 1`, `!dp = $3000`, `!addr = $6000` in UberASM defines).
+
+## Address source of truth
+
+- Use repo-root [`smwmemory.json`](smwmemory.json) for SMWCentral RAM names/meanings whenever reading or documenting game RAM.
+- Do **not** invent addresses from memory when the map has them.
+
+## SA-1 remap (how to read what the game uses)
+
+`smwmemory.json` lists lorom `$7E:xxxx`. On this ROM:
+
+| Access style | Bus address | Examples |
+|---|---|---|
+| DP (`LDA $xx` with `D=$3000`) | `$3000 + offset` | player X/Y `$30D1`/`$30D3`, `$3013` frame, `$3015` controller |
+| Absolute `\|!addr` | `$6000 + offset` (for `$0000–$1FFF`) | game mode `$6100` |
+| High WRAM (`$2000+`) | usually still `$7E:xxxx` | check map + SA-1 defines |
+
+`$7E:00xx` often looks like garbage and is **not** the live DP mirror. Prefer `$30xx` for player/controller/frame.
+
+## Sprite tables are indexed (always)
+
+On this SA-1 hack, sprite RAM is **per-slot indexed** via PIXI/`%define_sprite_table` remaps — never treat lorom `$7E:14C8` / `$B6` / `$9E` as the live table base.
+
+- Read/write as `table_base + slot` (e.g. status `!14C8,x` → `$3242+x`, custom num `!7FAB9E,x` → `$6083+x`).
+- Live X/Y speeds via MCP are the DP mirrors `$30B6+x` / `$309E+x` (absolute `$00B6+x` / `$009E+x` can be stale).
+- Source of remap list: `OliverClone.asm` `%define_sprite_table` / PIXI `sa1def`. Helper: `tools/test/mesen/smw-sprites.ps1`.
+
+Test helpers: `tools/test/mesen/smw-addrs.ps1`, `smw-sprites.ps1`.
+
+## Display format
+
+- Keep RAM addresses and values in **hexadecimal** (`$30D1`, `$004C`, `$14`).
+- Do not convert positions/speeds/modes to decimal in logs, scripts, or replies unless the user asks.

@@ -136,8 +136,12 @@ JMP .GFXStuff					;do graphics only (technically)
 
 LDA !CloneCarriedItemIndex
 CMP #$FF
-BNE .dontUpdateSpritePosition   ; if clone is carrying an item, don't update sprite position
+BEQ .updateSpritePosition
+TXA
+CMP !CloneCarriedItemIndex
+BEQ .dontUpdateSpritePosition   ; this sprite is held by clone — clone sets pos
 
+.updateSpritePosition
 JSL $01802A|!bank				;update sprite's position (X+Y with gravity)
 
 .dontUpdateSpritePosition

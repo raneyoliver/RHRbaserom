@@ -1,2 +1,9 @@
-workspace/sysLMRestore/RHRv5.lrp
-workspace/sysLMRestore/RHRv5_overworld.lrp
+.callisto/.cache/
+workspace/sysLMRestore/
+tools/addmusick/SPCs/
+tools/mesen2-expanded/
+tools/mesen2-expanded-src/
+tools/mesen2-expanded/mcp-server.log
+tools/test/mesen/.automation/
+tools/test/savestates/*.mst
+smwmemory.json

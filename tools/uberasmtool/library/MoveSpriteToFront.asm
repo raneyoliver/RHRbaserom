@@ -97,6 +97,8 @@
 !CloneSpriteSlot = $00
 !NewSpriteSlot = $01
 !CloneSpriteNumber = $14 ; from pixi_list.txt
+!CloneIndex = $41A01A
+!CloneCarriedItemIndex = $41B82E
 
 if read1($00FFD5) == $23		; check if the rom is sa-1
 	sa1rom
@@ -124,7 +126,7 @@ main:
 	BEQ .return		; if no sprite slot was saved, return
 
 	CMP !NewSpriteSlot
-	BEQ .return		; if the clone sprite slot is the NEW sprite slot, return
+	BEQ .updateCloneIndex	; if the clone sprite slot is the NEW sprite slot, no swap needed
 
 	; Put the NEW sprite tables into RAM:
 	PHX
@@ -142,6 +144,21 @@ main:
 	LDX !CloneSpriteSlot
 	JSR GetAllSpriteTablesFromRAM
 	PLX
+
+	; If the front-slot sprite was held by the clone, it moved into the
+	; clone's old slot during the swap.
+	LDA !CloneCarriedItemIndex
+	CMP !NewSpriteSlot
+	BNE +
+	LDA !CloneSpriteSlot
+	STA !CloneCarriedItemIndex
++
+	LDA !NewSpriteSlot
+	STA !CloneSpriteSlot
+
+.updateCloneIndex
+	LDA !CloneSpriteSlot
+	STA !CloneIndex
 .return
     RTL
 

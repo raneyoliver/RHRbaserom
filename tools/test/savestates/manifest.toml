@@ -1,0 +1,17 @@
+# Savestate registry for ASM test scenarios.
+# Create states in Mesen (File -> Save State), then copy .mst files here.
+# Register each file below so launch/load scripts can reference them by name.
+
+[clone_item_carry]
+file = "tools/test/savestates/clone_item_carry.mst"
+description = "Clone carrying an item; tests clone_item.asm Y-position hook"
+patch = "resources/patches/clone_item.asm"
+level = "TBD"
+notes = "Save right before or during item carry so low_y hook can be stepped"
+
+[clone_item_no_carry]
+file = "tools/test/savestates/clone_item_no_carry.mst"
+description = "Clone active but not carrying; control case for clone_item.asm"
+patch = "resources/patches/clone_item.asm"
+level = "TBD"
+notes = "CloneCarriedItemIndex should be $FF"

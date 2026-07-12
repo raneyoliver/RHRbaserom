@@ -134,6 +134,7 @@ endif
 !KoopaShellBlue					= $06	; in pixi_list.txt
 !KoopaShellYellow				= $07	; in pixi_list.txt
 !SpinyShell						= $5B	; in pixi_list.txt
+!Urchin							= $17	; in pixi_list.txt (urchin_3A+3B)
 !KoopaBlockActAs				= $0403
 
 ;;;;;;;;; PLAYER PROPERTIES ;;;;;;;;;
@@ -278,6 +279,20 @@ endmacro
 macro load_extra_byte(num)
         LDY #<num>-1                            ; \  I'm counting extra bytes from 1 to 12
         LDA [$00],y                             ; /
+endmacro
+
+macro load_using_y_index(addr)
+	PHX
+	TYX
+	LDA <addr>,x
+	PLX
+endmacro
+
+macro store_using_y_index(addr)
+	PHX
+	TYX
+	STA <addr>,x
+	PLX
 endmacro
 
 ;;;;;;;;; FUNCTIONS ;;;;;;;;;
@@ -587,7 +602,7 @@ print "MAIN ",pc
 	LDA !B6,x
 	STA !PreviousXSpeed
 .noLanding
-	; key carried
+	; Sync any clone-held sprite to the clone's final position.
 	JSR HandleCloneCarriedItemPosition
 	JSR Graphics
 	RTS
@@ -814,6 +829,7 @@ HandleState:
 	LDA #$00
 	STA !StareTimer
 	JSR SetupAttributesOfClone
+	JSR TransferItems
 	JSR SetTile
 	JSR MoveCloneToPlayer
 
@@ -821,18 +837,15 @@ HandleState:
 	JSR BackupAllSpriteProperties
 	PLX
 
-	; If player was holding an item, make it go invisible (inside yoshi's mouth?)
+	; If Player was holding an item, make it go invisible (inside yoshi's mouth?)
 	LDA !PlayerCarriedItemIndex
-	CMP #$FF
-	BEQ ..playerNotHoldingItem
+	JSR PutItemInYoshisMouth
+	LDA !CloneCarriedItemIndex
+	JSR PutItemInYoshisMouth
 
-	PHX
-	TAX
-	LDA #$07
-	STA !14C8,x
-	PLX
+..PlayerNotHoldingItem
+	;JSR SetPlayerTile ; might not need since the player just goes behind tiles
 
-..playerNotHoldingItem
 	LDA #$FF
 	STA $9D
 	JSR EraseFireballs
@@ -1060,9 +1073,40 @@ HandleState:
 	STA !LandingTimer
 	JSL $019138|!BankB	; re test if on ground
 	JSR HandleLandingBounce
-	JSR TransferItems
+;	JSR TransferItems
+
+	LDA !CloneCarriedItemIndex
+	JSR RestoreItemFromYoshisMouth
+	LDA !PlayerCarriedItemIndex
+	JSR RestoreItemFromYoshisMouth
 ._return
 	RTS
+
+PutItemInYoshisMouth:
+	CMP #$FF
+	BEQ .noItem
+
+	; put item in yoshi's mouth
+	PHX
+	TAX
+	LDA #$07 	; held item should always be stationary?
+	STA !14C8,x
+	PLX
+.noItem
+	RTS
+
+RestoreItemFromYoshisMouth:
+	CMP #$FF
+	BEQ .noItem
+
+	; take item out of yoshi's mouth
+	PHX
+	TAX
+	LDA #$09 	; held item should always be stationary?
+	STA !14C8,x
+	PLX
+.noItem
+	RTS	
 
 PlaySound:
 	BRA .blarrg
@@ -1092,6 +1136,37 @@ PlaySound:
 	STA $1DFC|!Base2                        ; /
 
 .return
+	RTS
+
+SetPlayerTile:
+	LDA !CloneCarriedItemIndex
+	CMP #$FF
+	BEQ .setPlayerTileNotCarrying
+
+.setPlayerTileCarrying
+	LDA $72		; check if player is in the air
+	BNE .CarryingAir
+
+.CarryingGround
+	LDA #$07
+	BRA .setPlayerTile
+
+.CarryingAir
+	LDA #$09
+	BRA .setPlayerTile
+
+.setPlayerTileNotCarrying
+	LDA $72
+	BNE .NotCarryingAir
+
+.NotCarryingGround
+	LDA #$00
+	BRA .setPlayerTile
+
+.NotCarryingAir
+	LDA #$0B
+.setPlayerTile
+	STA $13E0|!addr
 	RTS
 
 GivePSpeed:
@@ -3426,8 +3501,27 @@ SpriteAndSpecialBlockInteraction:
 	BRA .tryBounce
 
 .urchinDisassemblyCheck
-	CMP #$17
+	CMP #!Urchin
+	BNE .stationaryFlyingKoopa
+
+	; Spin + above → spin-bounce (same path as shell). Also disable
+	; contact so the urchin's vanilla $018032 can't shell-kill us
+	; while we're status $09 and overlapping.
+	LDA !Spinning
 	BEQ .tryBounce
+
+	JSR CheckIfAbove
+	BCS .urchinSpinBounce
+
+	; Deep overlap can report equal Y; still bounce if falling onto it
+	LDA !AA,x
+	BMI .tryBounce
+
+.urchinSpinBounce
+	LDA #$08
+	STA !154C,y
+	STA !154C,x
+	JMP MarioSpriteTryBounceOrSpin_spinning
 
 .stationaryFlyingKoopa
 	CMP #$18
@@ -4578,7 +4672,7 @@ HandleCloneCarriedItemPosition:
 	TAY
 	LDX $15E9|!addr
 	LDA !157C,x 		; set item's direction to clone's direction
-	STA !157C,y
+	%store_using_y_index(!157C)
 
 	; set item's position to clone's position
 	ASL ; multiply x by 2 because of 16-bit addressing
@@ -4593,17 +4687,14 @@ HandleCloneCarriedItemPosition:
 	REP #$20
 	CLC : ADC XPosOffset,x
 	SEP #$20
-	STA !E4,y
+	%store_using_y_index(!E4)
 	XBA
-	STA !14E0,y
+	%store_using_y_index(!14E0)
 	PLX ; restore clone index
 
 	; x fraction bits
-	LDA $14F8|!BankA,x
-	PHX
-	TYX
-	STA $14F8|!BankA,x
-	PLX
+	LDA !14F8,x
+	%store_using_y_index(!14F8)
 
 	; set item's y position to clone's y position
 	LDA !14D4,x
@@ -4612,16 +4703,13 @@ HandleCloneCarriedItemPosition:
 	REP #$20
 	SEC : SBC #$0001 ; subtract 1 in 16-bit mode
 	SEP #$20
-	STA !D8,y                                     
+	%store_using_y_index(!D8)
 	XBA
-	STA !14D4,y                                   
+	%store_using_y_index(!14D4)
 
 	; y fraction bits
-	LDA $14EC|!BankA,x
-	PHX
-	TYX
-	STA $14EC|!BankA,x
-	PLX
+	LDA !14EC,x
+	%store_using_y_index(!14EC)
 
 	.return
 	RTS

@@ -1,0 +1,27 @@
+---
+description: Infer common SMW player actions (throw, jump, etc.) for Mesen tests
+alwaysApply: true
+---
+
+# Mesen action vocabulary (infer when possible)
+
+When the user names a high-level action, translate it to controller + frames without asking for bit masks unless ambiguous.
+
+## Throw (carryable / OliverClone)
+
+- **Meaning**: release grab while optionally holding a direction so Mario/Luigi throws the carried sprite.
+- **Input**: clear grab buttons **Y and X** (`$15` y-bit / `$17` x-bit). Hold **Right** or **Left** if they want directional throw momentum.
+- **Do not** hold Y/X across the resume — that keeps carrying.
+- **Default script**: `tools/test/mesen/run-throw-clone.ps1` (Right + release grab, ~30 frames).
+- **Watch**: clone `14C8` `$0B`→`$09`/`$0A`, sprite X speed `B6`, Y speed `AA` (SA-1 `!AA` = `$9E`), freeram `PreviousXSpeed` `$41B835`, `BouncingSpeed` `$41A023`, `LandingTimer` `$41B834`.
+
+## Other common actions
+
+| Phrase | Input |
+|---|---|
+| walk / run right | Right held |
+| jump | B (or A if they say spin — X+B context) |
+| spin jump | typically X+B (confirm if unsure) |
+| release grab / drop | Y=0, X=0 |
+
+Savestates: user creates them in Mesen; scripts load slot N via MCP. Prefer hex in all logs.

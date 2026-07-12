@@ -818,8 +818,8 @@ HandleStationary:
 +
     jsr HandleStunned       ;> Handle stunned timer and stuff.
     LDA !CloneCarriedItemIndex
-    CMP #$FF
-    BNE +
+    CMP $15E9|!addr ; if clone is carrying this item, don't update position
+    BEQ +
     jsl $01802A|!bank       ;> Update X/Y positions with gravity and interact with blocks.
 +   lda !1588,x             ;\
     and #$04                ;| If on the ground, make it bounce on it.

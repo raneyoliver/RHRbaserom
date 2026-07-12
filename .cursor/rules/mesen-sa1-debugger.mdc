@@ -1,0 +1,23 @@
+---
+description: Mesen SA-1 vs SNES debugger — which CPU context to use
+alwaysApply: true
+---
+
+# Mesen debugging (SA-1 vs SNES)
+
+Mesen exposes both a regular **Debugger** (SNES CPU) and an **SA-1 Debugger**.
+
+## Which to use
+
+| Work | Prefer |
+|---|---|
+| PIXI sprites, GPS/blocks, sprite/block interaction | **SA-1 Debugger** |
+| UberASM (level/gamemode/overworld ASM) | **SNES Debugger** (regular) |
+
+If breakpoints or PC/stepping look wrong, switch debugger CPU context before assuming the code is broken.
+
+## Automated MCP / test harness
+
+- Emulation control and RAM reads go through patched Mesen MCP (`tools/test/mesen/`).
+- `run_frames` must wait on SA-1 game frame `$3013` (DP), not only PPU frame count — PPU can advance while the SNES CPU sits in the `LDA $10` / `BEQ` wait loop.
+- For PIXI-focused checks, read/step with SA-1 CPU type in mind when using MCP CPU tools; for UberASM, SNES (`cpu_type` 0).
