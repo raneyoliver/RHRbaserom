@@ -831,6 +831,8 @@ HandleState:
 	JSR SetupAttributesOfLuigi
 	JSR TransferItems
 	JSR MoveLuigiToMario
+	; Item was positioned before the move; re-attach at Luigi's new spot.
+	JSR HandleLuigiHeldItemPosition
 	; SetTile after move so we use midair position/speeds (and Frozen
 	; guards against clearing Spinning if !1588 is still stale).
 	JSR SetTile
@@ -1081,6 +1083,7 @@ HandleState:
 	JSR RestoreItemFromYoshisMouth
 	LDA !MarioHeldItemIndex
 	JSR RestoreItemFromYoshisMouth
+	JSR HandleLuigiHeldItemPosition
 ._return
 	RTS
 
@@ -1106,6 +1109,10 @@ RestoreItemFromYoshisMouth:
 	TAX
 	LDA #$09 	; held item should always be stationary?
 	STA !14C8,x
+	STZ !B6,x
+	STZ !AA,x
+	STZ !14F8,x
+	STZ !14EC,x
 	PLX
 .noItem
 	RTS	
@@ -4370,6 +4377,16 @@ CMP #!LuigiSpriteNumber					;| Don't freeze the Luigi.
 BNE +									;|
 JMP Next
 +
+; Don't freeze Luigi's held item (status $07 during TP / $09 while held).
+; Freezing re-backups $07 every frame and fights position sync on exit.
+PHA
+TXA
+CMP !LuigiHeldItemIndex
+BNE .notLuigiHeldItem
+PLA
+JMP Next
+.notLuigiHeldItem
+PLA
 
 ;LDA $9D
 ;BEQ .restoreSpriteTablesBridge	; As soon as done teleporting, unfreeze all sprites
@@ -4687,10 +4704,13 @@ HandleLuigiHeldItemPosition:
 	%store_using_y_index(!157C)
 
 	; set item's position to Luigi's position
+	AND #$01			; facing is only bit 0 (avoid bogus XPosOffset index)
 	ASL ; multiply x by 2 because of 16-bit addressing
 	STA $00 ; save offset for later
 
 	; set item's x position to Luigi's x position + 16 (or -16 if facing left)
+	LDA #$00
+	XBA				; clear B before building 16-bit X
 	LDA !14E0,x
 	XBA
 	LDA !E4,x
@@ -4709,6 +4729,8 @@ HandleLuigiHeldItemPosition:
 	%store_using_y_index(!14F8)
 
 	; set item's y position to Luigi's y position
+	LDA #$00
+	XBA				; clear B before building 16-bit Y
 	LDA !14D4,x
 	XBA
 	LDA !D8,x
@@ -4722,6 +4744,11 @@ HandleLuigiHeldItemPosition:
 	; y fraction bits
 	LDA !14EC,x
 	%store_using_y_index(!14EC)
+
+	; Held by Luigi: no independent speed (prevents physics vs sync fighting).
+	LDA #$00
+	%store_using_y_index(!B6)
+	%store_using_y_index(!AA)
 
 	.return
 	RTS
@@ -4752,6 +4779,12 @@ TransferItemMarioToLuigi:
 	TAX
 	LDA #$09
 	STA !14C8,x							; set Luigi's item status to stationary/carryable
+	; Mario-carry speeds must not persist — they fling the item offscreen
+	; once it is $09 and runs normal physics between Luigi syncs.
+	STZ !B6,x
+	STZ !AA,x
+	STZ !14F8,x
+	STZ !14EC,x
 	JSR HandleLuigiHeldItemPosition	; update Luigi's item position
 
 	.return

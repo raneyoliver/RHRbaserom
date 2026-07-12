@@ -1,0 +1,15 @@
+---
+description: Keep Luigi held-item behavior generic and preserve carry offsets
+alwaysApply: true
+---
+
+# Luigi held-item architecture
+
+- Implement transfer, positioning, swap, hide/restore, and despawn behavior generically through `!LuigiHeldItemIndex` (`$41B82E`).
+- Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm`.
+- `tools/pixi/sprites/!!Luigi/Luigi.asm` owns gameplay transfer, teleport lifecycle, and post-physics item positioning on SA-1.
+- `tools/uberasmtool/library/SyncLuigiHeldItem.asm` owns SNES-side pre-draw projection.
+- `MoveLuigiToFront.asm` owns only slot reordering and held-slot index remapping. Level glue calls the sync library immediately afterward because UberASM Tool does not link library-to-library dependencies.
+- Preserve the established facing offsets (`+$000B` / `-$000B`), fixed-point projection, fractions, spin facing, and Mario-carry behavior unless intentionally redesigning them.
+- SNES-side UberASM must use SA-1 DP mirrors (`$30B6`, `$309E`, `$3094`, `$30D1`, `$307D`, `$3076`, `$309D`).
+- Preserve processor width at library boundaries. Never index the two-entry facing-offset table with width-sensitive `LDX $00`; branch to immediate 16-bit offsets instead.

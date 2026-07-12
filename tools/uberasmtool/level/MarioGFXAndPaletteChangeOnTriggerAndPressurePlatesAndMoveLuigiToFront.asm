@@ -51,8 +51,10 @@ init:
 main:
 	WDM #$01
 	JSL PressurePlates_main
-	; Slot swap + Luigi-held item sync (library early-outs if no Luigi / no held item)
+	; Reorder first so both indices identify their final slots, then perform
+	; sprite-agnostic pre-draw projection of any Luigi-held item.
 	JSL MoveLuigiToFront_main
+	JSL SyncLuigiHeldItem_main
 
 
     ;if !ChangeToLuigi = 1
