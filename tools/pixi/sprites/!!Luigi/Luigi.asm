@@ -191,6 +191,7 @@ endif
 !LandingFrameIndex				= $41B837
 !NumFramesInsideWall			= $41B838
 !HeldInteractionDebug			= $41B839	; registered in docs/freeram-registry.md
+!HeldClipDebug					= $41B83A	; 10 bytes, $00-$07/$0A-$0B clipping
 !RunningLevel					= $AF
 
 !Lvl18XSpeed					= $24
@@ -4886,6 +4887,7 @@ HandleLuigiHeldItemPosition:
 HandleMarioVsLuigiHeldItem:
 	PHP
 	SEP #$30				; held index must be an 8-bit sprite slot
+	PHX						; clipping routines may clobber sprite index
 	PHY						; Graphics expects caller Y preserved
 	LDA #$00
 	STA !HeldInteractionDebug
@@ -4947,6 +4949,17 @@ HandleMarioVsLuigiHeldItem:
 	LDA #$2C
 	STA $06
 	JSL $03B664|!BankB		; Mario clipping
+	; Debug snapshot: Mario box $00-$03, held box $04-$07, high bytes $0A/$0B.
+	LDA $00 : STA.l !HeldClipDebug+0
+	LDA $01 : STA.l !HeldClipDebug+1
+	LDA $02 : STA.l !HeldClipDebug+2
+	LDA $03 : STA.l !HeldClipDebug+3
+	LDA $04 : STA.l !HeldClipDebug+4
+	LDA $05 : STA.l !HeldClipDebug+5
+	LDA $06 : STA.l !HeldClipDebug+6
+	LDA $07 : STA.l !HeldClipDebug+7
+	LDA $0A : STA.l !HeldClipDebug+8
+	LDA $0B : STA.l !HeldClipDebug+9
 	JSL $03B72B|!BankB		; overlap
 	BCS +
 	JMP .return
@@ -5015,6 +5028,7 @@ HandleMarioVsLuigiHeldItem:
 	STA !LuigiHeldItemIndex
 .return
 	PLY
+	PLX
 	PLP
 	RTS
 
