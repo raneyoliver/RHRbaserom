@@ -7,8 +7,12 @@ alwaysApply: true
 
 - Implement transfer, positioning, swap, hide/restore, and despawn behavior generically through `!LuigiHeldItemIndex` (`$41B82E`).
 - Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm` for positioning/despawn.
-- Mario↔held-item rules are keyed by `!LuigiHeldItemIndex` (TXA compare, not `$15E9|!addr`): no grab; ignore entirely when Mario carries Luigi (`14C8=$0B`); bounceable items (shells) may stomp-bounce Mario without leaving Luigi's hands.
-- `tools/pixi/sprites/!!Luigi/Luigi.asm` owns gameplay transfer, teleport lifecycle, and post-physics item positioning on SA-1.
+- Mario↔held-item rules are keyed by `!LuigiHeldItemIndex` (TXA compare, not `$15E9|!addr`): no grab; ignore entirely when Mario carries Luigi (`14C8=$0B`); bounceable shells may stomp-bounce Mario without leaving Luigi's hands; **spin / Yoshi** on a held shell spinkills it and clears `!LuigiHeldItemIndex`.
+- While Luigi owns an item, set `$167A` bit 7 to suppress vanilla Mario interaction; restore it for vanilla items returned to Mario. Otherwise vanilla shells can award points/grab before Luigi's handler runs.
+- Never transfer a held index whose `!14C8` is below `$08`; spinkill must clear both ownership indices if either aliases the killed slot.
+- Luigi↔Mario-held-item rules are keyed by `!MarioHeldItemIndex`: `SprSprContact` must skip that slot entirely so Luigi cannot kick it out of Mario's hands or trigger shell/Koopa state changes.
+- Shell detection is generic via `SetCarryIfShell` (vanilla `$04`–`$0C` / `$DA`–`$DF`, plus all custom shell IDs in `list.txt`). Do not special-case one color in Key/shell asm for Mario↔held behavior.
+- `tools/pixi/sprites/!!Luigi/Luigi.asm` owns gameplay transfer, teleport lifecycle, Mario↔held-item interact, and post-physics item positioning on SA-1.
 - `tools/uberasmtool/library/SyncLuigiHeldItem.asm` owns SNES-side pre-draw projection.
 - `MoveLuigiToFront.asm` owns only slot reordering and held-slot index remapping. Level glue calls the sync library immediately afterward because UberASM Tool does not link library-to-library dependencies.
 - Preserve the established facing offsets (`+$000B` / `-$000B`), fixed-point projection, fractions, spin facing, and Mario-carry behavior unless intentionally redesigning them.

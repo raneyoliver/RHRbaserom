@@ -97,6 +97,7 @@ Gaps in this page (verify before use): `$41A00D`, `$41A010`–`$41A015`, `$41A01
 | `$41B836` | 1 | `!LandingFrameCounter` | `Luigi.asm` |
 | `$41B837` | 1 | `!LandingFrameIndex` | `Luigi.asm` |
 | `$41B838` | 1 | `!NumFramesInsideWall` | `Luigi.asm` |
+| `$41B839` | 1 | `!HeldInteractionDebug` | held-shell path: `$10` item, `$20` contact, `$30` shell, `$40` spinkill, `$41` bounce |
 
 **Do not use `$41B830`–`$41B833` for debug** — that caused Mario to teleport offscreen on swap.
 
@@ -123,7 +124,7 @@ Verify with a fresh grep before claiming:
 
 | Range | Notes |
 |---|---|
-| `$41B839`–`$41B8FF` | After Luigi landing freeram, before `!StartRAM` — good for 1-byte debug |
+| `$41B83A`–`$41B8FF` | After Luigi interaction debug, before `!StartRAM` |
 | `$41BC00`+ | After freeze backup / slot-swap scratch (prefer over `$41BB00`) |
 | `$41A02E`–`$41A033` | Small gaps in Luigi page (confirm unused) |
 
@@ -133,4 +134,5 @@ Verify with a fresh grep before claiming:
 
 | Date | Change |
 |---|---|
+| 2026-07-12 | Reserved `$41B839` for held-shell interaction diagnostics. |
 | 2026-07-12 | Initial registry after `$41B830` debug overwrite of `!LuigiXPosLow`. |

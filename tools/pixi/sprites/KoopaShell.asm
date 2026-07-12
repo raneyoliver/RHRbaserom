@@ -31,6 +31,7 @@ endif
 !LuigiJumpHeld =        $41A018 ;jumpHeld in npc2.asm TODO: change to sprite table
 !LuigiSpinning =        $41A00C ;free ram for !Spinning in npc2.asm
 !LuigiHeldItemIndex = $41B82E
+!MarioHeldItemIndex = $41B82F
 
 ;=======================================================================================;
 ; Koopa / Shell disassembly + additional features (sprites 4-7, DA-DF)                  ;
@@ -1406,11 +1407,11 @@ SprMarioInteract:
 .Return:
     rts
 
-; Luigi is holding this shell:
-; - If Mario is carrying Luigi ($0B), ignore completely (no grab / kick / points).
-; - Else if Mario stomps from above, bounce him as if he hit a kicked shell,
-;   but keep the shell in Luigi's hands (no state change, no score).
-; - Else ignore (Mario must not grab it out of Luigi's hands).
+; Luigi is holding this shell (custom KoopaShell.asm path — backup if 154C clear):
+; - If Mario is carrying Luigi ($0B), ignore completely.
+; - Spin / Yoshi: spinkill (same as free shell).
+; - Else if Mario stomps from above, bounce him; shell stays held.
+; - Else ignore (no grab).
 HeldByLuigiMarioInteract:
     PHX
     LDA !LuigiIndex
@@ -1423,8 +1424,14 @@ HeldByLuigiMarioInteract:
     LDA $7D                 ;\ Moving upward — no side/grab interaction.
     BMI .Return             ;/
 
-    ; Same "Mario high enough to stomp" test as the kicked-shell path.
-    lda #$14
+    ; Spin / Yoshi kills on any downward overlap. Check before stomp height:
+    ; held shells sit beside Luigi and can be entered lower than free shells.
+    lda $140D|!addr
+    ora $187A|!addr
+    bne .SpinKillHeld
+
+    ; Held-shell stomp threshold is deliberately more lenient than #$14.
+    lda #$08
     sta $01
     lda $05
     sec
@@ -1447,6 +1454,20 @@ HeldByLuigiMarioInteract:
     lda #$08
     sta !154C,x
 .Return:
+    rts
+
+.SpinKillHeld:
+    jsr SpinJumpKill
+    txa
+    cmp !MarioHeldItemIndex
+    bne .clearLuigiHeld
+    lda #$FF
+    sta !MarioHeldItemIndex
+    sta !LuigiHeldItemIndex
+    rts
+.clearLuigiHeld
+    lda #$FF
+    sta !LuigiHeldItemIndex
     rts
 
 NoStar:

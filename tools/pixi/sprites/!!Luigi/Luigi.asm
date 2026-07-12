@@ -129,6 +129,7 @@ endif
 !PlayerCursor					= $15	; in pixi_list.txt
 !KoopaShellTeleports			= $12	; in pixi_list.txt
 !GhostShell						= $19	; in pixi_list.txt
+!ReverseGravKoopaShell			= $10	; in pixi_list.txt
 !KoopaShellGreen				= $1B	; in pixi_list.txt
 !KoopaShellRed					= $1E	; in pixi_list.txt
 !KoopaShellBlue					= $06	; in pixi_list.txt
@@ -183,6 +184,7 @@ endif
 !LandingFrameCounter			= $41B836
 !LandingFrameIndex				= $41B837
 !NumFramesInsideWall			= $41B838
+!HeldInteractionDebug			= $41B839	; registered in docs/freeram-registry.md
 !RunningLevel					= $AF
 
 !Lvl18XSpeed					= $24
@@ -1909,10 +1911,6 @@ SetCarryIfShell:	;requires sprite in y
 
 .isVanilla
 	LDA !9E,x
-.ghostShellCheck
-	CMP #!GhostShell
-	BEQ .isShell
-
 .vanillaShellCheck
 	CMP #$DA		; DA-DF vanilla shells
 	BCC .vanillaKoopaCheck
@@ -1922,7 +1920,7 @@ SetCarryIfShell:	;requires sprite in y
 
 	BRA .isShell
 
-.vanillaKoopaCheck	; 04-0C koopas hit -> shell?
+.vanillaKoopaCheck	; 04-0C koopas / shells
 	CMP #$04
 	BCC .isNotShell
 	CMP #$0D
@@ -1931,14 +1929,22 @@ SetCarryIfShell:	;requires sprite in y
 	BRA .isShell
 
 .isCustom
-	LDA !7FAB9E,x ;!9E,x
+	LDA !7FAB9E,x
 .multiBounceShellCheck
 	CMP #!MultiBounceShell
 	BEQ .isShell
 
 .tpShellCheck
 	CMP #!KoopaShellTeleports
-	BEQ .isShell	; try bounce if
+	BEQ .isShell
+
+.reverseGravShellCheck
+	CMP #!ReverseGravKoopaShell
+	BEQ .isShell
+
+.ghostShellCheck
+	CMP #!GhostShell
+	BEQ .isShell
 
 .customKoopaShellCheck
 	CMP #!KoopaShellGreen
@@ -3330,7 +3336,10 @@ SpriteAndSpecialBlockInteraction:
 	; that made Luigi fall through spinies while carrying).
 	TYA
 	CMP !LuigiHeldItemIndex
+	BEQ .heldItem
+	CMP !MarioHeldItemIndex
 	BNE .checkShell
+.heldItem
 	JMP CheckInteractableBlocksList
 
 .checkShell
@@ -4114,6 +4123,10 @@ SprSprContact:
 	; otherwise be the only contact returned (blocking spiny bounce etc.).
 	CMP !LuigiHeldItemIndex
 	BEQ .LoopSprSpr
+	; Mario owns this slot while its status is $0B. Luigi must not bounce
+	; on or kick it out of Mario's hands (which can also spawn a Koopa).
+	CMP !MarioHeldItemIndex
+	BEQ .LoopSprSpr
 
 	TYX					;transfer Y to X
 	LDA !7FAB9E,x		;load sprite number according to index
@@ -4704,6 +4717,12 @@ HandleLuigiHeldItemPosition:
 	JMP .return
 +
 	TAY
+	; Luigi owns Mario interaction while this index is held. In particular,
+	; vanilla shells ($04-$0C/$DA-$DF) otherwise run before Luigi and can
+	; award points or enter status $0B despite the ownership index.
+	LDA !167A,y
+	ORA #$80				; don't use default interaction with Mario
+	STA !167A,y
 	LDX $15E9|!addr
 	LDA !157C,x 		; set item's direction to Luigi's direction
 	%store_using_y_index(!157C)
@@ -4768,14 +4787,22 @@ HandleLuigiHeldItemPosition:
 	RTS
 
 ; Mario contact with !LuigiHeldItemIndex (vanilla or custom).
+; Shells (any color, vanilla or custom via SetCarryIfShell):
 ; - Luigi carried by Mario ($0B): ignore (154C blocks default interact).
-; - Stomp from above: bounce Mario only; item stays held (no kick/score/grab).
+; - Spin / Yoshi: spinkill shell; clear held index.
+; - Stomp from above: bounce Mario only; shell stays held (no kick/score/grab).
 ; - Otherwise: ignore (no grab out of Luigi's hands).
+; Non-shells: 154C only (no grab / no bounce / no kill).
 HandleMarioVsLuigiHeldItem:
+	LDA #$00
+	STA !HeldInteractionDebug
 	LDA !LuigiHeldItemIndex
 	CMP #$FF
-	BEQ .return
-
+	BNE +
+	JMP .return
++
+	LDA #$10
+	STA !HeldInteractionDebug	; held item found
 	TAY
 
 	; Keep default Mario interaction off every frame so slot order cannot
@@ -4786,45 +4813,116 @@ HandleMarioVsLuigiHeldItem:
 	LDA !14C8,x
 	CMP #$0B
 	BNE .notCarriedByMario
-
 	RTS
 
 .notCarriedByMario
 	LDA $7D
-	BMI .return				; Mario moving up — no side/grab response
+	BPL +
+	JMP .return				; Mario moving up — no side/grab response
++
+	JSR SetCarryIfShell
+	BCS +
+	JMP .return				; non-shell held item: block only
++
+	LDA #$30
+	STA !HeldInteractionDebug	; held item recognized as any shell
 
-	PHX
-	TYX						; X = held item
-	JSL $03B69F|!BankB		; sprite clipping
-	JSL $03B664|!BankB		; Mario clipping
-	JSL $03B72B|!BankB		; contact?
-	PLX
-	BCC .return
-
-	; Same "Mario high enough to stomp" test as kicked-shell path.
-	LDA #$14
-	STA $01
-	LDA $05
+	; Walking/turning through a held shell is ignored. Only an airborne,
+	; downward-moving player can stomp/spinkill it.
+	LDA $72
+	BNE +
+	JMP .return
++
+	; Standard sprite clipping was too narrow for the displayed held-shell
+	; offset. Use an ownership hitbox: Mario within $20 px horizontally...
+	LDA !14E0,y
+	XBA
+	LDA !E4,y
+	REP #$20
 	SEC
-	SBC $01
-	ROL $00
-	CMP $D3
-	PHP
-	LSR $00
-	LDA $0B
-	SBC #$00
-	PLP
-	SBC $D4
-	BMI .blockGrab			; too low → block grab only
+	SBC $D1
+	BPL +
+	EOR #$FFFF
+	INC
++	CMP #$0021
+	SEP #$20
+	BCC +
+	JMP .return
++
+	; ...and Mario's top is 0-$20 px above the shell.
+	LDA !14D4,y
+	XBA
+	LDA !D8,y
+	REP #$20
+	SEC
+	SBC $D3
+	CMP #$0021
+	SEP #$20
+	BCC +
+	JMP .return
++
+	LDA #$20
+	STA !HeldInteractionDebug	; ownership hitbox contact
 
-	; Bounce Mario; do not change held item state or give points.
+	; Spin / Yoshi kills any overlapping held shell.
+	LDA $140D|!addr
+	ORA $187A|!addr
+	BNE .spinKillShell
+
+	; Spiny shell: no safe bounce — hurt instead of trampoline.
+	PHY
+	PHX
+	TYX
+	LDA !7FAB10,x
+	AND #$08
+	BEQ ..notSpiny
+	LDA !7FAB9E,x
+	CMP #!SpinyShell
+	BNE ..notSpiny
+	PLX
+	PLY
+	JSL $00F5B7|!bank
+	RTS
+
+..notSpiny
+	PLX
+	PLY
+
+	; Bounce Mario; do not change held shell state or give points.
+	LDA #$41
+	STA !HeldInteractionDebug
 	LDA #$02
 	STA $1DF9|!addr
 	JSL $01AA33|!bank
 	JSL $01AB99|!bank
 	RTS
 
-.blockGrab
+.spinKillShell
+	LDA #$40
+	STA !HeldInteractionDebug
+	PHX
+	TYX						; X = held shell
+	JSL $01AB99|!bank		; contact GFX
+	JSL $01AA33|!bank		; boost Mario
+	LDA #$04
+	STA !14C8,x				; spinjump-killed
+	LDA #$1F
+	STA !1540,x
+	JSL $07FC3B|!bank		; stars
+	PLX
+	; GivePoints expects Luigi in X; contact sprite stays in Y.
+	JSR GivePoints
+	LDA #$08
+	STA $1DF9|!addr
+	TYA
+	CMP !MarioHeldItemIndex
+	BNE +
+	LDA #$FF
+	STA !MarioHeldItemIndex		; clear stale alias of the killed slot
+	STA !LuigiHeldItemIndex
+	RTS
++	LDA #$FF
+	STA !LuigiHeldItemIndex
 .return
 	RTS
 
@@ -4846,6 +4944,17 @@ TransferItemMarioToLuigi:
 	PHX
 	LDA !LuigiHeldItemIndex
 	STA $06								; save Luigi's item index for later
+	CMP #$FF
+	BEQ .oldLuigiItemValid
+	TAX
+	LDA !14C8,x
+	CMP #$08
+	BCS .oldLuigiItemValid
+	; Never transfer a dead/stale held index back to Mario.
+	LDA #$FF
+	STA $06
+	STA !LuigiHeldItemIndex
+.oldLuigiItemValid
 	LDA !MarioHeldItemIndex
 	STA !LuigiHeldItemIndex	
 	CMP #$FF
@@ -4854,6 +4963,9 @@ TransferItemMarioToLuigi:
 	TAX
 	LDA #$09
 	STA !14C8,x							; set Luigi's item status to stationary/carryable
+	LDA !167A,x
+	ORA #$80							; Luigi owns Mario interaction
+	STA !167A,x
 	; Mario-carry speeds must not persist — they fling the item offscreen
 	; once it is $09 and runs normal physics between Luigi syncs.
 	STZ !B6,x
@@ -4875,6 +4987,15 @@ TransferItemLuigiToMario:
 	BEQ .return							; if Luigi had no item, don't try to set it to carried
 
 	TAX
+	; Restore vanilla Mario interaction when ownership returns to Mario.
+	; Custom sprites already own their interaction through $167A bit 7.
+	LDA !7FAB10,x
+	AND #$08
+	BNE +
+	LDA !167A,x
+	AND #$7F
+	STA !167A,x
++
 	LDA #$0B
 	STA !14C8,x							; set player's item status to carried
 
