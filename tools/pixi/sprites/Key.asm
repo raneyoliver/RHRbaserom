@@ -699,6 +699,24 @@ STA $97						;
 RTS						;
 
 .SolidSides
+; While Mario carries Luigi who holds this key, skip side push — turning
+; would otherwise shove Mario. Free Mario vs Luigi-held key keeps sides.
+TXA
+CMP !LuigiHeldItemIndex
+BNE .doSolidSides
+PHX
+LDA !LuigiIndex
+CMP #$FF
+BEQ .restoreAndSolid
+TAX
+LDA !14C8,x
+CMP #$0B
+BNE .restoreAndSolid
+PLX
+RTS						; Mario holding Luigi+this key: no side push
+.restoreAndSolid
+PLX
+.doSolidSides
 STZ $7B						;stop player from moving
 
 %SubHorzPos()					;get which side the player's at

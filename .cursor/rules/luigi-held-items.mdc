@@ -6,13 +6,14 @@ alwaysApply: true
 # Luigi held-item architecture
 
 - Implement transfer, positioning, swap, hide/restore, and despawn behavior generically through `!LuigiHeldItemIndex` (`$41B82E`).
-- Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm` for positioning/despawn.
+- Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm` for positioning/despawn — except narrow ownership gates keyed by `!LuigiHeldItemIndex` / `!MarioHeldItemIndex` (e.g. key side-push while Mario carries Luigi).
 - Mario↔held-item rules are keyed by `!LuigiHeldItemIndex` (TXA compare, not `$15E9|!addr`): no grab; ignore entirely when Mario carries Luigi (`14C8=$0B`); bounceable shells may stomp-bounce Mario without leaving Luigi's hands; **spin / Yoshi** on a held shell spinkills it and clears `!LuigiHeldItemIndex`.
 - While Luigi owns an item, set `$167A` bit 7 to suppress vanilla Mario interaction; restore it for vanilla items returned to Mario. Otherwise vanilla shells can award points/grab before Luigi's handler runs.
 - Never transfer a held index whose `!14C8` is below `$08`; spinkill must clear both ownership indices if either aliases the killed slot.
 - Reject `$1498=$08` same-frame pickups when a swap starts; return that sprite to `$09` instead of replacing Luigi's existing held item.
 - Luigi↔Mario-held-item rules are keyed by `!MarioHeldItemIndex`: non-shell carryables keep normal platform/solid behavior (Luigi can stand on a carried Key); held shells use bounce-only handling that never kicks, spawns a Koopa, or changes ownership.
-- Shell detection is generic via `SetCarryIfShell` (vanilla `$04`–`$0C` / `$DA`–`$DF`, plus all custom shell IDs in `list.txt`). Do not special-case one color in Key/shell asm for Mario↔held behavior.
+- Key solid sides: if Mario carries Luigi (`!LuigiIndex` → `14C8=$0B`) **and** the key is `!LuigiHeldItemIndex`, skip side push. If Mario is free and runs into a Luigi-held key, keep normal side blocking.
+- Shell detection is generic via `SetCarryIfShell` / `ClassifyShellInX` (vanilla `$04`–`$0C` / `$DA`–`$DF`, plus all custom shell IDs in `list.txt`). Do not special-case one color in Key/shell asm for Mario↔held behavior.
 - `tools/pixi/sprites/!!Luigi/Luigi.asm` owns gameplay transfer, teleport lifecycle, Mario↔held-item interact, and post-physics item positioning on SA-1.
 - `tools/uberasmtool/library/SyncLuigiHeldItem.asm` owns SNES-side pre-draw projection.
 - `MoveLuigiToFront.asm` owns only slot reordering and held-slot index remapping. Level glue calls the sync library immediately afterward because UberASM Tool does not link library-to-library dependencies.
@@ -21,3 +22,33 @@ alwaysApply: true
 - SA-1 PIXI code that accesses `$30xx` mirrors while DBR is not guaranteed must force long addressing (`LDA.l` / `SBC.l`), not DBR-relative absolute addressing.
 - Preserve processor width at library boundaries. Never index the two-entry facing-offset table with width-sensitive `LDX $00`; branch to immediate 16-bit offsets instead.
 - Before converting a held byte index with `TAY`/`TAX`, force 8-bit index width under `PHP : SEP #$30` and restore it on every return.
+
+## Debugging held-item / shell contact (do this first)
+
+When Mario passes through a Luigi-held shell (or similar “no interact” bugs):
+
+1. **Think hard before retuning numbers.** Prefer finding the routine that *should* detect the collision and proving whether it runs, with what registers/RAM, at the moment of contact.
+2. **Start at the collision owner.** For Luigi-held shells that is `HandleMarioVsLuigiHeldItem` in `Luigi.asm` (not per-shell asm). Confirm it is called, then walk early-outs (`$0B` carried Luigi, Y-speed sign, shell classify, hitbox).
+3. **Use the savestate and step slowly** if needed: load the user’s slot (default **slot 1** — controller bind), dump `!LuigiHeldItemIndex` / `!MarioHeldItemIndex` / `$41B839`, sprite `14C8`/X/Y, then advance one game frame at a time across the pass-through.
+4. **Ask for tooling** (breakpoints on debug freeram writes, SA-1 step, etc.) rather than guessing another clip widen.
+5. After PIXI insert, user must **reload `workspace/RHRv5.smc`** before diagnostics mean anything.
+
+## Mario↔Luigi held-shell pitfalls (hard-won)
+
+- **Sole owner**: `HandleMarioVsLuigiHeldItem` in `Luigi.asm`. Do not re-add held-shell Mario interact to `KoopaShell.asm`.
+- **`IsLuigiHeldItemShell` must return the classification in A.** Never `PHA` / `PLX` / `PLA` after `ClassifyShellInX` — that returns the old X. Luigi is often sprite slot `$00`, so that pattern always looks like “not a shell” (`$41B839=$13`).
+- **Prefer manual clip boxes from SA-1 tables** (`!E4`/`!D8`/`!14E0`/`!14D4` + `!PlayerXPosMirror`/`!PlayerYPosMirror` with `$08`/`$09` highs) over `$03B69F`/`$03B664` for this path — those can read lorom `$E4`/`$94` and report a held X that is not the live shell.
+- Clipping scratch is byte-oriented (`$04` Xlo `$05` Ylo `$06` W `$07` H `$0A`/`$0B` sprite highs; Mario highs in `$08`/`$09`). Never `REP #$20` / `LDA $04` or `LDA $06`.
+- Debug: `!HeldInteractionDebug` `$41B839` — `$10` item, `$11` Luigi free, `$12` falling, `$13` not shell, `$30` shell, `$20` contact, `$40` spinkill, `$41` bounce. `!HeldClipDebug` `$41B83A`–`$41B843`.
+- Mario bounce: boost + contact FX only; shell stays held. Spin/Yoshi: status `$04`, clear `!LuigiHeldItemIndex`. Mario points via `$1697` / `$02ACE5`, not `GivePoints` (Luigi in X).
+
+## Luigi↔Mario-held shell
+
+- Route via `BounceOnMarioHeldShell` keyed by `!MarioHeldItemIndex`.
+- **Non-spin**: bounce speed + smoke + `GivePoints` only. Do **not** call `LuigiTryBounceOrSpin` / `CheckIfLuigiJumpingOnJumpableSprite` — those kick vanilla shells and `SpawnThrownKoopa`.
+- **Spin**: `LuigiTryBounceOrSpin` is OK; if shell status drops below `$08`, clear `!MarioHeldItemIndex` and `$1470` / `$148F`.
+
+## Mesen testing note
+
+- Prefer **slot 1** for the active test case (user controller bind). Slot meanings change; do not hard-code scenario tables from one chat into assumptions.
+- Savestates restore WRAM; code comes from the currently loaded ROM.

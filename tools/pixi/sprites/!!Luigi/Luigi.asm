@@ -1984,17 +1984,17 @@ SetCarryIfShell:	;requires sprite in y
 	PLX
 	RTS
 
-; Classifies the sprite owned by !LuigiHeldItemIndex without depending on
-; caller Y or carry surviving a shared contact helper. Returns A=$01 shell,
-; A=$00 non-shell. Index width must already be 8-bit.
+; Classifies the sprite owned by !LuigiHeldItemIndex.
+; Returns A=$01 shell, A=$00 non-shell. Must preserve A across restore of X/Y
+; (Luigi is often slot $00 — never return the saved index via PHA/PLX/PLA).
 IsLuigiHeldItemShell:
 	PHX
+	PHY
 	LDA !LuigiHeldItemIndex
 	TAX
-	JSR ClassifyShellInX
-	PHA
-	PLX
-	PLA
+	JSR ClassifyShellInX	; A = $00/$01
+	PLY
+	PLX						; A unchanged
 	RTS
 
 ClassifyShellInX:
@@ -3772,23 +3772,53 @@ CheckIfAbove:
 .return
 	RTS
 
-; Luigi may bounce on a shell carried by Mario, but ownership and shell state
-; must not change. X=Luigi, Y=Mario-held shell.
+; Luigi vs Mario-held shell.
+; - Non-spin: bounce + points/FX only. Never kick, spawn Koopa, or change ownership.
+; - Spin: LuigiTryBounceOrSpin (real spinkill). Clear Mario carry if shell dies.
 BounceOnMarioHeldShell:
 	JSR CheckIfAbove
-	BCC .return
+	BCS +
+	RTS
++
 	LDA !AA,x
-	BMI .return				; Luigi is moving upward
+	BPL +
+	RTS						; Luigi is moving upward
++
+	JSR OnlyBounceOnSpinyShellIfSpinning
+	BCC .return
+
+	LDA !Spinning
+	BNE .spinPath
+
+	; --- normal stomp: trampoline only ---
 	LDA !JumpHeld
 	BNE .high
 	LDA #!NonSpikyLowBounce
-	BRA .store
+	BRA .storeBounce
 .high
 	LDA #!NonSpikyHighBounce
-.store
+.storeBounce
 	STA !BouncingSpeed
+	STZ $00 : STZ $01
+	LDA #$08 : STA $02
 	LDA #$02
-	STA $1DF9|!Base2
+	%SpawnSmoke()
+	JSR GivePoints			; increasing stomp points (Luigi in X)
+	; Do NOT touch !14C8,y / SpawnThrownKoopa / MarioHeldItemIndex
+	RTS
+
+.spinPath
+	JSR LuigiTryBounceOrSpin
+	TYA
+	CMP !MarioHeldItemIndex
+	BNE .return
+	LDA !14C8,y
+	CMP #$08
+	BCS .return				; still alive / carried
+	LDA #$FF
+	STA !MarioHeldItemIndex
+	STZ $1470|!addr
+	STZ $148F|!addr
 .return
 	RTS
 
@@ -4923,6 +4953,19 @@ HandleMarioVsLuigiHeldItem:
 	STA !HeldInteractionDebug	; Mario is falling
 	JSR IsLuigiHeldItemShell
 	BNE +
+	; Fail path: stash held !9E / custom num so we can see why ($41B83A/$41B83B).
+	PHX
+	LDA !LuigiHeldItemIndex
+	TAX
+	LDA !9E,x
+	STA.l !HeldClipDebug+0
+	LDA !7FAB9E,x
+	STA.l !HeldClipDebug+1
+	LDA !7FAB10,x
+	STA.l !HeldClipDebug+2
+	LDA !14C8,x
+	STA.l !HeldClipDebug+3
+	PLX
 	LDA #$13
 	STA !HeldInteractionDebug	; held item was not classified as a shell
 	JMP .return
@@ -4930,26 +4973,41 @@ HandleMarioVsLuigiHeldItem:
 	LDA #$30
 	STA !HeldInteractionDebug	; held item recognized as any shell
 
-	; Build the held shell's normal clipping box, then widen it horizontally
-	; for the displayed +/-$0B carrying offset. Let SMW build Mario's box.
-	PHX
-	TYX
-	JSL $03B69F|!BankB		; held sprite clipping -> $04-$07/$0A-$0B
-	PLX
-	LDA $0A
-	XBA
-	LDA $04
-	REP #$20
-	SEC
-	SBC #$0010
-	SEP #$20
+	; Build clipping from SA-1 sprite tables + player mirrors.
+	; Do NOT call $03B69F/$03B664 here — on SA-1 those can read lorom
+	; $E4/$94 and invent a false miss (held X showed $B0 while !E4 was $59).
+	LDA !E4,y
 	STA $04
-	XBA
+	LDA !14E0,y
 	STA $0A
-	LDA #$2C
+	LDA !D8,y
+	STA $05
+	LDA !14D4,y
+	STA $0B
+	LDA #$0C				; shell-ish width/height
 	STA $06
-	JSL $03B664|!BankB		; Mario clipping
-	; Debug snapshot: Mario box $00-$03, held box $04-$07, high bytes $0A/$0B.
+	LDA #$0A
+	STA $07
+
+	LDA.l !PlayerXPosMirror
+	CLC
+	ADC #$02
+	STA $00
+	LDA.l !PlayerXPosMirror+1
+	ADC #$00
+	STA $08
+	LDA.l !PlayerYPosMirror
+	CLC
+	ADC #$08
+	STA $01
+	LDA.l !PlayerYPosMirror+1
+	ADC #$00
+	STA $09
+	LDA #$0C
+	STA $02
+	STA $03
+
+	; Debug snapshot: Mario $00-$03, held $04-$07, highs $08/$0A (X) then $09/$0B (Y) packed later
 	LDA $00 : STA.l !HeldClipDebug+0
 	LDA $01 : STA.l !HeldClipDebug+1
 	LDA $02 : STA.l !HeldClipDebug+2
@@ -4958,8 +5016,8 @@ HandleMarioVsLuigiHeldItem:
 	LDA $05 : STA.l !HeldClipDebug+5
 	LDA $06 : STA.l !HeldClipDebug+6
 	LDA $07 : STA.l !HeldClipDebug+7
-	LDA $0A : STA.l !HeldClipDebug+8
-	LDA $0B : STA.l !HeldClipDebug+9
+	LDA $08 : STA.l !HeldClipDebug+8
+	LDA $0A : STA.l !HeldClipDebug+9
 	JSL $03B72B|!BankB		; overlap
 	BCS +
 	JMP .return
@@ -5013,19 +5071,24 @@ HandleMarioVsLuigiHeldItem:
 	STA !1540,x
 	JSL $07FC3B|!bank		; stars
 	PLX
-	; GivePoints expects Luigi in X; contact sprite stays in Y.
-	JSR GivePoints
+	; Mario stomp counter / score (do not use GivePoints — that keys off Luigi in X).
+	PHY						; preserve held slot in Y
+	INC $1697|!addr
+	LDA $1697|!addr
+	CMP #$08
+	BCC +
+	LDA #$08
++	JSL $02ACE5|!bank
 	LDA #$08
 	STA $1DF9|!addr
+	PLY						; Y = held slot again
+	LDA #$FF
+	STA !LuigiHeldItemIndex
 	TYA
 	CMP !MarioHeldItemIndex
-	BNE +
+	BNE .return
 	LDA #$FF
 	STA !MarioHeldItemIndex		; clear stale alias of the killed slot
-	STA !LuigiHeldItemIndex
-	BRA .return
-+	LDA #$FF
-	STA !LuigiHeldItemIndex
 .return
 	PLY
 	PLX
