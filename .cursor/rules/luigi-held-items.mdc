@@ -8,7 +8,8 @@ alwaysApply: true
 - Implement transfer, positioning, swap, hide/restore, and despawn behavior generically through `!LuigiHeldItemIndex` (`$41B82E`).
 - Do not add Luigi-specific fixes to individual carryables such as `Key.asm` or `KoopaShell.asm` for positioning/despawn — except narrow ownership gates keyed by `!LuigiHeldItemIndex` / `!MarioHeldItemIndex` (e.g. key side-push while Mario carries Luigi).
 - Mario↔held-item rules are keyed by `!LuigiHeldItemIndex` (TXA compare, not `$15E9|!addr`): no grab; ignore entirely when Mario carries Luigi (`14C8=$0B`); bounceable shells may stomp-bounce Mario without leaving Luigi's hands; **spin / Yoshi** on a held shell spinkills it and clears `!LuigiHeldItemIndex`.
-- While Luigi owns an item, set `$167A` bit 7 to suppress vanilla Mario interaction; restore it for vanilla items returned to Mario. Otherwise vanilla shells can award points/grab before Luigi's handler runs.
+- **Sprite-agnostic anti-grab:** while Luigi owns an index, if that sprite’s `14C8` becomes `$0B` outside teleport (`!State=0`), reclaim to `$09` and clear `$1470`/`$148F`/`$1498`. Custom grab code (e.g. Key) should still `CMP !LuigiHeldItemIndex` before pickup so it never steals for a frame.
+- While Luigi owns an item, set `$167A` bit 7 and keep `$154C` warm every frame so vanilla interact cannot grab/kick; restore `$167A` for vanilla items returned to Mario.
 - Never transfer a held index whose `!14C8` is below `$08`; spinkill must clear both ownership indices if either aliases the killed slot.
 - Reject `$1498=$08` same-frame pickups when a swap starts; return that sprite to `$09` instead of replacing Luigi's existing held item.
 - Luigi↔Mario-held-item rules are keyed by `!MarioHeldItemIndex`: non-shell carryables keep normal platform/solid behavior (Luigi can stand on a carried Key); held shells use bounce-only handling that never kicks, spawns a Koopa, or changes ownership.
@@ -37,9 +38,11 @@ When Mario passes through a Luigi-held shell (or similar “no interact” bugs)
 
 - **Sole owner**: `HandleMarioVsLuigiHeldItem` in `Luigi.asm`. Do not re-add held-shell Mario interact to `KoopaShell.asm`.
 - **`IsLuigiHeldItemShell` must return the classification in A.** Never `PHA` / `PLX` / `PLA` after `ClassifyShellInX` — that returns the old X. Luigi is often sprite slot `$00`, so that pattern always looks like “not a shell” (`$41B839=$13`).
-- **Prefer manual clip boxes from SA-1 tables** (`!E4`/`!D8`/`!14E0`/`!14D4` + `!PlayerXPosMirror`/`!PlayerYPosMirror` with `$08`/`$09` highs) over `$03B69F`/`$03B664` for this path — those can read lorom `$E4`/`$94` and report a held X that is not the live shell.
-- Clipping scratch is byte-oriented (`$04` Xlo `$05` Ylo `$06` W `$07` H `$0A`/`$0B` sprite highs; Mario highs in `$08`/`$09`). Never `REP #$20` / `LDA $04` or `LDA $06`.
+- **Prefer manual 16-bit overlap** from SA-1 tables (`!E4`/`!D8`/`!14E0`/`!14D4` via `LDA !LuigiHeldItemIndex : TAX`, plus `!PlayerXPosMirror`/`!PlayerYPosMirror`). Avoid `$03B69F`/`$03B664`/`$03B72B` on this path — they can invent a held X that is not the live shell. Reload held slot from freeram before reading coords; do not trust Y across helpers.
+- Spin/Yoshi: skip the “Y-speed must be downward” early-out so `$140D|!addr` (`$740D` on SA-1) still reaches the kill path.
 - Debug: `!HeldInteractionDebug` `$41B839` — `$10` item, `$11` Luigi free, `$12` falling, `$13` not shell, `$30` shell, `$20` contact, `$40` spinkill, `$41` bounce. `!HeldClipDebug` `$41B83A`–`$41B843`.
+- Never `STA.l !HeldClipDebug*` under `REP #$20` (especially odd offsets). That softlocked after swap-when-Mario-held-shell (`$41B839` stuck at `$30`, then `14C8` filled with `F9 07 00 15`). Dump clip bytes only in 8-bit A, or skip dumps.
+- Prefer `LDX !LuigiIndex` over `$15E9|!addr` inside held-item helpers — `$75E9` can be stale outside the sprite's own frame.
 - Mario bounce: boost + contact FX only; shell stays held. Spin/Yoshi: status `$04`, clear `!LuigiHeldItemIndex`. Mario points via `$1697` / `$02ACE5`, not `GivePoints` (Luigi in X).
 
 ## Luigi↔Mario-held shell

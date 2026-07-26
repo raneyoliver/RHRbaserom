@@ -1,0 +1,87 @@
+global samples:
+
+$00 $FF $E0 $B8 $07 $00		;@0 brass
+$01 $FF $E0 $B8 $04 $00		;@1 trumpet
+$02 $AF $B2 $B8 $0E $F0		;@2 fingered bass ?
+$03 $FF $F0 $B8 $03 $D0		;@3 bell pad ?
+$04 $CF $F5 $B8 $08 $F0		;@4 fretless bass ?
+$05 $EA $54 $B8 $03 $00		;@5 bell pad ?
+$06 $BF $13 $B8 $03 $00		;@6 same as above with different adsr ?
+$07 $8F $EF $B8 $04 $00		;@7 celesta ?
+$08 $EA $54 $B8 $04 $00		;@8 more celesta
+$09 $FF $F3 $B8 $04 $00		;@9 more more celesta
+$0A $DF $F6 $B8 $04 $20		;@10 iceberg level snare
+$0B $8F $E0 $B8 $04 $20		;@11 with different adsr
+$0C $85 $EB $B8 $02 $80		;@12 something windy ?
+$0D $8E $E0 $B8 $02 $80		;@13 ^ stronger
+$0E $82 $EE $B8 $02 $80		;@14 ^ less strong
+$0F $8F $E0 $B8 $02 $80		;@15 ^ stronger
+$10 $FF $E0 $B8 $03 $B0		;@16 weird sine wave
+$11 $81 $E7 $B8 $03 $90		;@17 slow wind
+$12 $EA $54 $B8 $03 $90		;@18 wind with release
+$13 $FF $E0 $B8 $03 $90		;@19 wind
+$14 $8F $E0 $B8 $05 $00		;@20 more melodic wind ??
+$15 $88 $0D $B8 $03 $C0		;@21 low sustain strings
+$16 $87 $0D $B8 $03 $C0		;@22 slower low sustain strings
+$17 $82 $EE $B8 $03 $C0		;@23 slow slow strings
+$18 $88 $E0 $B8 $03 $C0		;@24 standard strings
+$19 $8A $E0 $B8 $03 $C0		;@25 fast strings
+$1A $FF $E0 $B8 $02 $C0		;@26 synth voice something?
+$1B $FF $E0 $B8 $03 $00		;@27 blown bottle
+$1C $FB $E0 $B8 $03 $D0		;@28 pan flute I think
+$1D $FF $E0 $B8 $04 $00		;@29 synth brass like quack or bass
+$1E $8E $E0 $B8 $02 $00		;@30 square wave
+$1F $FF $E0 $B8 $02 $00		;@31 fast square wave
+$20 $FF $E0 $B8 $02 $00		;@32 triangle or sine?
+$21 $FF $E0 $B8 $04 $00		;@33 fretless bass
+$22 $FF $E0 $B8 $03 $30		;@34 kick-like noise
+$23 $FF $E0 $B8 $07 $40		;@35 kick
+$24 $FF $E0 $B8 $07 $A0		;@36 closed hihat
+$25 $FF $E0 $B8 $07 $A0		;@37 timbale
+$26 $BF $D3 $B8 $07 $A0		;@38 snare
+$27 $FF $E0 $B8 $07 $A0		;@39 more snare
+
+only the last 4 samples are local:
+
+extra 1 used in big boss battle/iceberg
+$28 $FF $E0 $B8 $07 $A0		;@40 snare
+$29 $FF $EE $B8 $11 $F0		;@41 synth bass
+
+extra 2 used in miniboss battle/ripple field 1/2/grassland 3
+$28 $8A $E0 $B8 $03 $C0		;@40 synth voice?
+$29 $FF $E0 $B8 $03 $C0		;@41 synth voice
+$2A $FF $EE $B8 $11 $F0		;@42 slap bass
+$2B $FF $E0 $B8 $04 $00		;@43 quack brass
+
+extra 3 used in sand canyon 2/king dedede/hyper zone 1
+$28 $FF $B2 $B8 $12 $00		;@40 synth bass
+$29 $FF $E0 $B8 $04 $80		;@41 chorded quack
+$2A $FF $E0 $B8 $04 $00		;@42 quack
+
+extra 4 used in grass land 1/2
+$28 $FF $E0 $B8 $04 $00		;@40 clarinet
+$29 $FF $E0 $B8 $11 $F0		;@41 tuba
+
+extra 5 used in ripple field 2
+$28 $FF $E0 $B8 $02 $00		;@40 
+$29 $FF $E0 $B8 $07 $A0		;@41 snare
+$2A $FF $E0 $B8 $11 $F0		;@42 fretless bass ?
+
+extra 6 used in hyper zone 2
+$28 $FF $E0 $B8 $03 $D0		;@40 glock / whistle
+$29 $FF $EE $B8 $0F $00		;@41 synth bass
+
+extra 7 used in opening/music test
+$28 $88 $87 $B8 $02 $40		;@40 bubbly whistly bellpad
+$29 $FF $E0 $B8 $02 $40		;@41 bubbly whistly bellpad
+$2A $FF $E0 $B8 $05 $B0		;@42 open hihat
+
+extra 8 used in pop star
+$28 $FF $E0 $B8 $02 $00		;@40 pop star wind
+
+extra 9 used in staff roll
+$28 $FF $E0 $B8 $04 $70		;@40 ending synth voice doo
+$29 $FF $E0 $B8 $08 $F0		;@41 synth bass used on high octaves ?
+
+extra 10 used in cast montage
+$28 $8F $E0 $B8 $07 $A0		;@40 bongos

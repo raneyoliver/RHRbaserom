@@ -28,7 +28,7 @@ if (-not (Get-Process -Name "Mesen" -ErrorAction SilentlyContinue)) {
     throw "Mesen is not running."
 }
 if (-not (Wait-McpPort -TimeoutSec 30)) {
-    throw "MCP not available on :51234."
+    throw "MCP not available on :52000."
 }
 
 $tools = Invoke-MesenMcpListTools

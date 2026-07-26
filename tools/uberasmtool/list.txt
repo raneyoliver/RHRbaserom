@@ -46,6 +46,7 @@ level:
 28 Cursor.asm
 29 Cursor.asm
 107 MarioGFXAndPaletteChangeOnTriggerAndPressurePlatesAndMoveLuigiToFront.asm
+10B MarioGFXAndPaletteChangeOnTriggerAndPressurePlatesAndMoveLuigiToFront.asm
 
 ; Overworld resources
 overworld:

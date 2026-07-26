@@ -47,7 +47,7 @@ if ($Launch) {
 }
 
 if (-not (Wait-McpPort -TimeoutSec 30)) {
-    throw "MCP not available on :51234. Run start-mcp.ps1, then Mesen Tools -> MCP Server -> Start."
+    throw "MCP not available on :52000. Run start-mcp.ps1, then Mesen Tools -> MCP Server -> Start."
 }
 
 $tools = Invoke-MesenMcpListTools

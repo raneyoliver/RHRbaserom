@@ -70,7 +70,7 @@ function Invoke-MesenMcp {
     if (-not $script:McpReqId) { $script:McpReqId = 1 }
     $script:McpReqId++
     $body = @{ jsonrpc = "2.0"; id = $script:McpReqId; method = "tools/call"; params = @{ name = $tool; arguments = $argsObj } } | ConvertTo-Json -Depth 10 -Compress
-    $r = Invoke-WebRequest -Uri "http://127.0.0.1:51234/mcp" -Method POST -ContentType "application/json" -Body $body -UseBasicParsing -TimeoutSec $timeoutSec
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:52000/mcp" -Method POST -ContentType "application/json" -Body $body -UseBasicParsing -TimeoutSec $timeoutSec
     $parsed = $r.Content | ConvertFrom-Json
     if ($parsed.error) { throw ($parsed.error | ConvertTo-Json -Compress) }
     $text = $parsed.result.content[0].text
@@ -80,7 +80,7 @@ function Invoke-MesenMcp {
 
 function Invoke-MesenMcpListTools {
     $body = '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
-    $r = Invoke-WebRequest -Uri "http://127.0.0.1:51234/mcp" -Method POST -ContentType "application/json" -Body $body -UseBasicParsing -TimeoutSec 10
+    $r = Invoke-WebRequest -Uri "http://127.0.0.1:52000/mcp" -Method POST -ContentType "application/json" -Body $body -UseBasicParsing -TimeoutSec 10
     $parsed = $r.Content | ConvertFrom-Json
     if ($parsed.error) { throw ($parsed.error | ConvertTo-Json -Compress) }
     return @($parsed.result.tools | ForEach-Object { $_.name })
@@ -119,7 +119,7 @@ function Wait-McpPort {
         if (Test-McpPort) { return $true }
         if (-not $Quiet) {
             $dots = ($dots + 1) % 4
-            Write-Host ("Waiting for MCP on :51234{0}   (start-mcp.ps1 + Mesen Tools -> MCP Server -> Start)" -f ('.' * $dots)) -NoNewline
+            Write-Host ("Waiting for MCP on :52000{0}   (start-mcp.ps1 + Mesen Tools -> MCP Server -> Start)" -f ('.' * $dots)) -NoNewline
             Write-Host "`r" -NoNewline
         }
         Start-Sleep -Seconds 2
@@ -131,7 +131,7 @@ function Wait-McpPort {
 function Test-McpPort {
     try {
         $c = New-Object System.Net.Sockets.TcpClient
-        $c.Connect("127.0.0.1", 51234)
+        $c.Connect("127.0.0.1", 52000)
         $ok = $c.Connected
         $c.Close()
         return $ok

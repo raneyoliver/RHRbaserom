@@ -1,8 +1,11 @@
-# Kill orphaned MCPServer / free port 51234 when Mesen MCP gets stuck.
+# Kill orphaned MCPServer / free MCP HTTP port when Mesen MCP gets stuck.
 # Usage: .\reset-mcp.ps1
+#
+# Default 52000 — Windows often excludes 51136-51235 (Hyper-V/WSL), which
+# makes 51234 look "in use" with an empty netstat.
 
 $ErrorActionPreference = "Stop"
-$Port = 51234
+$Port = 52000
 
 Get-Process -Name "MCPServer" -ErrorAction SilentlyContinue | ForEach-Object {
     Write-Host "Stopping MCPServer PID $($_.Id)"

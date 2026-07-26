@@ -8,7 +8,9 @@
 # Use reset-mcp.ps1 only when things are stuck (port open but pipe down).
 
 param(
-    [int]$Port = 51234
+    # 52000: Windows Hyper-V/WSL often excludes 51136-51235, so 51234 fails
+    # with "already in use" even when netstat shows nothing.
+    [int]$Port = 52000
 )
 
 $ErrorActionPreference = "Stop"
@@ -55,6 +57,23 @@ function Test-McpPort([int]$p) {
 
 $pipeUp = Test-MesenDebugPipe
 $portUp = Test-McpPort $Port
+
+# Windows Hyper-V/WSL reserves blocks of ports; bind fails with "already in use"
+# even when netstat is empty. 51234 sits in a common exclusion (51136-51235).
+try {
+    $excl = netsh interface ipv4 show excludedportrange protocol=tcp
+    if ($excl -match '\b51136\b' -or ($excl | Select-String -Pattern "\s+$Port\s+" -Quiet)) {
+        foreach ($line in ($excl -split "`n")) {
+            if ($line -match '^\s*(\d+)\s+(\d+)') {
+                $start = [int]$Matches[1]; $end = [int]$Matches[2]
+                if ($Port -ge $start -and $Port -le $end) {
+                    Write-Host "WARNING: port $Port is in a Windows excluded range ($start-$end)."
+                    Write-Host "Use 52000 (script default) or run patch-mesen-mcp-port.ps1 / free the range as admin."
+                }
+            }
+        }
+    }
+} catch {}
 
 if ($portUp -and (-not $pipeUp)) {
     throw "Port $Port is in use but Mesen's debugger pipe is down (stale bridge). Run: .\tools\test\mesen\reset-mcp.ps1 then run this script and Start MCP in Mesen."

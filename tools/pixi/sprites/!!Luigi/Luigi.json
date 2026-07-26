@@ -7,7 +7,7 @@
     "Disappears in cloud of smoke": false
   },
   "$1662": {
-    "Sprite Clipping": 0,
+    "Sprite Clipping": 12,
     "Use shell as death frame": false,
     "Fall straight down when killed": false
   },

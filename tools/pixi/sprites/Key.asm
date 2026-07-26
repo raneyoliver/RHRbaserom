@@ -642,6 +642,11 @@ LDA $15						;
 AND #$40					;hold X/Y button to carry the sprite
 BEQ .NoCarry					;
 
+; Cannot grab whatever Luigi is holding (ownership is in LuigiHeldItemIndex).
+TXA
+CMP !LuigiHeldItemIndex
+BEQ .NoCarry
+
 LDA $1470|!addr					;already holding something?
 ORA $187A|!addr					;can't hold deez
 BNE .NoCarry					;
