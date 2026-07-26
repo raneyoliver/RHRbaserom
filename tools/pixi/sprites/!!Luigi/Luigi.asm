@@ -1654,6 +1654,12 @@ SetLandingTile:
 		RTS
 
 .iceSlide
+		JSR GetIsLuigiFastEnoughForPSpeed
+		BEQ .iceStationary
+		LDA #!RunningTile
+		STA !Frame
+		RTS
+.iceStationary
 		LDA #!StationaryTile
 		STA !Frame
 		RTS
