@@ -210,6 +210,9 @@ endif
 !NumFramesInsideWallToKill		= $06
 !BounceDelay					= $08
 !TimeToSpendLanding				= $24
+; Mario ice decel table ($00D309) uses ±$0020 per frame vs ±$0100 normal
+; → ~1/8 friction. Match by applying ±1 to !B6 every 8 frames.
+!IceFrictionMask				= $07
 !NumPixelsAboveSpriteRequiredToBounce	= $00 ;$02
 !NumPixelsBelowSprite			= $0011
 !XOffset = $0008
@@ -1599,6 +1602,10 @@ GetIsLuigiFastEnoughForPSpeed:
 	RTS
 
 SetHoldingLandingTile:
+		; Ice: slide pose is standing/holding, not walk frames
+		JSR IsLevelSlippery
+		BNE .iceSlide
+
 		JSR GetLandingTileIndexInY
 		LDA .holdingLandingTiles,y
 		STA !Frame
@@ -1612,10 +1619,19 @@ SetHoldingLandingTile:
 .return
 		RTS
 
+.iceSlide
+		LDA #!HoldingTile
+		STA !Frame
+		RTS
+
 .holdingLandingTiles
 		db !HoldingTileInAir, !HoldingTile
 
 SetLandingTile:
+		; Ice: momentum slide uses standing tile only (no walk cycle)
+		JSR IsLevelSlippery
+		BNE .iceSlide
+
 		JSR GetLandingTileIndexInY
 		JSR GetIsLuigiFastEnoughForPSpeed
 		BEQ .notFastEnough
@@ -1635,6 +1651,11 @@ SetLandingTile:
 		STA !Frame
 
 .return
+		RTS
+
+.iceSlide
+		LDA #!StationaryTile
+		STA !Frame
 		RTS
 
 .landingTiles
@@ -1658,6 +1679,18 @@ GetLandingTileIndexInY:
 		LDA #$01
 		TAY
 		RTS
+
+; Z clear / A nonzero if level is fully slippery ($86 bit 7 / $80+).
+; On SA-1 use $3086 (DP mirror). Do NOT return with A=$80 and Z set —
+; vanilla ice is exactly #$80, and BEQ would treat that as "not icy".
+IsLevelSlippery:
+	LDA.l $3086
+	BMI .yes			; $80-$FF
+	LDA #$00
+	RTS
+.yes
+	LDA #$01
+	RTS
 
 Graphics:
 ;         ; set up properties byte
@@ -2935,6 +2968,14 @@ HandleLandingBounce:
 ;         BMI .return
 ;         STA !AA,x
 .decrementXSpeed
+	; Ice: apply friction less often so he slides further
+	JSR IsLevelSlippery
+	BEQ .doDecel
+	LDA.l $3014			; SA-1 frame mirror (bare $14 can be wrong)
+	AND #!IceFrictionMask
+	BNE .return
+
+.doDecel
 	LDA !B6,x
 	CMP #$80
 	BCC ..rightDirection
