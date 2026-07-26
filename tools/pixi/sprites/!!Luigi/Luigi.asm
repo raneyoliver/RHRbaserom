@@ -3090,15 +3090,16 @@ HandleInteraction:
         db $01,$00,$FF,$FF
 
 ; Carry set if Mario overlaps Luigi's body (ignores sprite clipping).
-; 16 wide x 32 tall. Luigi's JSON draws head at Y-16 / feet at Y (origin =
-; lower 16x16), so the body is [Y-$10, Y+$10), not [Y, Y+$20).
+; Feet-origin graphics (head at Y-$10). Keep the box from eating space
+; under Luigi — a full Y+$10 bottom let Mario grab while Luigi was still
+; falling in from above (feet clipping Mario's head too early).
 ; Uses SA-1 player mirrors; preserves X (Luigi slot).
 MarioLuigiBodyContact:
 	PHX
 	PHP
 	SEP #$30
 
-	; Width ~12px centered in the 16px sprite (not a fat grab slab)
+	; Width ~12px centered in the 16px sprite
 	LDA #$00
 	XBA
 	LDA !14E0,x
@@ -3113,7 +3114,8 @@ MarioLuigiBodyContact:
 	STA $02					; luigi right
 	SEP #$20
 
-	; Feet-origin: head at Y-$10, feet bottom at Y+$10
+	; Head at Y-$10; stop at Y+$08 (not full feet) so a fall-in
+	; doesn't count as grab until he's actually beside Mario.
 	LDA #$00
 	XBA
 	LDA !14D4,x
@@ -3124,8 +3126,8 @@ MarioLuigiBodyContact:
 	SBC #$0010
 	STA $04					; luigi top (head)
 	CLC
-	ADC #$0020
-	STA $06					; luigi bottom (feet)
+	ADC #$0018
+	STA $06					; luigi bottom (mid-feet)
 	SEP #$20
 
 	LDA #$00
@@ -3149,9 +3151,18 @@ MarioLuigiBodyContact:
 	LDA.l !PlayerYPosMirror
 	REP #$20
 	STA $0C					; mario top
+	; Small Mario height — big Mario still overlaps this band beside Luigi.
 	CLC
-	ADC #$0020				; cover small and big Mario
+	ADC #$0010
 	STA $0E					; mario bottom
+
+	; Reject "Luigi still mostly above Mario" (fall-in grab).
+	; If Luigi's mid-torso is above Mario's top, wait.
+	LDA $04
+	CLC
+	ADC #$000C
+	CMP $0C
+	BCC .no
 
 	LDA $08
 	CMP $02
