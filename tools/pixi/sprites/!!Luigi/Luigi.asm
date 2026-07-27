@@ -5152,27 +5152,35 @@ HandleMarioVsLuigiHeldItem:
 	LDA #$11
 	STA.l !HeldInteractionDebug	; Luigi is not carried by Mario
 
-	; Spin / Yoshi: allow contact even if grounded or Y-speed upward.
-	LDA $140D|!addr
-	ORA $187A|!addr
-	BNE .doShellContact
-
-	; Standing on ground: never trampoline (SMW keeps a small +Y speed
-	; while blocked-below — $7D alone is not enough).
+	; Bounce AND spin-kill both require Mario airborne + moving down.
+	; Grounded / upward must never trampoline or kill Luigi's held shell.
+	; ($7D alone is not enough — SMW keeps a small +Y while blocked-below.)
+	LDA.l $3072				; $72 air pose (SA-1 DP mirror)
+	BNE +
+	LDA #$14
+	STA.l !HeldInteractionDebug	; not in air
+	JMP .return
++
 	LDA.l $3077
 	AND #$04
 	BEQ +
+	LDA #$15
+	STA.l !HeldInteractionDebug	; blocked below
 	JMP .return
 +
 	LDA.l !PlayerYSpeedMirror
 	BNE +
-	JMP .return				; no vertical speed
+	LDA #$16
+	STA.l !HeldInteractionDebug	; no vertical speed
+	JMP .return
 +	BPL +
-	JMP .return				; moving up — no side/grab response
+	LDA #$17
+	STA.l !HeldInteractionDebug	; moving up
+	JMP .return
 +
 .doShellContact
 	LDA #$12
-	STA.l !HeldInteractionDebug	; Mario is falling or spinning
+	STA.l !HeldInteractionDebug	; Mario is falling (or spin-falling)
 	JSR IsLuigiHeldItemShell
 	BNE +
 	LDA #$13
@@ -5217,7 +5225,11 @@ HandleMarioVsLuigiHeldItem:
 	STA $06					; shell bottom
 	SEP #$20
 
-	; Mario box from SA-1 mirrors, modest inset
+	; Mario box from SA-1 mirrors. Include feet (Y+$02 .. Y+$20): the old
+	; Y+$08 / height $0C body never overlapped the shell while airborne on
+	; this geometry — Mario only entered the box after $77 blocked-below,
+	; so stomps were inconsistent. Jump-held "bounces" were often Luigi
+	; body contact ($A1), not shell ($41).
 	LDA #$00
 	XBA
 	LDA.l !PlayerXPosMirror+1
@@ -5239,14 +5251,16 @@ HandleMarioVsLuigiHeldItem:
 	LDA.l !PlayerYPosMirror
 	REP #$20
 	CLC
-	ADC #$0008
+	ADC #$0002
 	STA $0C					; mario top
 	CLC
-	ADC #$000C
-	STA $0E					; mario bottom
+	ADC #$001E
+	STA $0E					; mario bottom (Y+$20)
 	; Must stay REP for overlap CMPs only (no 8-bit STA.l here).
 
 	; 16-bit overlap: marioL < shellR && shellL < marioR && marioT < shellB && shellT < marioB
+	; Air + downward already gated — no separate fromAbove (that skipped
+	; fast falls where Mario was already deep into the shell box).
 	LDA $08
 	CMP $02
 	BCS .noContact16
@@ -5260,20 +5274,7 @@ HandleMarioVsLuigiHeldItem:
 	CMP $0E
 	BCS .noContact16
 
-	; Stomp only (Y grows down): Mario's top must be above the shell's top.
-	; Side-overlap while slightly "falling" into the floor must not bounce —
-	; that blocked grabbing Luigi and felt like walking through him.
-	LDA $0C
-	CMP $04
-	BCC .fromAbove			; marioTop < shellTop
 	SEP #$20
-	LDA $140D|!addr			; side hit: only spin/Yoshi may continue
-	ORA $187A|!addr
-	BNE .contactOk
-	BRA .noContact
-.fromAbove
-	SEP #$20
-.contactOk
 	LDA !LuigiHeldItemIndex
 	TAY
 	; Prefer !LuigiIndex over $15E9|!addr — end-of-frame $75E9 can be stale.
@@ -5331,7 +5332,22 @@ HandleMarioVsLuigiHeldItem:
 	PHX
 	TAX
 	JSL $01AB99|!bank
+	; Non-spiky high/low spin — not $01AA33 ($A8/$D0 = spiky/stomp trampoline).
+	; Yoshi still gets the full boost.
+	LDA $187A|!addr
+	BEQ ..marioSpin
 	JSL $01AA33|!bank
+	BRA ..afterBoost
+..marioSpin
+	LDA $15					; B held → high spin (same gate as $01AA33)
+	BMI ..highSpin
+	LDA #!NonSpikyLowSpin
+	BRA ..storeSpin
+..highSpin
+	LDA #!NonSpikyHighSpin
+..storeSpin
+	STA.l !PlayerYSpeedMirror
+..afterBoost
 	LDA #$04
 	STA !14C8,x
 	LDA #$1F

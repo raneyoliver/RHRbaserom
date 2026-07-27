@@ -39,8 +39,9 @@ When Mario passes through a Luigi-held shell (or similar “no interact” bugs)
 - **Sole owner**: `HandleMarioVsLuigiHeldItem` in `Luigi.asm`. Do not re-add held-shell Mario interact to `KoopaShell.asm`.
 - **`IsLuigiHeldItemShell` must return the classification in A.** Never `PHA` / `PLX` / `PLA` after `ClassifyShellInX` — that returns the old X. Luigi is often sprite slot `$00`, so that pattern always looks like “not a shell” (`$41B839=$13`).
 - **Prefer manual 16-bit overlap** from SA-1 tables (`!E4`/`!D8`/`!14E0`/`!14D4` via `LDA !LuigiHeldItemIndex : TAX`, plus `!PlayerXPosMirror`/`!PlayerYPosMirror`). Avoid `$03B69F`/`$03B664`/`$03B72B` on this path — they can invent a held X that is not the live shell. Reload held slot from freeram before reading coords; do not trust Y across helpers.
-- Spin/Yoshi: skip the “Y-speed must be downward” early-out so `$140D|!addr` (`$740D` on SA-1) still reaches the kill path.
-- Debug: `!HeldInteractionDebug` `$41B839` — `$10` item, `$11` Luigi free, `$12` falling, `$13` not shell, `$30` shell, `$20` contact, `$40` spinkill, `$41` bounce. `!HeldClipDebug` `$41B83A`–`$41B843`.
+- Bounce and spin-kill both require Mario airborne (`$72` nonzero), not blocked-below (`$77` bit `$04`), and downward `$7D`. Grounded / upward never trampoline or kill Luigi’s held shell.
+- Mario shell clip uses feet (`Y+$02`..`Y+$20`); a short body box missed aerial stomps so only Luigi body contact (`$A1`) felt like a bounce when jump was held.
+- Debug: `!HeldInteractionDebug` `$41B839` — `$10` item, `$11` Luigi free, `$14` not in air, `$15` blocked below, `$16` no Y speed, `$17` moving up, `$12` falling, `$13` not shell, `$30` shell, `$20` contact, `$40` spinkill, `$41` bounce, `$A1` Luigi body contact. `!HeldClipDebug` `$41B83A`–`$41B843`.
 - Never `STA.l !HeldClipDebug*` under `REP #$20` (especially odd offsets). That softlocked after swap-when-Mario-held-shell (`$41B839` stuck at `$30`, then `14C8` filled with `F9 07 00 15`). Dump clip bytes only in 8-bit A, or skip dumps.
 - Prefer `LDX !LuigiIndex` over `$15E9|!addr` inside held-item helpers — `$75E9` can be stale outside the sprite's own frame.
 - Mario bounce: boost + contact FX only; shell stays held. Spin/Yoshi: status `$04`, clear `!LuigiHeldItemIndex`. Mario points via `$1697` / `$02ACE5`, not `GivePoints` (Luigi in X).
