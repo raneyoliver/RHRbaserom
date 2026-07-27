@@ -193,6 +193,7 @@ endif
 !HeldInteractionDebug			= $41B839	; registered in docs/freeram-registry.md
 !HeldClipDebug					= $41B83A	; 10 bytes, $00-$07/$0A-$0B clipping
 !LuigiHeldItem1686Backup		= $41B844	; $1686 before "ignore objects" while held
+!LuigiHeldItem167ABackup		= $41B845	; $167A before offscreen/process + no-interact while held
 !RunningLevel					= $AF
 
 !Lvl18XSpeed					= $24
@@ -5432,10 +5433,11 @@ TransferItemMarioToLuigi:
 	TAX
 	LDA #$09
 	STA !14C8,x							; set Luigi's item status to stationary/carryable
+	; Remember tweakers so drop/off-screen despawn work again after release.
 	LDA !167A,x
+	STA.l !LuigiHeldItem167ABackup
 	ORA #$84							; off-screen process + Luigi owns Mario interact
 	STA !167A,x
-	; Remember object-interact tweaker so walls work again after release.
 	LDA !1686,x
 	STA.l !LuigiHeldItem1686Backup
 	ORA #$80							; don't interact with objects while held
@@ -5461,16 +5463,10 @@ TransferItemLuigiToMario:
 	BEQ .return							; if Luigi had no item, don't try to set it to carried
 
 	TAX
-	; Restore vanilla Mario interaction when ownership returns to Mario.
-	; Custom sprites already own their interaction through $167A bit 7.
-	LDA !7FAB10,x
-	AND #$08
-	BNE +
-	LDA !167A,x
-	AND #$7F
+	; Restore tweakers from before Luigi held (bit $04 = process off-screen).
+	; Clearing only bit 7 left "don't despawn off-screen" stuck on after swap/drop.
+	LDA.l !LuigiHeldItem167ABackup
 	STA !167A,x
-+
-	; Restore object clipping (cleared while Luigi held the item in walls).
 	LDA.l !LuigiHeldItem1686Backup
 	STA !1686,x
 	LDA #$0B

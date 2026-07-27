@@ -100,6 +100,7 @@ Gaps in this page (verify before use): `$41A00D`, `$41A010`–`$41A015`, `$41A01
 | `$41B839` | 1 | `!HeldInteractionDebug` | held-shell path: `$10` item, `$11` Luigi free, `$12` falling, `$13` not shell, `$30` shell, `$20` hitbox contact, `$40` spinkill, `$41` bounce |
 | `$41B83A`–`$41B843` | 10 | `!HeldClipDebug` | held-shell clipping snapshot: Mario `$00`–`$03`, held item `$04`–`$07`, high bytes `$0A`–`$0B` |
 | `$41B844` | 1 | `!LuigiHeldItem1686Backup` | `$1686` before ignore-objects while Luigi holds |
+| `$41B845` | 1 | `!LuigiHeldItem167ABackup` | `$167A` before offscreen-process / no-interact while Luigi holds |
 
 **Do not use `$41B830`–`$41B833` for debug** — that caused Mario to teleport offscreen on swap.
 
@@ -126,7 +127,7 @@ Verify with a fresh grep before claiming:
 
 | Range | Notes |
 |---|---|
-| `$41B844`–`$41B8FF` | After `!LuigiHeldItem1686Backup`, before `!StartRAM` |
+| `$41B846`–`$41B8FF` | After `!LuigiHeldItem167ABackup`, before `!StartRAM` |
 | `$41BC00`+ | After freeze backup / slot-swap scratch (prefer over `$41BB00`) |
 | `$41A02E`–`$41A033` | Small gaps in Luigi page (confirm unused) |
 
@@ -136,6 +137,7 @@ Verify with a fresh grep before claiming:
 
 | Date | Change |
 |---|---|
+| 2026-07-27 | Reserved `$41B845` for `!LuigiHeldItem167ABackup` (restore offscreen despawn after hold). |
 | 2026-07-27 | Reserved `$41B844` for `!LuigiHeldItem1686Backup` (ignore objects while held). |
 | 2026-07-12 | Reserved `$41B83A`–`$41B843` for held-shell clipping diagnostics. |
 | 2026-07-12 | Reserved `$41B839` for held-shell interaction diagnostics. |

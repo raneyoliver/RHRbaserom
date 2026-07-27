@@ -57,6 +57,7 @@ if read1($00FFD5) == $23
     !rhr_luigi_slot_swap_scratch            = $41BB00 ; 62 bytes (overlaps freeze window — see registry)
     !rhr_debug_freeram                      = $41B839 ; preferred 1-byte debug scratch
     !rhr_luigi_held_item_1686_backup        = $41B844 ; 1 byte ($1686 while Luigi holds)
+    !rhr_luigi_held_item_167a_backup        = $41B845 ; 1 byte ($167A while Luigi holds)
 else
     !rhr_mario_exgfx_freeram                = $7FA000
     !rhr_luigi_index                        = $7FA01A
@@ -71,4 +72,5 @@ else
     !rhr_luigi_slot_swap_scratch            = $7FBB00
     !rhr_debug_freeram                      = $7FB839
     !rhr_luigi_held_item_1686_backup        = $7FB844
+    !rhr_luigi_held_item_167a_backup        = $7FB845
 endif
