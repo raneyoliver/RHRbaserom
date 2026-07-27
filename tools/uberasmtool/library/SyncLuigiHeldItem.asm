@@ -11,6 +11,7 @@
 %define_sprite_table("14EC", $14EC, $74C8)
 %define_sprite_table("14F8", $14F8, $74DE)
 %define_sprite_table("157C", $157C, $3334)
+%define_sprite_table("167A", $167A, $7616)
 
 !LuigiIndex = $41A01A
 !LuigiHeldItemIndex = $41B82E
@@ -63,6 +64,18 @@ main:
 	JMP .return
 +
 	TAY
+	; Drop stale ownership if the slot was erased off-screen / killed.
+	LDA !14C8,y
+	CMP #$08
+	BCS +
+	LDA #$FF
+	STA !LuigiHeldItemIndex
+	JMP .return
++
+	; Keep held carryables alive while the camera leaves them.
+	LDA !167A,y
+	ORA #$84
+	STA !167A,y
 
 	LDA !LuigiIndex
 	TAX

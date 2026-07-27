@@ -5007,11 +5007,22 @@ HandleLuigiHeldItemPosition:
 	JMP .return
 +
 	TAY
+	; Stale ownership after off-screen erase would point at a reused slot
+	; (corrupt "other sprites" in Luigi's hands). Drop the index if dead.
+	LDA !14C8,y
+	CMP #$08
+	BCS .itemAlive
+	LDA #$FF
+	STA !LuigiHeldItemIndex
+	JMP .return
+.itemAlive
 	; Luigi owns Mario interaction while this index is held. In particular,
 	; vanilla shells ($04-$0C/$DA-$DF) otherwise run before Luigi and can
 	; award points or enter status $0B despite the ownership index.
+	; Also keep "Process when off screen" ($04): status $09 items are erased
+	; when the camera leaves them, which despawns Luigi's held shell/key.
 	LDA !167A,y
-	ORA #$80				; don't use default interaction with Mario
+	ORA #$84				; off-screen process + no default Mario interact
 	STA !167A,y
 	LDA !LuigiIndex
 	TAX
@@ -5400,7 +5411,7 @@ TransferItemMarioToLuigi:
 	LDA #$09
 	STA !14C8,x							; set Luigi's item status to stationary/carryable
 	LDA !167A,x
-	ORA #$80							; Luigi owns Mario interaction
+	ORA #$84							; off-screen process + Luigi owns Mario interact
 	STA !167A,x
 	; Mario-carry speeds must not persist — they fling the item offscreen
 	; once it is $09 and runs normal physics between Luigi syncs.
