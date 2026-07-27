@@ -65,10 +65,15 @@ main:
 	JMP .return
 +
 	TAY
-	; Drop stale ownership if the slot was erased off-screen / killed.
+	; Drop stale ownership if the slot was erased off-screen / killed,
+	; or if it became a non-carryable ($08 naked koopa, etc.).
 	LDA !14C8,y
-	CMP #$08
-	BCS +
+	CMP #$07
+	BEQ +
+	CMP #$09
+	BEQ +
+	CMP #$0B
+	BEQ +
 	LDA #$FF
 	STA !LuigiHeldItemIndex
 	JMP .return

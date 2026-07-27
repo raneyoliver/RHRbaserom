@@ -634,6 +634,11 @@ PlayerInteraction:
 LDA !SpriteRAM_PlayerIntDisableTimer		;interaction disable
 BNE .Re						;
 
+; Luigi owns interact while holding this slot (see HandleLuigiHeldItemSpriteInteract).
+TXA
+CMP !LuigiHeldItemIndex
+BEQ .Re
+
 JSL $01803A|!bank				;interact with sprites and player
 BCC .Re						;
 

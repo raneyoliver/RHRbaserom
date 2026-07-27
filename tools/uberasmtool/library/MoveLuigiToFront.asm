@@ -99,6 +99,7 @@
 !LuigiSpriteNumber = $14 ; from pixi_list.txt
 !LuigiIndex = $41A01A
 !LuigiHeldItemIndex = $41B82E
+!MarioHeldItemIndex = $41B82F
 
 if read1($00FFD5) == $23		; check if the rom is sa-1
 	sa1rom
@@ -145,14 +146,16 @@ main:
 	JSR GetAllSpriteTablesFromRAM
 	PLX
 
-	; If the front-slot sprite was held by the Luigi, it moved into the
-	; Luigi's old slot during the swap.
+	; Slots L <-> N exchanged contents. Remap any held-item index that
+	; pointed at either slot (Mario-held shell in the front slot was the
+	; swap+invisibility / "koopa is shell" bug).
 	LDA !LuigiHeldItemIndex
-	CMP !NewSpriteSlot
-	BNE +
-	LDA !LuigiSpriteSlot
+	JSR RemapIndexAfterSlotSwap
 	STA !LuigiHeldItemIndex
-+
+	LDA !MarioHeldItemIndex
+	JSR RemapIndexAfterSlotSwap
+	STA !MarioHeldItemIndex
+
 	LDA !NewSpriteSlot
 	STA !LuigiSpriteSlot
 
@@ -162,38 +165,75 @@ main:
 .return
 	RTL
 
+; A = sprite slot index or $FF. If it is New or Luigi slot, return the other.
+RemapIndexAfterSlotSwap:
+	CMP #$FF
+	BEQ .done
+	CMP !NewSpriteSlot
+	BNE .checkLuigiSlot
+	LDA !LuigiSpriteSlot
+	RTS
+.checkLuigiSlot
+	CMP !LuigiSpriteSlot
+	BNE .done
+	LDA !NewSpriteSlot
+.done
+	RTS
+
 GetSpriteSlots:
 	LDA #$FF
 	STA !LuigiSpriteSlot
 	STA !NewSpriteSlot
 	PHX
-	LDX #$00		; loop count (loop though all sprite number slots)
-.loop
-	LDA !14C8,x			; load sprite number
-	BEQ .next			; if sprite status is not in use, skip
 
-.slotInUse
+	; Prefer !LuigiIndex (written by Luigi's MAIN each frame). Recycled
+	; slots can keep stale 7FAB9E=$14 and look like a second Luigi — that
+	; stole the front slot, parked the held item on a ghost, and made the
+	; companion + item look invisible after swap.
+	LDA !LuigiIndex
+	CMP #!SprSize
+	BCS .scan
+	TAX
+	LDA !14C8,x
+	CMP #$08
+	BCC .scan
+	LDA !7FAB10,x
+	AND #$08
+	BEQ .scan
+	LDA !7FAB9E,x
+	CMP #!LuigiSpriteNumber
+	BNE .scan
+	STX !LuigiSpriteSlot
+
+.scan
+	LDX #$00
+.loop
+	LDA !14C8,x
+	; Dead/init slots ($00-$07) must not be swap targets.
+	CMP #$08
+	BCC .next
+
 	LDA !NewSpriteSlot
 	CMP #$FF
-	BNE .newSpriteSlotIsSet	; if NEW sprite slot is already set, skip
-
-	STX !NewSpriteSlot	; set NEW sprite slot to current sprite slot
-
-.newSpriteSlotIsSet
-	LDA !7FAB9E,x		; load sprite number
-	CMP #!LuigiSpriteNumber	; if sprite number is not the Luigi sprite number,
-	BNE .next				; then skip
-
-.luigiSpriteSlotFound
+	BNE .haveNew
+	STX !NewSpriteSlot			; lowest alive slot (Luigi destination)
+.haveNew
+	LDA !LuigiSpriteSlot
+	CMP #$FF
+	BNE .next				; already have canonical Luigi
+	LDA !7FAB10,x
+	AND #$08
+	BEQ .next
+	LDA !7FAB9E,x
+	CMP #!LuigiSpriteNumber
+	BNE .next
 	STX !LuigiSpriteSlot
-	BRA .done
 
 .next
-	INX					; increment loop count
-	CPX #!SprSize		; if loop count is equal to the sprite size, loop
-	BNE .loop			; if loop count is not equal to the sprite size, loop
+	INX
+	CPX #!SprSize
+	BNE .loop
 
-.done
 	PLX
 	RTS
 

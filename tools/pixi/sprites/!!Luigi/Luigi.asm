@@ -627,6 +627,9 @@ print "MAIN ",pc
 .noLanding
 	; Sync any Luigi-held sprite to the Luigi's final position.
 	JSR HandleLuigiHeldItemPosition
+	; Carried-style sprite↔sprite for the held item (status $09 would only
+	; kill the other sprite — Mario-carry $0B kills both).
+	JSR HandleLuigiHeldItemSpriteInteract
 	; Mario vs held item must live here (not per-carryable asm):
 	; vanilla shells never run KoopaShell.asm.
 	JSR HandleMarioVsLuigiHeldItem
@@ -1095,6 +1098,7 @@ HandleState:
 	STZ $185C|!Base2                        ;  |
 	STZ $13F9|!Base2                        ;  | all kinds of teleportation settings
 	STZ $1419|!Base2                        ;  |
+	STZ $78                                 ;  | un-hide player (set #$FF while teleporting)
 	STZ $9D
 
 	LDA #$00
@@ -1126,22 +1130,34 @@ PutItemInYoshisMouth:
 .noItem
 	RTS
 
+; A = slot. Restore Luigi-held items to $09; Mario-carried to $0B.
 RestoreItemFromYoshisMouth:
 	CMP #$FF
 	BEQ .noItem
 
-	; take item out of yoshi's mouth
 	PHX
 	TAX
-	LDA #$09 	; held item should always be stationary?
-	STA !14C8,x
 	STZ !B6,x
 	STZ !AA,x
 	STZ !14F8,x
 	STZ !14EC,x
+
+	TXA
+	CMP !MarioHeldItemIndex
+	BNE .luigiHeld
+	LDA #$0B
+	STA !14C8,x
+	LDA #$01
+	STA $1470|!addr
+	STA $148F|!addr
+	BRA .done
+.luigiHeld
+	LDA #$09
+	STA !14C8,x
+.done
 	PLX
 .noItem
-	RTS	
+	RTS
 
 PlaySound:
 	BRA .blarrg
@@ -3023,132 +3039,109 @@ HandleLandingBounce:
 
 HandleInteraction:
 
+	; Force 8-bit A/X/Y: prior SetTile/helpers can leave M/X=16, and then
+	; STA !14C8,x / INC $1470 write the wrong width (grab looks like A2 but
+	; Luigi never stays $0B). Prefer !LuigiIndex over $15E9 — end-of-Main
+	; $75E9 is often the next sprite slot, and some helpers leave it stale.
+	PHP
+	SEP #$30
+	LDA !LuigiIndex
+	TAX
+
 	; Always clear before interact. Kick-timer / reclaim leftovers on Luigi
-	; make $01803A and the body test unreachable (Mario walks through).
+	; make contact tests unreachable (Mario walks through).
 	STZ !154C,x
 
-	; Prefer body test when Luigi holds an item: shell sits ~+$0B and eats
-	; the small clipping box so $01803A never reports contact.
-	LDA !LuigiHeldItemIndex
-	CMP #$FF
-	BEQ .tryDefaultClip
+	; Luigi.cfg sets "Don't use default interaction with Mario" — custom
+	; body test is the reliable grab path. Use long $30D1/$30D3 (not DP
+	; $D1: under SA-1 asar that can assemble as $60D1 garbage).
 	JSR MarioLuigiBodyContact
 	BCS .haveContact
-
-.tryDefaultClip
-        JSL $01803A|!BankB   ; Player interaction (sprite clipping)
-        BCC .return
+	; Backup probe; may no-op with default-interact disabled.
+	JSL $01803A|!BankB
+	BCC .returnRest
 
 .haveContact
         LDA #$01
         STA !TeleportReady
-	; Debug: contact reached (grab may still fail on $1470 / no Y)
 	LDA #$A1
 	STA.l !HeldInteractionDebug
+	STA.l !HeldClipDebug		; sticky: MarioVs overwrites !HeldInteractionDebug
 
+	; Grab with Y ($15 bit6) or X ($17 bit6)
         LDA $15
+        ORA $17
         AND #$40
         BEQ .checkSprite
 
-        LDA $1470|!Base2     ; Checking if the player can carry it
+        LDA $1470|!Base2
         ORA $148F|!Base2
         ORA $187A|!Base2
         BNE .checkSprite
 
+	; Never apply carry to Luigi's held item slot (glued shell sits in the
+	; same AABB; a stale X used to set shell $0B → anti-grab cleared $1470).
+	TXA
+	CMP !LuigiHeldItemIndex
+	BEQ .checkSprite
+
         LDA #$0B
         STA !14C8,x
 
+	TXA
+	STA.l !HeldClipDebug+1		; slot written ($10 expected)
+	LDA !14C8,x
+	STA.l !HeldClipDebug+2		; readback ($0B expected)
+
 	LDA #$A2
-	STA.l !HeldInteractionDebug	; grab applied
+	STA.l !HeldInteractionDebug
+	STA.l !HeldClipDebug
 
 .keepCarried
         INC $1470|!Base2
         LDA #$08
         STA $1498|!Base2
+	PLP
         CLC
         RTS
 
 .checkSprite
         LDA !14C8,x
         CMP #$09
-        BNE .return
+        BNE .returnRest
 
-        ; Player carries object
         STZ !154C,x
         LDA !D8,x
         SEC : SBC $D3
         CLC : ADC #$08
         CMP #$20
         BCC .solidSides
-        BPL .onTop
+        BPL .returnRest
 
         LDA #$10
         STA $7D
 
-        CLC
-        RTS
-
-.onTop
-        ; I do not want the player to be able to stand on top to avoid key jump type tricks.
-        ; Uncomment this code if you wish to re-enable it.
-;if !CanStandOnIt
-;        LDA $7D
-;        BMI .return
-;
-;        STZ $7D
-;        STZ $72
-;        INC $1471|!Base2
-;
-;        LDA #$1F           ; Check Yoshi state
-;        LDY $187A|!Base2
-;        BEQ .notOnYoshi
-;        LDA #$2F
-;.notOnYoshi
-;        STA $00
-;
-;        LDA !D8,x
-;        SEC : SBC $00
-;        STA $96
-;        LDA !14D4,x
-;        SBC #$00
-;        STA $97
-;
-;        SEC
-;        RTS
-;endif
-
-.return
+.returnRest
+	PLP
         CLC
         RTS
 
 .solidSides
-;if !SolidSides
-;        STZ $7B
-;        %SubHorzPos()
-;        TYA : ASL : TAY
-;        REP #$21
-;        LDA $94
-;        ADC .DATA_01AB2D,y
-;        STA $94
-;        SEP #$20
-;        CLC
-;endif
+	PLP
         RTS
 
 .DATA_01AB2D
-        db $01,$00,$FF,$FF
+	db $01,$00,$FF,$FF
 
 ; Carry set if Mario overlaps Luigi's body (ignores sprite clipping).
-; Feet-origin graphics (head at Y-$10). Keep the box from eating space
-; under Luigi — a full Y+$10 bottom let Mario grab while Luigi was still
-; falling in from above (feet clipping Mario's head too early).
-; Uses SA-1 player mirrors; preserves X (Luigi slot).
+; Feet-origin graphics (head at Y-$10).
+; MUST use long $30D1/$30D3 — SA-1 asar remaps bare $D1 to $60D1.
+; Preserves X (Luigi slot).
 MarioLuigiBodyContact:
 	PHX
 	PHP
 	SEP #$30
 
-	; Width ~12px centered in the 16px sprite
 	LDA #$00
 	XBA
 	LDA !14E0,x
@@ -3163,8 +3156,6 @@ MarioLuigiBodyContact:
 	STA $02					; luigi right
 	SEP #$20
 
-	; Head at Y-$10; stop at Y+$08 (not full feet) so a fall-in
-	; doesn't count as grab until he's actually beside Mario.
 	LDA #$00
 	XBA
 	LDA !14D4,x
@@ -3176,14 +3167,14 @@ MarioLuigiBodyContact:
 	STA $04					; luigi top (head)
 	CLC
 	ADC #$0018
-	STA $06					; luigi bottom (mid-feet)
+	STA $06					; luigi bottom
 	SEP #$20
 
 	LDA #$00
 	XBA
-	LDA.l !PlayerXPosMirror+1
+	LDA.l $30D2
 	XBA
-	LDA.l !PlayerXPosMirror
+	LDA.l $30D1
 	REP #$20
 	CLC
 	ADC #$0002
@@ -3195,18 +3186,16 @@ MarioLuigiBodyContact:
 
 	LDA #$00
 	XBA
-	LDA.l !PlayerYPosMirror+1
+	LDA.l $30D4
 	XBA
-	LDA.l !PlayerYPosMirror
+	LDA.l $30D3
 	REP #$20
 	STA $0C					; mario top
-	; Small Mario height — big Mario still overlaps this band beside Luigi.
 	CLC
 	ADC #$0010
 	STA $0E					; mario bottom
 
-	; Reject "Luigi still mostly above Mario" (fall-in grab).
-	; If Luigi's mid-torso is above Mario's top, wait.
+	; Reject fall-in: Luigi mid-torso still above Mario's head
 	LDA $04
 	CLC
 	ADC #$000C
@@ -4479,37 +4468,79 @@ CheckIfLuigiOnTop:
     SEC                     ;|
     SBC $01                 ;|
     ROL $00                 ;|
-    CMP !D8,x ;$D3                 ;|	player y pos
+    CMP !D8,x ;$D3                 ;|	Luigi y pos
     PHP                     ;|
     LSR $00                 ;|
     LDA $0B                 ;|
-    SBC #$00                ;| Don't bounce on the sprite if one of these is true:
-    PLP                     ;|  - Mario's Y position is too low w.r.t. the sprite's Y position.
-    SBC !14D4,x ;$D4 ;player y pos   ;|  - Mario is moving upwards, the sprite can't be hit while moving upward
+    SBC #$00                ;|
+    PLP                     ;|
+    SBC !14D4,x             ;|
 
-	;LDA !14D4,x
-	;XBA
-	;LDA.w !D8,x
-	;REP #$20
-	;SEC : SBC $D3
-	;STA $00
-    BMI KillLuigi         ;|     and Mario hasn't bounced on any other enemies.
-    LDA !AA,x ;$7D ;player y speed ;|  - Both Mario and the sprite are on the ground.
-    BPL +                   ;|
-    LDA !190F,y ;,x         ;|
-    AND #$10                ;| if can't be jumped with upspeed
-    BEQ KillLuigi		;  kill Luigi
-+   LDA !1588,y              ;if touched sprite in air skip
+    BMI .notAboveLuigi
+    LDA !AA,x
+    BPL +
+    LDA !190F,y
+    AND #$10
+    BEQ .killUnlessMarioStomp
++   LDA !1588,y
     AND #$04
     BEQ ++
-    LDA !1588,x ;$72
-	AND #$04                ; else, if both Luigi and
-    BNE KillLuigi     ; touched sprite on ground, kill
-;++  LDA !1656,y ;x
-;    AND #$10                ;| If the sprite can be bounced on, jump.
-;    BNE CheckIfLuigiJumpingOnJumpableSprite        ;/
-	; Otherwise, return to SpriteAndSpecialBlockInteraction to try spin.
+    LDA !1588,x
+	AND #$04
+    BEQ ++
+	LDA !1656,y
+	AND #$10
+	BNE ++
+.killUnlessMarioStomp
+	JSR MarioStompingContactSpriteY
+	BCS ++					; Mario owns the stomp — don't kill player
+    JMP KillLuigi
+
+.notAboveLuigi
+	; Side contact with Luigi vs enemy.
+	; Jumpable (goomba/koopa): never KillLuigi — Mario may be stomping the
+	; same sprite, and a glued held shell makes false overlaps common.
+	; Spiky / non-jumpable still kill.
+	LDA !1656,y
+	AND #$10
+	BNE ++
+	JSR MarioStompingContactSpriteY
+	BCS ++
+	JMP KillLuigi
 ++	JMP LuigiTryBounceOrSpin_checkIfSpinning
+
+; Carry set if Mario is falling onto contact sprite Y (stomp ownership).
+MarioStompingContactSpriteY:
+	LDA.l $3072				; air pose
+	BEQ .no
+	LDA.l !PlayerYSpeedMirror
+	BMI .no					; rising
+	BEQ .no
+	; Mario bottom roughly above sprite mid-Y?
+	LDA #$00
+	XBA
+	LDA.l $30D4
+	XBA
+	LDA.l $30D3
+	REP #$20
+	CLC
+	ADC #$0010				; mario bottom
+	STA $0E
+	SEP #$20
+	LDA #$00
+	XBA
+	LDA !14D4,y
+	XBA
+	LDA !D8,y
+	REP #$20
+	CMP $0E					; spriteY >= marioBottom → mario still above
+	SEP #$20
+	BCC .no
+	SEC
+	RTS
+.no
+	CLC
+	RTS
 
 KillLuigi:
 	LDA #!DeadTopLeftTile
@@ -4995,7 +5026,248 @@ GetMarioHeldItemIndex:
 	STA !MarioHeldItemIndex
 
 	.return
-	RTS			;end? return.
+	RTS
+
+; Clear !LuigiHeldItemIndex and restore tweakers after the held item dies
+; or is otherwise released without TransferItems.
+ClearLuigiHeldItemOwnership:
+	PHX
+	LDA !LuigiHeldItemIndex
+	CMP #$FF
+	BEQ .done
+	TAX
+	LDA.l !LuigiHeldItem167ABackup
+	STA !167A,x
+	LDA.l !LuigiHeldItem1686Backup
+	STA !1686,x
+	LDA #$FF
+	STA !LuigiHeldItemIndex
+.done
+	PLX
+	RTS
+
+; Backup $167A for restore. If our hold bits ($84) are already set (stale
+; from a prior hold), strip them so restore does not permanently keep
+; "process off-screen" / "no default interact".
+BackupLuigiHeldItem167A:
+	LDA !167A,x
+	STA $00
+	AND #$84
+	CMP #$84
+	BNE .store
+	LDA $00
+	AND #$7B				; strip already-applied hold bits
+	STA $00
+.store
+	LDA $00
+	STA.l !LuigiHeldItem167ABackup
+	RTS
+
+; While Luigi holds an item as $09, vanilla $018032 treats it as stationary
+; (koopa dies, shell lives). Mario-carried $0B kills both. Run that rule here
+; for every other sprite (skip Luigi — they overlap every frame). Item-agnostic:
+; respects $1686 "don't interact with sprites", and spares vanilla key ($80).
+HandleLuigiHeldItemSpriteInteract:
+	PHP
+	SEP #$30
+	PHX					; Graphics runs after this — must not leave X as the loop index
+	LDA $9D
+	BNE .return
+	LDA !State
+	BNE .return
+
+	LDA !LuigiHeldItemIndex
+	CMP #$FF
+	BEQ .return
+	STA $0F					; held slot
+	TAY
+	; Only carryable / mouth statuses. $08 (naked koopa etc.) must not stay
+	; owned — that glued enemies to Luigi after shell↔koopa splits.
+	LDA !14C8,y
+	CMP #$07
+	BEQ .itemOk				; Yoshi-mouth during TP
+	CMP #$09
+	BEQ .itemOk
+	CMP #$0B
+	BEQ .itemOk
+	CMP #$08
+	BCC .itemDied			; dead / init
+	JSR ClearLuigiHeldItemOwnership
+	BRA .return
+.itemOk
+	LDA !1686,y
+	AND #$08				; don't interact with other sprites
+	BNE .return
+
+	STX $0E					; Luigi slot (caller X)
+	LDX #!sprite_slots-1
+.loop
+	CPX $0F
+	BEQ .next
+	CPX $0E
+	BEQ .next
+
+	LDA !14C8,x
+	CMP #$08
+	BCC .next
+
+	LDY $0F
+	LDA !1686,x
+	ORA !1686,y
+	AND #$08
+	BNE .next
+	LDA !1564,x
+	ORA !1564,y
+	BNE .next
+	LDA !1632,x
+	EOR !1632,y
+	BNE .next
+
+	; Manual 16-bit AABB (SA-1 tables). Avoid $03B69F/$03B6E5 — lorom
+	; clipping can false-contact and KillBoth Luigi+item (both vanish).
+	JSR LuigiHeldItemContactWithX
+	BCC .next
+
+	JSR LuigiHeldItemKillBoth
+	LDY $0F
+	LDA !14C8,y
+	CMP #$07
+	BEQ .next
+	CMP #$09
+	BEQ .next
+	CMP #$0B
+	BEQ .next
+	JSR ClearLuigiHeldItemOwnership
+	BRA .return
+.next
+	DEX
+	BPL .loop
+.return
+	PLX
+	PLP
+	RTS
+
+.itemDied
+	JSR ClearLuigiHeldItemOwnership
+	PLX
+	PLP
+	RTS
+
+; Carry set if other (X) overlaps held ($0F). Preserves $0E/$0F. Uses $00-$0C.
+LuigiHeldItemContactWithX:
+	LDA $0E
+	PHA
+	LDA $0F
+	PHA
+	TAY					; Y = held (from $0F still)
+
+	LDA #$00
+	XBA
+	LDA !14E0,x
+	XBA
+	LDA !E4,x
+	REP #$20
+	STA $00					; other left
+	CLC
+	ADC #$0010
+	STA $02					; other right
+	SEP #$20
+
+	LDA #$00
+	XBA
+	LDA !14D4,x
+	XBA
+	LDA !D8,x
+	REP #$20
+	STA $04					; other top
+	CLC
+	ADC #$0010
+	STA $06					; other bottom
+	SEP #$20
+
+	LDA #$00
+	XBA
+	LDA !14E0,y
+	XBA
+	LDA !E4,y
+	REP #$20
+	STA $08					; held left
+	CLC
+	ADC #$0010
+	STA $0A					; held right
+	SEP #$20
+
+	LDA #$00
+	XBA
+	LDA !14D4,y
+	XBA
+	LDA !D8,y
+	REP #$20
+	STA $0C					; held top
+	CLC
+	ADC #$0010
+	PHA					; held bottom on stack
+	LDA $00
+	CMP $0A
+	BCS .no
+	LDA $08
+	CMP $02
+	BCS .no
+	LDA $04
+	CMP $01,s				; otherTop >= heldBottom?
+	BCS .no
+	LDA $0C
+	CMP $06
+	BCS .no
+	PLA					; drop held bottom
+	SEP #$20
+	PLA					; restore $0F
+	STA $0F
+	PLA
+	STA $0E
+	SEC
+	RTS
+.no
+	PLA					; drop held bottom
+	SEP #$20
+	PLA
+	STA $0F
+	PLA
+	STA $0E
+	CLC
+	RTS
+
+; X = other sprite, $0F = held. Mirrors $01A685 with SA-1 remapped tables.
+LuigiHeldItemKillBoth:
+	PHX
+	PHY
+	LDY $0F
+	LDA !9E,x
+	CMP #$83
+	BEQ .skipOther
+	CMP #$84
+	BEQ .skipOther
+	LDA #$02
+	STA !14C8,x
+	LDA #$D0
+	STA !AA,x
+.skipOther
+	LDA !9E,y
+	CMP #$80
+	BEQ .skipHeld
+	LDA #$02
+	STA !14C8,y
+	LDA #$D0
+	STA !AA,y
+.skipHeld
+	JSL $01AB99|!bank
+	LDA #$04
+	JSL $02ACE5|!bank
+	LDA #$03
+	STA $1DF9|!addr
+	PLY
+	PLX
+	RTS
 
 ; Sets position of Luigi carried item
 HandleLuigiHeldItemPosition:
@@ -5009,13 +5281,16 @@ HandleLuigiHeldItemPosition:
 	JMP .return
 +
 	TAY
-	; Stale ownership after off-screen erase would point at a reused slot
-	; (corrupt "other sprites" in Luigi's hands). Drop the index if dead.
+	; Only keep ownership for mouth/carryable statuses. $08 (e.g. naked
+	; koopa after a shell spit) must not stay glued to Luigi's hands.
 	LDA !14C8,y
-	CMP #$08
-	BCS .itemAlive
-	LDA #$FF
-	STA !LuigiHeldItemIndex
+	CMP #$07
+	BEQ .itemAlive
+	CMP #$09
+	BEQ .itemAlive
+	CMP #$0B
+	BEQ .itemAlive
+	JSR ClearLuigiHeldItemOwnership
 	JMP .return
 .itemAlive
 	; Luigi owns Mario interaction while this index is held. In particular,
@@ -5115,9 +5390,9 @@ HandleMarioVsLuigiHeldItem:
 	BNE +
 	JMP .return
 +
+	TAY					; must TAY before debug LDA #$10 (was clobbering A → always Y=$10)
 	LDA #$10
 	STA.l !HeldInteractionDebug	; held item found
-	TAY
 
 	; Keep default Mario interaction off on the held item so slot order cannot
 	; grab/kick it (vanilla shells never run KoopaShell.asm). Use Y-index
@@ -5137,9 +5412,21 @@ HandleMarioVsLuigiHeldItem:
 	BNE .skipAntiGrab
 	LDA #$09
 	STA !14C8,y
+	; If Mario is carrying Luigi, keep $1470 — reclaiming the glued shell must
+	; not drop Luigi. (Grab used to hit the shell slot; anti-grab then wiped carry.)
+	LDA !LuigiIndex
+	TAX
+	LDA !14C8,x
+	CMP #$0B
+	BEQ .antiGrabKeepCarry
 	STZ $1470|!addr
 	STZ $148F|!addr
 	STZ $1498|!addr
+.antiGrabKeepCarry
+	LDA #$B0
+	STA.l !HeldClipDebug+3		; anti-grab fired
+	TYA
+	STA.l !HeldClipDebug+4		; reclaimed slot
 	LDA #$10
 	STA !154C,y
 .skipAntiGrab
@@ -5182,6 +5469,21 @@ HandleMarioVsLuigiHeldItem:
 .doShellContact
 	LDA #$12
 	STA.l !HeldInteractionDebug	; Mario is falling (or spin-falling)
+	; If Mario is trying to grab Luigi (Y/X) and overlaps his body, do not
+	; treat the held shell as a stomp target — the glued shell sits in the
+	; same space and was eating grab / turning nearby stomps into shell hits.
+	LDA $15
+	ORA $17
+	AND #$40
+	BEQ .notGrabbingLuigi
+	LDA !LuigiIndex
+	TAX
+	JSR MarioLuigiBodyContact
+	BCC .notGrabbingLuigi
+	LDA #$18
+	STA.l !HeldInteractionDebug	; grab-overlap, skip shell
+	JMP .return
+.notGrabbingLuigi
 	JSR IsLuigiHeldItemShell
 	BNE +
 	LDA #$13
@@ -5193,13 +5495,11 @@ HandleMarioVsLuigiHeldItem:
 
 	; Force held slot into X from freeram (do not trust Y across helpers).
 	; Use 16-bit coords + local overlap — avoid $03B69F/$03B664/$03B72B here.
-	; Do NOT dump clip debug in 16-bit A mode: a prior block did STA.l under
-	; REP #$20 (including odd addresses) and corrupted sprite tables / softlocked
-	; after swap-when-Mario-held-shell (dbg stuck at $30).
 	LDA !LuigiHeldItemIndex
 	TAX
 
-	; Shell box: X = !E4, width $14 (lenient), Y = !D8-$02, height $10
+	; Shell box: full sprite X width, feet-stomp band only (not Mario's
+	; whole body — standing next to Luigi+shell used to count as contact).
 	LDA #$00
 	XBA
 	LDA !14E0,x
@@ -5208,7 +5508,7 @@ HandleMarioVsLuigiHeldItem:
 	REP #$20
 	STA $00					; shell left
 	CLC
-	ADC #$0014
+	ADC #$0010
 	STA $02					; shell right
 	SEP #$20
 
@@ -5219,18 +5519,14 @@ HandleMarioVsLuigiHeldItem:
 	LDA !D8,x
 	REP #$20
 	SEC
-	SBC #$0002
-	STA $04					; shell top
+	SBC #$0008				; top of stomp band (above shell center)
+	STA $04
 	CLC
-	ADC #$0010
-	STA $06					; shell bottom
+	ADC #$000C				; short band — must come from above
+	STA $06
 	SEP #$20
 
-	; Mario box from SA-1 mirrors. Include feet (Y+$02 .. Y+$20): the old
-	; Y+$08 / height $0C body never overlapped the shell while airborne on
-	; this geometry — Mario only entered the box after $77 blocked-below,
-	; so stomps were inconsistent. Jump-held "bounces" were often Luigi
-	; body contact ($A1), not shell ($41).
+	; Mario feet: Y+$08 .. Y+$14 (stomping, not standing beside)
 	LDA #$00
 	XBA
 	LDA.l !PlayerXPosMirror+1
@@ -5252,12 +5548,11 @@ HandleMarioVsLuigiHeldItem:
 	LDA.l !PlayerYPosMirror
 	REP #$20
 	CLC
-	ADC #$0002
-	STA $0C					; mario top
+	ADC #$0008
+	STA $0C					; mario feet top
 	CLC
-	ADC #$001E
-	STA $0E					; mario bottom (Y+$20)
-	; Must stay REP for overlap CMPs only (no 8-bit STA.l here).
+	ADC #$000C
+	STA $0E					; mario feet bottom
 
 	; 16-bit overlap: marioL < shellR && shellL < marioR && marioT < shellB && shellT < marioB
 	; Air + downward already gated — no separate fromAbove (that skipped
@@ -5363,8 +5658,7 @@ HandleMarioVsLuigiHeldItem:
 +	JSL $02ACE5|!bank
 	LDA #$08
 	STA $1DF9|!addr
-	LDA #$FF
-	STA !LuigiHeldItemIndex
+	JSR ClearLuigiHeldItemOwnership
 	LDA $00
 	CMP !MarioHeldItemIndex
 	BNE .return
@@ -5386,7 +5680,17 @@ TransferItems:
 	; transfer it to the player, player gets whatever Luigi had, even if it's nothing
 	JSR TransferItemLuigiToMario
 
-	.return
+	; Carrying flags must match the post-swap Mario item (or clear if none).
+	LDA !MarioHeldItemIndex
+	CMP #$FF
+	BNE .marioHasItem
+	STZ $1470|!addr
+	STZ $148F|!addr
+	RTS
+.marioHasItem
+	LDA #$01
+	STA $1470|!addr
+	STA $148F|!addr
 	RTS
 
 ; Swaps player carried item to Luigi
@@ -5434,8 +5738,8 @@ TransferItemMarioToLuigi:
 	LDA #$09
 	STA !14C8,x							; set Luigi's item status to stationary/carryable
 	; Remember tweakers so drop/off-screen despawn work again after release.
+	JSR BackupLuigiHeldItem167A
 	LDA !167A,x
-	STA.l !LuigiHeldItem167ABackup
 	ORA #$84							; off-screen process + Luigi owns Mario interact
 	STA !167A,x
 	LDA !1686,x

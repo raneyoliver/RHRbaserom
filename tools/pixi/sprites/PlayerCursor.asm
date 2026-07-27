@@ -27,6 +27,7 @@ endif
 
 ;Luigi sprite index from pixi_list
 	!LuigiSpriteNumber = $14
+	!LuigiIndex = $41A01A
 	!CloneIsMario = $41A026
 
 
@@ -258,23 +259,38 @@ OffscreenRoutine:
 	RTS
 
 GetLuigiSpriteNumber:
+	; Prefer the live index Luigi writes each frame — recycled slots keep
+	; stale 7FAB9E=$14 and would look like a second Luigi.
+	LDA !LuigiIndex
+	TAY
+	CPY #!SprSize
+	BCS .scan
+	LDA !7FAB10,y
+	AND #$08
+	BEQ .scan
+	LDA !7FAB9E,y
+	CMP #!LuigiSpriteNumber
+	BEQ .return
+.scan
 	PHX
 	LDY #!SprSize-1
 .loop
 	TYX
 	LDA !14C8,x
 	BEQ .next
-
+	LDA !7FAB10,x
+	AND #$08
+	BEQ .next
 	LDA !7FAB9E,x
 	CMP #!LuigiSpriteNumber
-	BEQ .return
-
+	BEQ .found
 .next
 	DEY
 	BPL .loop
-
-.return
+	LDY #$00
+.found
 	PLX
+.return
 	RTS
 
 Follow:
@@ -371,32 +387,22 @@ DrawGraphicsIfNotTeleporting:
 	RTS
 
 +
-	LDY #!SprSize-1		;loop count (loop though all sprite number slots)
+	; Kill Mario only when the *real* Luigi dies — not a recycled slot that
+	; still has stale 7FAB9E=$14 (e.g. stomped naked koopa → status $03).
+	LDA !LuigiIndex
+	TAY
+	CPY #!SprSize
+	BCS .drawGraphics
+	LDA !7FAB10,y
+	AND #$08
+	BEQ .drawGraphics
+	LDA !7FAB9E,y
+	CMP #!LuigiSpriteNumber
+	BNE .drawGraphics
 
-.Loop
-	PHX
-	LDA !14C8,y		;load sprite status
-	BEQ .LoopSprSpr		;if non-existant, keep looping.
-
-	LDA !7FAB9E,x		;load this sprite's number
-	STA $07			;store to scratch RAM.
-	TXA			;transfer X to A (sprite index)
-	STA $08			;store it to scratch RAM.
-	TYA			;transfer Y to A
-	CMP $08			;compare with sprite index
-	BEQ .LoopSprSpr		;if equal, keep looping.
-
-	TYX			;transfer Y to X
-	LDA !7FAB9E,x		;load sprite number according to index
-	CMP $07			;compare with cursor's number from scratch RAM
-	BEQ .LoopSprSpr		;if equal, keep looping.
-
-	CMP #!LuigiSpriteNumber ;compare with Luigi index
-	BNE .LoopSprSpr 	;if not Luigi, keep looping.
-
-	LDA !14C8,x
+	LDA !14C8,y
 	CMP #$05
-	BCS .alive
+	BCS .checkTeleporting
 
 	CMP #$01
 	BEQ .noGraphics
@@ -404,26 +410,18 @@ DrawGraphicsIfNotTeleporting:
 .killed
 	JSL $00F606|!bank     ;kill mario
 
-.alive
-	LDA !1504,x	;!State from npc2.asm, 02 is teleporting
-	AND #$03
-	CMP #$02
-	BNE .drawGraphics
-
 .noGraphics
-	PLX
 	RTS
 
-.drawGraphics
-	PLX			;restore sprite index.
-	JSR DrawGraphics
-	RTS			;return.
+.checkTeleporting
+	LDA !1504,y				; Luigi !State — $02 = teleporting
+	AND #$03
+	CMP #$02
+	BEQ .noGraphics
 
-.LoopSprSpr
-	PLX			;restore sprite index
-	DEY			;decrement loop count by one
-	BPL .Loop		;and loop while not negative.
-	RTS			;end? return.
+.drawGraphics
+	JSR DrawGraphics
+	RTS
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1385,18 +1385,20 @@ KickedGFX:
 ; Sprite<->Sprite interaction and Mario<->Sprite interaction ;
 ;============================================================;
 SprMarioInteract:
+    ; Luigi owns Mario + sprite interact while this slot is held.
+    ; Stationary $09 vs enemy only kills the enemy; carried $0B kills both —
+    ; HandleLuigiHeldItemSpriteInteract applies that rule.
+    TXA
+    CMP !LuigiHeldItemIndex
+    BNE .shellNotHeldByLuigi
+    RTS
+
+.shellNotHeldByLuigi
     jsl $01803A|!bank       ;\ Interact with sprites, and check for contact with Mario.
     bcs .contact             ;/ Return if no contact.
     BRA .Return
 
 .contact
-    ; Generic held-item gate via !LuigiHeldItemIndex (any slot Luigi holds).
-    TXA
-    CMP !LuigiHeldItemIndex
-    BNE .shellNotHeldByLuigi
-    RTS                         ; Luigi.asm exclusively owns held interaction
-
-.shellNotHeldByLuigi
     lda $1490|!addr         ;\ If Mario has a star
     beq NoStar              ;|
     lda !167A,x             ;| and the sprite can be starkilled
