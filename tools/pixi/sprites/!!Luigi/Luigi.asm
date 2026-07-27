@@ -192,6 +192,7 @@ endif
 !NumFramesInsideWall			= $41B838
 !HeldInteractionDebug			= $41B839	; registered in docs/freeram-registry.md
 !HeldClipDebug					= $41B83A	; 10 bytes, $00-$07/$0A-$0B clipping
+!LuigiHeldItem1686Backup		= $41B844	; $1686 before "ignore objects" while held
 !RunningLevel					= $AF
 
 !Lvl18XSpeed					= $24
@@ -5024,6 +5025,11 @@ HandleLuigiHeldItemPosition:
 	LDA !167A,y
 	ORA #$84				; off-screen process + no default Mario interact
 	STA !167A,y
+	; Mario-carried ($0B) skips object clipping; held-as-$09 does not.
+	; Ignore objects while Luigi owns the slot so walls don't fling it.
+	LDA !1686,y
+	ORA #$80
+	STA !1686,y
 	LDA !LuigiIndex
 	TAX
 	LDA !157C,x 		; set item's direction to Luigi's direction
@@ -5413,6 +5419,11 @@ TransferItemMarioToLuigi:
 	LDA !167A,x
 	ORA #$84							; off-screen process + Luigi owns Mario interact
 	STA !167A,x
+	; Remember object-interact tweaker so walls work again after release.
+	LDA !1686,x
+	STA.l !LuigiHeldItem1686Backup
+	ORA #$80							; don't interact with objects while held
+	STA !1686,x
 	; Mario-carry speeds must not persist — they fling the item offscreen
 	; once it is $09 and runs normal physics between Luigi syncs.
 	STZ !B6,x
@@ -5443,6 +5454,9 @@ TransferItemLuigiToMario:
 	AND #$7F
 	STA !167A,x
 +
+	; Restore object clipping (cleared while Luigi held the item in walls).
+	LDA.l !LuigiHeldItem1686Backup
+	STA !1686,x
 	LDA #$0B
 	STA !14C8,x							; set player's item status to carried
 

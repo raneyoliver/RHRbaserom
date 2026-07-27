@@ -12,6 +12,7 @@
 %define_sprite_table("14F8", $14F8, $74DE)
 %define_sprite_table("157C", $157C, $3334)
 %define_sprite_table("167A", $167A, $7616)
+%define_sprite_table("1686", $1686, $762C)
 
 !LuigiIndex = $41A01A
 !LuigiHeldItemIndex = $41B82E
@@ -73,9 +74,13 @@ main:
 	JMP .return
 +
 	; Keep held carryables alive while the camera leaves them.
+	; Ignore objects ($1686 bit 7) so walls don't fling a $09 held item.
 	LDA !167A,y
 	ORA #$84
 	STA !167A,y
+	LDA !1686,y
+	ORA #$80
+	STA !1686,y
 
 	LDA !LuigiIndex
 	TAX
