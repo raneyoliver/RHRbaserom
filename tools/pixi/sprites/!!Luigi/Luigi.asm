@@ -4410,20 +4410,29 @@ SprSprContact:
 	BEQ .LoopSprSpr
 
 	TYX					;transfer Y to X
-	LDA !7FAB9E,x		;load sprite number according to index
-	CMP $07				;compare with this sprite's number from scratch RAM
-	BEQ .LoopSprSpr		;if equal, keep looping.
-
+	; Skip only a *real* duplicate Luigi (custom + num $14). Recycled
+	; vanilla slots keep stale 7FAB9E=$14 and must still hurt Luigi.
+	LDA !7FAB10,x
+	AND #$08
+	BEQ .notDupLuigi
+	LDA !7FAB9E,x
+	CMP $07				; compare with this Luigi's custom number
+	BEQ .LoopSprSpr
+.notDupLuigi
 	; If dead, skip
 	LDA !14C8,x
 	CMP #$08
 	BCC .LoopSprSpr
 
+	; Skip PlayerCursor only when it is actually custom $15
+	LDA !7FAB10,x
+	AND #$08
+	BEQ .checkContact
 	LDA !7FAB9E,x
-	; If PlayerCursor Sprite (above mario's head), skip
 	CMP #!PlayerCursor
 	BEQ .LoopSprSpr
 
+.checkContact
 	PLX					;restore sprite index.
 	JSL $03B6E5|!BankB	;get sprite B clipping (this sprite)
 	PHX					;preserve sprite index
@@ -4484,26 +4493,21 @@ CheckIfLuigiOnTop:
     BEQ .killUnlessMarioStomp
 +   LDA !1588,y
     AND #$04
-    BEQ ++
+    BEQ ++					; enemy airborne → may bounce
     LDA !1588,x
 	AND #$04
-    BEQ ++
-	LDA !1656,y
-	AND #$10
-	BNE ++
+    BEQ ++					; Luigi airborne → may bounce
+	; Both grounded at contact: never stomp. Jumpable used to BNE to bounce
+	; here, so a naked koopa walking into grounded Luigi got squished.
+	BRA .notAboveLuigi
 .killUnlessMarioStomp
 	JSR MarioStompingContactSpriteY
 	BCS ++					; Mario owns the stomp — don't kill player
     JMP KillLuigi
 
 .notAboveLuigi
-	; Side contact with Luigi vs enemy.
-	; Jumpable (goomba/koopa): never KillLuigi — Mario may be stomping the
-	; same sprite, and a glued held shell makes false overlaps common.
-	; Spiky / non-jumpable still kill.
-	LDA !1656,y
-	AND #$10
-	BNE ++
+	; Side / same-height contact → kill player, unless Mario is stomping
+	; this same sprite (shared overlap during a stomp).
 	JSR MarioStompingContactSpriteY
 	BCS ++
 	JMP KillLuigi
