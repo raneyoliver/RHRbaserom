@@ -5587,7 +5587,7 @@ HandleMarioVsLuigiHeldItem:
 	ORA $187A|!addr
 	BNE .spinKillShell
 
-	; Spiny shell: hurt instead of trampoline.
+	; Spiny shell + normal jump: hurt instead of trampoline.
 	PHY
 	PHX
 	LDA !LuigiHeldItemIndex
@@ -5625,12 +5625,29 @@ HandleMarioVsLuigiHeldItem:
 	JMP .return
 
 .spinKillShell
-	LDA #$40
-	STA.l !HeldInteractionDebug
 	LDA !LuigiHeldItemIndex
 	STA $00					; keep killed slot for MarioHeld clear
 	PHX
 	TAX
+	; Spiny shell: spin/Yoshi bounce like a spike — stay held, never spinkill.
+	LDA !7FAB10,x
+	AND #$08
+	BEQ ..doSpinKill
+	LDA !7FAB9E,x
+	CMP #!SpinyShell
+	BNE ..doSpinKill
+	PLX
+	LDA #$42
+	STA.l !HeldInteractionDebug
+	LDA #$02
+	STA $1DF9|!addr
+	JSL $01AA33|!bank			; spiky/stomp trampoline speeds
+	JSL $01AB99|!bank
+	JMP .return
+
+..doSpinKill
+	LDA #$40
+	STA.l !HeldInteractionDebug
 	JSL $01AB99|!bank
 	; Non-spiky high/low spin — not $01AA33 ($A8/$D0 = spiky/stomp trampoline).
 	; Yoshi still gets the full boost.
