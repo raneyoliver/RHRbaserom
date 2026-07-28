@@ -17,6 +17,12 @@ endif
 
 ; Must enable other optional global UberASM code first.
 ; May cause very slight delay on level load, and slight delay when actually changing GFX.
+;
+; Level 10B layer split (Mario L1 / Luigi L2):
+;   Map16 $521 = MarioIdentitySolid — place on Layer 1 only
+;   Map16 $522 = LuigiIdentitySolid — place on Layer 2 only
+;   Keep enemy floors as vanilla $130 (or similar) on either layer.
+;   Act-as for both custom tiles: 130 (GPS overrides to air for wrong identity).
 
 ; You can also use this with SwitchBetweenMarioAndLuigiWithLR.asm,
 ; if you want the player to actually change into Luigi (e.g. in status bar too), and not just GFX.

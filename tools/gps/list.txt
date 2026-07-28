@@ -29,6 +29,9 @@
 44E:130 RotVineBlock_Down.asm
 450:025 spinyblock.asm
 4A8:04B SpawnCarryableSprite.asm
+; Level 10B: Mario path on Layer 1, Luigi path on Layer 2 (identity via !IsMario).
+521:130 MarioIdentitySolid.asm
+522:130 LuigiIdentitySolid.asm
 
 ; BASEROM RESERVED BLOCKS BELOW -------------------------------------;
 ; The following blocks are largely on Pages 02 and 03 of Map16

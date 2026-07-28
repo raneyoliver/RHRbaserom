@@ -43,4 +43,5 @@ Locals:
 27  Aperture Science Psychoacoustic Labolatories - Robot Waiting Room #4/Robot Waiting Room #4.txt
 28  FlyingDuckman/FlyingDuckmanNoAccordion.txt
 29  Iceberg/Iceberg.txt
+2A  Elemental Sanctuary/elementalsanctuary.txt
 
