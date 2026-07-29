@@ -23,6 +23,7 @@ if read1($00FFD5) == $23
 	!SA1 = 1
 	!UberFreezeFlag = $309D
 	!UberPlayerDirection = $3076
+	!UberPlayerBlocked = $3077
 	!UberPlayerXNext = $3094
 	!UberPlayerX = $30D1
 	!UberPlayerYSpeed = $307D
@@ -33,6 +34,7 @@ else
 	!SA1 = 0
 	!UberFreezeFlag = $9D
 	!UberPlayerDirection = $76
+	!UberPlayerBlocked = $77
 	!UberPlayerXNext = $94
 	!UberPlayerX = $D1
 	!UberPlayerYSpeed = $7D
@@ -231,8 +233,18 @@ main:
 	XBA
 	%store_using_y_index(!14E0)
 
-	; Project Y through Mario's vertical speed.
+	; Project Y through Mario's vertical speed only while airborne.
+	; SMW can leave a positive $7D (e.g. $2E) while blocked below; applying
+	; it here made Luigi's held item render about 3 pixels too low whenever
+	; Mario carried Luigi on the ground.
+	LDA !UberPlayerBlocked
+	AND #$04
+	BNE .noCarriedYProjection
 	LDA !UberPlayerYSpeed
+	BRA .storeCarriedYSpeed
+.noCarriedYProjection
+	LDA #$00
+.storeCarriedYSpeed
 	STA $02
 	STZ $03
 	REP #$20
