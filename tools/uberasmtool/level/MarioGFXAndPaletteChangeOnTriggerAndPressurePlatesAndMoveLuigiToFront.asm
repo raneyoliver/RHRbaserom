@@ -50,11 +50,15 @@ init:
 	STA !RAM_PlayerPalPtr+2
 	;endif
 
+	JSL lvl10BAutoScroll_init
+
 	RTL
 
 ; !ChangeToLuigi = 0
 
 main:
+	JSL lvl10BAutoScroll_main
+
 	WDM #$01
 	JSL PressurePlates_main
 	; Reorder first so both indices identify their final slots, then perform
