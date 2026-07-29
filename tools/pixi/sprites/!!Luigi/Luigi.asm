@@ -3933,8 +3933,9 @@ CheckIfAbove:
 	RTS
 
 ; Luigi vs Mario-held shell.
-; - Non-spin: bounce + points/FX only. Never kick, spawn Koopa, or change ownership.
-; - Spin: LuigiTryBounceOrSpin (real spinkill). Clear Mario carry if shell dies.
+; - Spiny + non-spin: KillLuigi (player dies) — never silent ignore.
+; - Non-spin (normal shell): bounce + points/FX only. Never kick/spawn/ownership change.
+; - Spin: LuigiTryBounceOrSpin (spiny bounces; normal may spinkill). Clear Mario carry if shell dies.
 BounceOnMarioHeldShell:
 	JSR CheckIfAbove
 	BCS +
@@ -3945,8 +3946,10 @@ BounceOnMarioHeldShell:
 	RTS						; Luigi is moving upward
 +
 	JSR OnlyBounceOnSpinyShellIfSpinning
-	BCC .return
+	BCS .canInteract
+	JMP KillLuigi				; spiny + not spinning
 
+.canInteract
 	LDA !Spinning
 	BNE .spinPath
 
@@ -4095,10 +4098,11 @@ LuigiInteractWithVanillaShell:
 	AND #$04
 	BNE .returnBridge
 
-	; and Luigi in air, only bounce
+	; and Luigi in air, only bounce (spiny requires spin; else kill)
 	JSR OnlyBounceOnSpinyShellIfSpinning
-	BCC .returnBridge
-
+	BCS .airBounce
+	JMP KillLuigi
+.airBounce
 	JMP LuigiTryBounceOrSpin
 
 .checkStationary
@@ -4253,23 +4257,29 @@ LuigiInteractWithVanillaShell:
 	RTS
 
 OnlyBounceOnSpinyShellIfSpinning:
+	; Carry set = OK to bounce/spin-interact. Clear = spiny + not spinning
+	; (caller should KillLuigi / hurt, not ignore).
 	PHX
-		TYX
-		LDA !7FAB9E,x
+	TYX
+	LDA !7FAB10,x
+	AND #$08
+	BEQ .notSpiny
+	LDA !7FAB9E,x
 	PLX
 	CMP #!SpinyShell
 	BNE .canBounce
 
 	LDA !Spinning
-	BNE .canBounce	; if spiny shell, only interact if spinning
+	BNE .canBounce				; spiny: only bounce/spin-kill if spinning
 
 .cannotBounce
 	CLC
-	BRA .return
+	RTS
 
+.notSpiny
+	PLX
 .canBounce
 	SEC
-.return
 	RTS
 
 GetLuigiRightOfContactSprite:
