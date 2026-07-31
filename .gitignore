@@ -8,3 +8,5 @@ tools/test/mesen/.automation/
 tools/test/savestates/*.mst
 smwmemory.json
 tools/pixi/.dependencies
+tools/test/mesen/run-postdeath-phantom.ps1
+tools/uberasmtool/.dependencies
