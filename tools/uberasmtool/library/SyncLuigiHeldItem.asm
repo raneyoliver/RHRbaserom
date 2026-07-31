@@ -23,10 +23,10 @@ if read1($00FFD5) == $23
 	!SA1 = 1
 	!UberFreezeFlag = $309D
 	!UberPlayerDirection = $3076
-	!UberPlayerBlocked = $3077
 	!UberPlayerXNext = $3094
+	!UberPlayerYNext = $3096
 	!UberPlayerX = $30D1
-	!UberPlayerYSpeed = $307D
+	!UberPlayerY = $30D3
 	!UberSpriteXSpeed = $30B6
 	!UberSpriteYSpeed = $309E
 else
@@ -34,10 +34,10 @@ else
 	!SA1 = 0
 	!UberFreezeFlag = $9D
 	!UberPlayerDirection = $76
-	!UberPlayerBlocked = $77
 	!UberPlayerXNext = $94
+	!UberPlayerYNext = $96
 	!UberPlayerX = $D1
-	!UberPlayerYSpeed = $7D
+	!UberPlayerY = $D3
 	!UberSpriteXSpeed = $B6
 	!UberSpriteYSpeed = $AA
 endif
@@ -233,54 +233,26 @@ main:
 	XBA
 	%store_using_y_index(!14E0)
 
-	; Project Y through Mario's vertical speed only while airborne.
-	; SMW can leave a positive $7D (e.g. $2E) while blocked below; applying
-	; it here made Luigi's held item render about 3 pixels too low whenever
-	; Mario carried Luigi on the ground.
-	LDA !UberPlayerBlocked
-	AND #$04
-	BNE .noCarriedYProjection
-	LDA !UberPlayerYSpeed
-	BRA .storeCarriedYSpeed
-.noCarriedYProjection
-	LDA #$00
-.storeCarriedYSpeed
-	STA $02
-	STZ $03
+	; Project Y by Mario's exact whole-pixel movement this frame — same as X.
+	; Speed-based $7D projection disagreed with the pixels Luigi already
+	; inherited from Mario-carry positioning, which jittered the item while
+	; airborne. Grounded delta is 0, so the old "skip when blocked below"
+	; special case is unnecessary.
 	REP #$20
-	LDA $02
-	AND #$00FF
-	CMP #$0080
-	BCC +
-	ORA #$FF00
-+	ASL #4
+	LDA !UberPlayerYNext
+	SEC
+	SBC !UberPlayerY
 	STA $02
 	SEP #$20
 
 	LDA !14EC,x
-	STA $04
-	STZ $05
-	REP #$20
-	LDA $04
-	CLC
-	ADC $02
-	STA $04
-	SEP #$20
-	LDA $04
 	%store_using_y_index(!14EC)
-
-	LDA $05
-	STA $06
-	STZ $07
-	BPL +
-	DEC $07
-+
 	LDA !14D4,x
 	XBA
 	LDA !D8,x
 	REP #$20
 	CLC
-	ADC $06
+	ADC $02
 	SEC
 	SBC #$0001
 	SEP #$20
